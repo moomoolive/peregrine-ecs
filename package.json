@@ -22,16 +22,16 @@
     "url": "https://github.com/moomoolive/peregrine-ecs/issues"
   },
   "homepage": "https://github.com/moomoolive/peregrine-ecs#readme",
-  "dependencies": {
-    "struct-vec": "^0.1.1"
-  },
   "devDependencies": {
     "@jest/globals": "^27.5.1",
     "@types/jest": "^27.4.1",
+    "husky": "^7.0.0",
     "jest": "^27.5.1",
     "ts-jest": "^27.1.4",
     "ts-node": "^10.7.0",
-    "typescript": "^4.6.3",
-    "husky": "^7.0.0"
+    "typescript": "^4.6.3"
+  },
+  "dependencies": {
+    "struct-vec": "^0.1.2"
   }
 }
