@@ -1,34 +1,23 @@
-import {createMemory} from "../dataStructures/veci32/index"
-
-// all 32 bits
-// (0b1111_1111_1111_1111_1111_1111_1111_1111 >> 0)
-
-/* 
-first six bits of EntityRecord.meta
-are reserved for entity generation count 
-*/
-const GENERATION_COUNT_MASK = ~(
-    0b1111_1111_1111_1111_1111_1111_1100_0000 >> 0
-)
+import {SharedInt32Array} from "../dataStructures/veci32/index"
 
 export class EntityRecords {
     static expand(records: EntityRecords, additional: number) {
         const capacity = records.archetype.length + additional
-        const archetype = createMemory(capacity)
+        const archetype = SharedInt32Array(capacity)
         archetype.set(records.archetype, 0)
-        const meta = createMemory(capacity)
-        meta.set(records.meta, 0)
+        const meta = SharedInt32Array(capacity)
+        meta.set(records.generationCount, 0)
         records.archetype = archetype
-        records.meta = meta
+        records.generationCount = meta
     }
     
     archetype: Int32Array
-    meta: Int32Array
+    generationCount: Int32Array
     length: number
     
     constructor(capacity: number) {
-        this.archetype = createMemory(capacity)
-        this.meta = createMemory(capacity)
+        this.archetype = SharedInt32Array(capacity)
+        this.generationCount = SharedInt32Array(capacity)
         this.length = 0
     }
 } 

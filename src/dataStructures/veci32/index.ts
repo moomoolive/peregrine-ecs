@@ -1,5 +1,15 @@
-export function createMemory(capacity: number): Int32Array {
-    const bytes = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * capacity)
+const BYTES = Int32Array.BYTES_PER_ELEMENT
+
+/**
+ * Returns a Int32Array that is 
+ * backed by a SharedArrayBuffer
+ * 
+ * @param {number} capacity number of elements
+ * array can carry
+ * @returns {Int32Array}
+ */
+export function SharedInt32Array(capacity: number): Int32Array {
+    const bytes = new SharedArrayBuffer(BYTES * capacity)
     return new Int32Array(bytes)
 }
 
@@ -13,7 +23,7 @@ export class Veci32 {
         const mutIndex = vec.length
         vec.length += 1
         if (vec.length > mem.length) {
-            const newMem = createMemory(mem.length * 2)
+            const newMem = SharedInt32Array(mem.length * 2)
             newMem.set(mem, 0)
             vec.memory = newMem
         }
@@ -24,7 +34,7 @@ export class Veci32 {
         const len = vec.length
         const mem = vec.memory
         if ((mem.length - len) > defaults.collectionLimit) {
-            const newMem = createMemory(len + defaults.collectionLimit)
+            const newMem = SharedInt32Array(len + defaults.collectionLimit)
             for (let i = 0; i < len; i += 1) {
                 newMem[i] = mem[i]
             }
@@ -44,7 +54,7 @@ export class Veci32 {
         if (additionalMemory < 1) {
             return
         }
-        const newMem = createMemory(vec.memory.length + additionalMemory)
+        const newMem = SharedInt32Array(vec.memory.length + additionalMemory)
         newMem.set(vec.memory, 0)
         vec.memory = newMem
     }
@@ -59,7 +69,7 @@ export class Veci32 {
         if (currentCapcity <= minCapacity) {
             return
         }
-        const newMem = createMemory(len + minCapacity)
+        const newMem = SharedInt32Array(len + minCapacity)
         for (let i = 0; i < len; i += 1) {
             newMem[i] = mem[i]
         }
@@ -70,7 +80,7 @@ export class Veci32 {
     length: number
 
     constructor(capacity: number) {
-        this.memory = createMemory(capacity)
+        this.memory = SharedInt32Array(capacity)
         this.length = 0
     }
 }

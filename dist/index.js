@@ -1,19 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ecs = void 0;
-const dataStructures_1 = require("./dataStructures");
-const archetypes_1 = require("./archetypes");
-const entities_1 = require("./entities");
+const index_1 = require("./entities/index");
+const index_2 = require("./dataStructures/veci32/index");
 class Ecs {
     constructor() {
-        this.unusedIds = new dataStructures_1.EntityIds();
-        this.archetypes = [(0, archetypes_1.ID)(), (0, archetypes_1.COMPONENT)()];
-        const index = new Map();
-        index.set(0 /* id */, (0, entities_1.EntityRecord)(this.archetypes[0], 0, -1 /* none */));
-        index.set(0 /* component */, (0, entities_1.EntityRecord)(this.archetypes[1], 1, -1 /* none */));
-        this.entityIndex = index;
-        this.componentClasses = [];
-        this.systems = [];
+        this._memory = {
+            unusedEntityIds: new index_2.Veci32(1),
+            entityRecords: new index_1.EntityRecords(1),
+            componentRefs: (0, index_2.SharedInt32Array)(1),
+            unusedArchetypeRef: new index_2.Veci32(1),
+            archetypeRefs: new index_2.Veci32(1),
+            archetypes: []
+        };
     }
 }
 exports.Ecs = Ecs;
