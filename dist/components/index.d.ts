@@ -15,4 +15,15 @@ export declare type ComponentDef = {
 export declare type Component<T extends ComponentDef> = {
     [key in keyof T]: ComponentType<T[key]>;
 };
+export declare type ComponentObject<T extends ComponentDef> = {
+    [key in keyof T]: number;
+};
+export interface ComponentClass<T extends ComponentDef> {
+    readonly def: T;
+    new (initialCapacity: number): Component<T>;
+    push(component: Component<T>, obj: ComponentObject<T>, length: number): number;
+    pop(component: Component<T>, length: number): number;
+    consume(consumer: Component<T>, consumed: Component<T>, targetIndex: number): void;
+}
+export declare function componentMacro<T extends ComponentDef>(name: string, def: T): ComponentClass<T>;
 //# sourceMappingURL=index.d.ts.map

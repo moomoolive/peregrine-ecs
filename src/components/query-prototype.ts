@@ -1,27 +1,23 @@
 import {Component, ComponentDef} from "./index"
 
-const components = {
-    position: {
-        id: 1,
-        def: () => ({x: "i32"} as const)
-    },
-    velocity: {
-        id: 2,
-        def: () => ({x: "f32", y: "f32", z: "f32"} as const)
-    }
-} as const
+type CX = {
+    readonly position: number | {x: "i32"}
+    readonly velocity: number | {x: "f32", y: "f32", z: "f32"}
+}
 
-type QueryParams = ReadonlyArray<{ 
-    readonly id: number, 
-    readonly def: () => Readonly<ComponentDef>
-}>
+const comps: CX = {
+    position: 1,
+    velocity: 2
+}
+
+type QueryParams = ReadonlyArray<number | ComponentDef>
 
 // this beautiful generic was made with the help of
 // this answer: https://stackoverflow.com/questions/71931020/creating-a-readonly-array-from-another-readonly-array/71933754#71933754
 type Query<T extends QueryParams> = {
     [I in keyof T]: (
-        T[I] extends {def: () => ComponentDef} ? 
-            Component<ReturnType<T[I]["def"]>> 
+        T[I] extends number | ComponentDef ? 
+            Component<Exclude<T[I], number>> 
             : never
     ) 
 }
@@ -30,9 +26,5 @@ function fn<T extends QueryParams>(q: T): Query<T> {
     return {} as any
 }
 
-
-
-const {position, velocity} = components
-
 // works
-const q = fn([position, velocity] as const)[1]
+const q = fn([comps.position, comps.velocity] as const)[1]

@@ -33,16 +33,16 @@ class Veci32 {
     }
     static pop(vec) {
         const len = vec.length;
+        if (len < 1) {
+            return;
+        }
         const mem = vec.memory;
         if ((mem.length - len) > 34 /* collectionLimit */) {
             const newMem = SharedInt32Array(len + 34 /* collectionLimit */);
-            for (let i = 0; i < len; i += 1) {
+            for (let i = 0; i < len; i++) {
                 newMem[i] = mem[i];
             }
             vec.memory = newMem;
-        }
-        if (len < 1) {
-            return;
         }
         const val = vec.memory[len - 1];
         vec.length -= 1;
@@ -69,7 +69,7 @@ class Veci32 {
             return;
         }
         const newMem = SharedInt32Array(len + minCapacity);
-        for (let i = 0; i < len; i += 1) {
+        for (let i = 0; i < len; i++) {
             newMem[i] = mem[i];
         }
         vec.memory = newMem;
