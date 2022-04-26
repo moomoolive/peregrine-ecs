@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.componentMacro = void 0;
+exports.generateComponentClasses = exports.componentMacro = void 0;
 const tokenizeDef_1 = require("./tokenizeDef");
+const errors_1 = require("../debugging/errors");
 const GARBAGE_COLLECTION_LIMIT = 15;
 function componentMacro(name, def) {
     const { componentName, fieldToConstructor, allFields, elementSize } = (0, tokenizeDef_1.tokenizeComponentDef)(name, def);
@@ -50,3 +51,17 @@ function componentMacro(name, def) {
     return generatedClass;
 }
 exports.componentMacro = componentMacro;
+function generateComponentClasses(declaration) {
+    const components = [];
+    const keys = Object.keys(declaration);
+    if (keys.length < 1) {
+        throw SyntaxError((0, errors_1.err)(`you must declare at least one component`));
+    }
+    const len = keys.length;
+    for (let i = 0; i < len; i++) {
+        const key = keys[i];
+        components.push(componentMacro(key, declaration[key]));
+    }
+    return components;
+}
+exports.generateComponentClasses = generateComponentClasses;

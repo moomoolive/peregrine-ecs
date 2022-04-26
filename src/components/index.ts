@@ -1,4 +1,5 @@
 import {tokenizeComponentDef} from "./tokenizeDef"
+import {err} from "../debugging/errors"
 
 export type Types = (
     "i8"
@@ -118,4 +119,26 @@ export function componentMacro<
     }`)()
 
     return generatedClass as ComponentClass<T>
+}
+
+export type ComponentsDeclaration = {
+    readonly [key: string]: ComponentDef
+}
+
+export type ComponentClasses = ReadonlyArray<ComponentClass<ComponentDef>>
+
+export function generateComponentClasses(
+    declaration: ComponentsDeclaration
+): ComponentClasses {
+    const components = []
+    const keys = Object.keys(declaration)
+    if (keys.length < 1) {
+        throw SyntaxError(err(`you must declare at least one component`))
+    }
+    const len = keys.length
+    for (let i = 0; i < len; i++) {
+        const key = keys[i]
+        components.push(componentMacro(key, declaration[key]))
+    }
+    return components
 }

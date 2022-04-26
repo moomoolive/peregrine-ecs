@@ -1,7 +1,4 @@
-import { ComponentDef, ComponentClass } from "../../components/index";
-export declare type ComponentsDeclaration = {
-    readonly [key: string]: ComponentDef;
-};
+import { ComponentDef, ComponentsDeclaration, ComponentClasses } from "../../components/index";
 export declare type ComponentRegistry<T extends ComponentsDeclaration> = {
     readonly [key in keyof T]: number | T[key];
 };
@@ -13,5 +10,6 @@ export declare type ComponentDebug = {
     bytesPerElement: number;
     name: string;
 };
-export declare function debugComponent(component: number | ComponentDef, componentClasses: ComponentClass<ComponentDef>[]): ComponentDebug;
+export declare type ComponentId = number | ComponentDef;
+export declare function debugComponent(component: ComponentId, componentClasses: ComponentClasses): ComponentDebug;
 //# sourceMappingURL=index.d.ts.map

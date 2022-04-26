@@ -27,4 +27,9 @@ export interface ComponentClass<T extends ComponentDef> {
     consume(consumer: Component<T>, consumed: Component<T>, targetIndex: number): void;
 }
 export declare function componentMacro<T extends ComponentDef>(name: string, def: T): ComponentClass<T>;
+export declare type ComponentsDeclaration = {
+    readonly [key: string]: ComponentDef;
+};
+export declare type ComponentClasses = ReadonlyArray<ComponentClass<ComponentDef>>;
+export declare function generateComponentClasses(declaration: ComponentsDeclaration): ComponentClasses;
 //# sourceMappingURL=index.d.ts.map

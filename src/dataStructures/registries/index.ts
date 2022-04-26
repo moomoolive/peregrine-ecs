@@ -1,12 +1,9 @@
 import {
     ComponentDef,
-    ComponentClass
+    ComponentsDeclaration,
+    ComponentClasses
 } from "../../components/index"
 import {err} from "../../debugging/errors"
-
-export type ComponentsDeclaration = {
-    readonly [key: string]: ComponentDef
-}
 
 export type ComponentRegistry<T extends ComponentsDeclaration> = {
     readonly [key in keyof T]: number | T[key]
@@ -32,21 +29,23 @@ export function componentRegistryMacro<
     return Function(`return Object.freeze({${components}})`)()
 }
 
-export type ComponentDebug = {
-    definition: ComponentDef
+export type ComponentDebug<T extends ComponentDef> = {
+    definition: T
     id: number
     bytesPerElement: number
     name: string
 }
 
-export function debugComponent(
-    component: number | ComponentDef,
-    componentClasses: ComponentClass<ComponentDef>[]
-): ComponentDebug {
+export type ComponentId<T extends ComponentDef> = number | T
+
+export function debugComponent<T extends ComponentDef>(
+    component: ComponentId<T>,
+    componentClasses: ComponentClasses
+): ComponentDebug<T> {
     const componentClass = componentClasses[component as number]
     const {def, name, bytesPerElement} = componentClass
     return {
-        definition: def,
+        definition: def as T,
         bytesPerElement,
         name,
         id: component as number
