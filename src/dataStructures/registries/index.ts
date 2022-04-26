@@ -32,38 +32,8 @@ export function componentRegistryMacro<
     return Function(`return Object.freeze({${components}})`)()
 }
 
-function getComponentSize(def: ComponentDef): number {
-    let size = 0
-    const keys = Object.keys(def)
-    const len = keys.length
-    for (let i = 0; i < len; i++) {
-        const key = keys[i]
-        switch(def[key]) {
-            case "u8":
-            case "i8":
-                size += 1
-                break
-            case "i16":
-            case "u16":
-                size += 2
-                break
-            case "u32":
-            case "i32":
-            case "f32":
-                size += 4
-                break
-            case "num":
-            case "f64":
-                size += 8
-                break
-            
-        }
-    }
-    return size
-}
-
 export type ComponentDebug = {
-    def: ComponentDef
+    definition: ComponentDef
     id: number
     bytesPerElement: number
     name: string
@@ -71,14 +41,14 @@ export type ComponentDebug = {
 
 export function debugComponent(
     component: number | ComponentDef,
-    componentRefs: ComponentClass<ComponentDef>[]
+    componentClasses: ComponentClass<ComponentDef>[]
 ): ComponentDebug {
-    const ref = componentRefs[component as number]
-    const def = ref.def
+    const componentClass = componentClasses[component as number]
+    const {def, name, bytesPerElement} = componentClass
     return {
-        def,
-        id: component as number,
-        bytesPerElement: getComponentSize(def),
-        name: ref.name
+        definition: def,
+        bytesPerElement,
+        name,
+        id: component as number
     }
 }

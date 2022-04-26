@@ -1,5 +1,5 @@
 import {expect, describe, it} from "@jest/globals"
-import {tokenizeComponentDef} from "./defValidation"
+import {tokenizeComponentDef} from "./tokenizeDef"
 
 describe("invalid component def shapes throw error", () => {
     it("should throw with non-object", () => {
@@ -39,6 +39,15 @@ describe("component naming convention", () => {
         expect(() => tokenizeComponentDef("#component", {x: "i32"})).toThrow()
         expect(() => tokenizeComponentDef("(component)", {x: "i32"})).toThrow()
         expect(() => tokenizeComponentDef("component%", {x: "i32"})).toThrow()
+    })
+
+    it("should throw if component name is a reserved ecma keyword", () => {
+        expect(() => tokenizeComponentDef("class", {x: "i32"})).toThrow()
+        expect(() => tokenizeComponentDef("await", {x: "i32"})).toThrow()
+        expect(() => tokenizeComponentDef("true", {x: "i32"})).toThrow()
+        expect(() => tokenizeComponentDef("const", {x: "i32"})).toThrow()
+        expect(() => tokenizeComponentDef("let", {x: "i32"})).toThrow()
+        expect(() => tokenizeComponentDef("throw", {x: "i32"})).toThrow()
     })
 })
 

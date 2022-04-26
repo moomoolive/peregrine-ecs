@@ -41,7 +41,8 @@ export type DefTokens = {
     u32: string[],
     i32: string[],
     f32: string[],
-    f64: string[]
+    f64: string[],
+    elementSize: number
 }
 
 // Allows for alpha-numeric characters, $, and _.
@@ -51,6 +52,59 @@ function validVariableName(candidate: string): boolean {
     return ALLOW_CHARACTERS_IN_VARIABLE_NAME.test(candidate)
 }
 
+function reservedJsKeyword(word: string): boolean {
+    switch(word) {
+        case "false":
+        case "true":
+        case "null":
+        case "await":
+        case "static":
+        case "public":
+        case "protected":
+        case "private":
+        case "package":
+        case "let":
+        case "interface":
+        case "implements":
+        case "yield":
+        case "with":
+        case "while":
+        case "void":
+        case "var":
+        case "typeof":
+        case "try":
+        case "throw":
+        case "this":
+        case "switch":
+        case "super":
+        case "return":
+        case "new":
+        case "instanceof":
+        case "in":
+        case "import":
+        case "if":
+        case "function":
+        case "for":
+        case "finally":
+        case "extends":
+        case "export":
+        case "else":
+        case "do":
+        case "delete":
+        case "default":
+        case "debugger":
+        case "continue":
+        case "const":
+        case "class":
+        case "catch":
+        case "case":
+        case "break":
+            return true
+        default:
+            return false
+    }
+}
+
 export function tokenizeComponentDef(
     name: any, 
     def: any
@@ -58,7 +112,7 @@ export function tokenizeComponentDef(
     if (typeof name !== "string" || name.length < 1) {
         throw SyntaxError(err(`components must be named with a non empty-string, component with definition ${def} has no name.`))
     }
-    if (!validVariableName(name)) {
+    if (!validVariableName(name)|| reservedJsKeyword(name)) {
         throw SyntaxError(err(`component name "${name}" must conform to naming standard of js variables (excluding unicode)`))
     }
     const type = typeof def
@@ -80,7 +134,8 @@ export function tokenizeComponentDef(
         u32: [],
         i32: [],
         f32: [],
-        f64: []
+        f64: [],
+        elementSize: 0
     }
     for (let i = 0; i < keys.length; i++) {
         const targetKey = keys[i]
@@ -100,6 +155,7 @@ export function tokenizeComponentDef(
                     name: targetKey,
                     construct: Float64Array.name
                 })
+                tokens.elementSize += 8
                 break
             case "f32":
                 tokens.f32.push(targetKey)
@@ -107,6 +163,7 @@ export function tokenizeComponentDef(
                     name: targetKey,
                     construct: Float32Array.name
                 })
+                tokens.elementSize += 4
                 break
             case "u32":
                 tokens.u32.push(targetKey)
@@ -114,6 +171,7 @@ export function tokenizeComponentDef(
                     name: targetKey,
                     construct: Uint32Array.name
                 })
+                tokens.elementSize += 4
                 break
             case "i32":
                 tokens.i32.push(targetKey)
@@ -121,6 +179,7 @@ export function tokenizeComponentDef(
                     name: targetKey,
                     construct: Int32Array.name
                 })
+                tokens.elementSize += 4
                 break
             case "i16":
                 tokens.i16.push(targetKey)
@@ -128,6 +187,7 @@ export function tokenizeComponentDef(
                     name: targetKey,
                     construct: Int16Array.name
                 })
+                tokens.elementSize += 2
                 break
             case "u16":
                 tokens.u16.push(targetKey)
@@ -135,6 +195,7 @@ export function tokenizeComponentDef(
                     name: targetKey,
                     construct: Uint16Array.name
                 })
+                tokens.elementSize += 2
                 break
             case "u8":
                 tokens.u8.push(targetKey)
@@ -142,6 +203,7 @@ export function tokenizeComponentDef(
                     name: targetKey,
                     construct: Uint8Array.name
                 })
+                tokens.elementSize += 1
                 break
             case "i8":
                 tokens.i8.push(targetKey)
@@ -149,6 +211,7 @@ export function tokenizeComponentDef(
                     name: targetKey,
                     construct: Int8Array.name
                 })
+                tokens.elementSize += 1
                 break
             default:
                 throw TypeError(err(`field "${targetKey}" of "${name}" is an invalid type ${datatype}. Accepted data types are ${DATA_TYPES_LISTED}.`))

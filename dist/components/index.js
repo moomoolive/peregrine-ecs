@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.componentMacro = void 0;
-const defValidation_1 = require("./defValidation");
+const tokenizeDef_1 = require("./tokenizeDef");
 const GARBAGE_COLLECTION_LIMIT = 15;
 function componentMacro(name, def) {
-    const { componentName, fieldToConstructor, allFields } = (0, defValidation_1.tokenizeComponentDef)(name, def);
+    const { componentName, fieldToConstructor, allFields, elementSize } = (0, tokenizeDef_1.tokenizeComponentDef)(name, def);
     const generatedClass = Function(`return class ${componentName} {
         static def = ${JSON.stringify(def)}
+        static bytesPerElement = ${elementSize}
         
         static push(component, obj, length) {
             const mutIndex = length

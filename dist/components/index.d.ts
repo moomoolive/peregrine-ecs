@@ -20,6 +20,7 @@ export declare type ComponentObject<T extends ComponentDef> = {
 };
 export interface ComponentClass<T extends ComponentDef> {
     readonly def: T;
+    readonly bytesPerElement: number;
     new (initialCapacity: number): Component<T>;
     push(component: Component<T>, obj: ComponentObject<T>, length: number): number;
     pop(component: Component<T>, length: number): number;

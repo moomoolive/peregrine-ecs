@@ -33,6 +33,7 @@ describe("component generation", () => {
             blue: "u8",
             green: "u8"
         })
+        expect(color.bytesPerElement).toBe(3)
         expect(typeof color.push).toBe("function")
         expect(typeof color.pop).toBe("function")
         expect(typeof color.consume).toBe("function")

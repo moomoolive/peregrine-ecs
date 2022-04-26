@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.componentRegistryMacro = exports.MAX_COMPONENTS = void 0;
+exports.debugComponent = exports.componentRegistryMacro = exports.MAX_COMPONENTS = void 0;
 const errors_1 = require("../../debugging/errors");
 exports.MAX_COMPONENTS = 256;
 function componentRegistryMacro(declartion) {
@@ -15,22 +15,19 @@ function componentRegistryMacro(declartion) {
     const len = keys.length;
     for (let i = 0; i < len; i++) {
         const field = keys[i];
-        const def = declartion[field];
-        components += `\n\t\t${field}: Object.freeze({id: ${i}, def: () => ${JSON.stringify(def)}}),`;
+        components += `\n\t\t${field}: ${i},`;
     }
-    const registry = Function(`return Object.freeze({${components}})`)();
-    return {};
+    return Function(`return Object.freeze({${components}})`)();
 }
 exports.componentRegistryMacro = componentRegistryMacro;
-const def = componentRegistryMacro({
-    position: {
-        x: "i32",
-        y: "i32",
-        z: "i32"
-    },
-    color: {
-        x: "u8",
-        y: "u8",
-        z: "u8"
-    }
-});
+function debugComponent(component, componentClasses) {
+    const componentClass = componentClasses[component];
+    const { def, name, bytesPerElement } = componentClass;
+    return {
+        definition: def,
+        bytesPerElement,
+        name,
+        id: component
+    };
+}
+exports.debugComponent = debugComponent;

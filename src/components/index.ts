@@ -1,4 +1,4 @@
-import {tokenizeComponentDef} from "./defValidation"
+import {tokenizeComponentDef} from "./tokenizeDef"
 
 export type Types = (
     "i8"
@@ -44,6 +44,8 @@ export type ComponentObject<T extends ComponentDef> = {
 
 export interface ComponentClass<T extends ComponentDef> {
     readonly def: T
+    readonly bytesPerElement: number
+    
     new(initialCapacity: number): Component<T>
     push(
         component: Component<T>, 
@@ -69,10 +71,12 @@ export function componentMacro<
     const {
         componentName,
         fieldToConstructor,
-        allFields
+        allFields,
+        elementSize
     } = tokenizeComponentDef(name, def)
     const generatedClass = Function(`return class ${componentName} {
         static def = ${JSON.stringify(def)}
+        static bytesPerElement = ${elementSize}
         
         static push(component, obj, length) {
             const mutIndex = length
