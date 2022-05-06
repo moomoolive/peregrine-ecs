@@ -19,12 +19,13 @@ export declare type ComponentObject<T extends ComponentDef> = {
     [key in keyof T]: number;
 };
 export interface ComponentClass<T extends ComponentDef> {
-    readonly def: T;
     readonly bytesPerElement: number;
-    new (initialCapacity: number): Component<T>;
-    push(component: Component<T>, obj: ComponentObject<T>, length: number): number;
-    pop(component: Component<T>, length: number): number;
-    consume(consumer: Component<T>, consumed: Component<T>, targetIndex: number): void;
+    readonly name: string;
+    def: () => T;
+    new: (initialCapacity: number) => Component<T>;
+    push: (component: Component<T>, obj: ComponentObject<T>, length: number) => number;
+    pop: (component: Component<T>, length: number) => number;
+    consume: (consumer: Component<T>, consumed: Component<T>, targetIndex: number) => void;
 }
 export declare function componentMacro<T extends ComponentDef>(name: string, def: T): ComponentClass<T>;
 export declare type ComponentsDeclaration = {

@@ -4,7 +4,10 @@ import {
     MAX_COMPONENTS,
     debugComponent
 } from "./index"
-import {componentMacro} from "../../components/index"
+import {
+    componentMacro,
+    ComponentClasses
+} from "../../components/index"
 
 describe("component registry", () => {
     it("should generate object will inputted keys", () => {
@@ -54,7 +57,7 @@ describe("component registry debug tools", () => {
         const components = [
             componentMacro("cat", defs.cat),
             componentMacro("bird", defs.bird),
-        ]
+        ] as unknown as ComponentClasses
         const registry = componentRegistryMacro(defs)
         {
             const {

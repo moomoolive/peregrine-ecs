@@ -54,8 +54,13 @@ export class BaseEcs<
         this._componentClasses = componentClasses
         /* ends here */
 
-        this.debugger = new Debugger(this)
-        this._mutator = new EntityMutator(this)
+        this.debugger = new Debugger(
+            this._componentClasses
+        )
+        this._mutator = new EntityMutator(
+            this._entityRecords,
+            this._tables
+        )
     }
 
     updateEntity(entityId: number): EntityMutator {

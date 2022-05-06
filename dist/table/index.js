@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Table = void 0;
-const index_1 = require("../dataStructures/veci32/index");
+const sharedArrays_1 = require("../dataStructures/sharedArrays");
 class TableWorkerMemory {
     constructor(length, components, entities) {
         this.length = length;
@@ -17,8 +17,8 @@ class TableWorkerMemory {
 // archetype graph implemenation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/table_graph.c#L192
 class Table {
     constructor() {
-        this.workerMemory = new TableWorkerMemory(0, [], (0, index_1.SharedInt32Array)(1));
-        this.type = (0, index_1.SharedInt32Array)(1);
+        this.workerMemory = new TableWorkerMemory(0, [], (0, sharedArrays_1.SharedInt32Array)(1));
+        this.components = (0, sharedArrays_1.SharedUint8Array)(1);
         this.addEdges = new Map();
         this.removeEdges = new Map();
     }

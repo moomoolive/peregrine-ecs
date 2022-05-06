@@ -35,36 +35,40 @@ export type ComponentDef = {
     readonly [key: string]: Types
 }
 
-export type Component<T extends ComponentDef> = {
+export type ComponentData<T extends ComponentDef> = {
     [key in keyof T]: ComponentType<T[key]>
 }
+
+type ComponentGetters<T extends ComponentDef> = {
+    [key in keyof T]: (index: number) => number
+}
+
+type ComponentSetters<T extends ComponentDef> = {
+    [key in keyof T as `set_${key & string}`]: (index: number, val: number) => void
+}
+
+export type Component<T extends ComponentDef> = (
+    {
+        ["@memory"]: ComponentData<T>
+        set: (
+            index: number,
+            offset: number,
+            databuffer: Float64Array
+        ) => void,
+    }
+    & ComponentGetters<T>
+    & ComponentSetters<T>
+)
 
 export type ComponentObject<T extends ComponentDef> = {
     [key in keyof T]: number
 }
 
 export interface ComponentClass<T extends ComponentDef> {
-    readonly def: T
     readonly bytesPerElement: number
-    
+    readonly def: T
     new(initialCapacity: number): Component<T>
-    push(
-        component: Component<T>, 
-        obj: ComponentObject<T>,
-        length: number
-    ): number
-    pop(
-        component: Component<T>,
-        length: number
-    ): number
-    consume(
-        consumer: Component<T>,
-        consumed: Component<T>,
-        targetIndex: number
-    ): void
 }
-
-const GARBAGE_COLLECTION_LIMIT = 15
 
 export function componentMacro<
     T extends ComponentDef
@@ -78,44 +82,26 @@ export function componentMacro<
     const generatedClass = Function(`return class ${componentName} {
         static def = ${JSON.stringify(def)}
         static bytesPerElement = ${elementSize}
-        
-        static push(component, obj, length) {
-            const mutIndex = length
-            const len = length + 1
-            if (len > component.${allFields[0]}.length) {
-                const capacity = length * 2
-                ${fieldToConstructor.map(({name, construct}) => {
-                    return `const new_${name} = new ${construct}(new SharedArrayBuffer(capacity * ${construct}.BYTES_PER_ELEMENT)); new_${name}.set(component.${name}, 0); component.${name} = new_${name}`
-                }).join("\n\t\t    ")}
-            }
-            ${allFields.map((field) => {
-                return `component.${field}[mutIndex] = obj.${field}`
-            }).join("\n\t\t")}
-            return len
-        }
 
-        static pop(component, length) {
-            if (length < 1) {
-                return length
-            }
-            if ((component.${allFields[0]}.length - length) > ${GARBAGE_COLLECTION_LIMIT}) {
-                const capacity = length + ${GARBAGE_COLLECTION_LIMIT}
-                ${fieldToConstructor.map(({name, construct}) => {
-                    return `const new_${name} = new ${construct}(new SharedArrayBuffer(capacity * ${construct}.BYTES_PER_ELEMENT)); for (let i = 0; i < length; i++) { new_${name}[i] = component.${name}[i] }; component.${name} = new_${name}`
-                }).join("\n\t\t    ")}
-            }
-            return length - 1
-        }
-
-        static consume(consumer, consumed, index) {
-
-        }
-        
         constructor(initialCapacity) {
-            ${fieldToConstructor.map(({name, construct}) => {
-                return `this.${name} = new ${construct}(initialCapacity)`
+            this["@memory"] = {
+                ${fieldToConstructor.map(({name, construct}) => {
+                    return `${name}: new ${construct}(initialCapacity),`
+                }).join("\n\t\t    ")}
+            }
+        }
+
+        set(index, offset, databuffer) {
+            ${allFields.map((field, fieldOffset) => {
+                return `this["@memory"].${field}[index] = databuffer[offset${fieldOffset === 0 ? "" : ` + ${fieldOffset}`}]`
             }).join("\n\t\t")}
         }
+
+        ${allFields.map((field) => {
+            const getter = `${field}(index) {return this["@memory"].${field}[index]}`
+            const setter = `set_${field}(index, val) {this["@memory"].${field}[index] = val; return this}`
+            return `${getter};${setter}`
+        }).join("\n\t    ")}
     }`)()
 
     return generatedClass as ComponentClass<T>

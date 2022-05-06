@@ -1,4 +1,7 @@
-import {SharedInt32Array} from "../dataStructures/veci32/index"
+import {
+    SharedInt32Array,
+    SharedUint8Array
+} from "../dataStructures/sharedArrays"
 import {Component, ComponentDef} from "../components/index"
 
 class TableWorkerMemory {
@@ -24,7 +27,7 @@ class TableWorkerMemory {
 // archetype implementation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/private_types.h#L170
 // archetype graph implemenation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/table_graph.c#L192
 export class Table {
-    type: Int32Array
+    components: Uint8Array
     removeEdges: Map<number, Table>
     addEdges: Map<number, Table>
     workerMemory: TableWorkerMemory
@@ -36,7 +39,7 @@ export class Table {
             SharedInt32Array(1)
         )
 
-        this.type = SharedInt32Array(1)
+        this.components = SharedUint8Array(1)
         this.addEdges = new Map()
         this.removeEdges = new Map()
     }

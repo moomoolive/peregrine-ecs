@@ -1,7 +1,8 @@
 import {
     ComponentDef,
     ComponentsDeclaration,
-    ComponentClasses
+    ComponentClasses,
+    ComponentClass
 } from "../../components/index"
 import {err} from "../../debugging/errors"
 
@@ -43,7 +44,7 @@ export function debugComponent<T extends ComponentDef>(
     componentClasses: ComponentClasses
 ): ComponentDebug<T> {
     const componentClass = componentClasses[component as number]
-    const {def, name, bytesPerElement} = componentClass
+    const {def, name, bytesPerElement} = componentClass as unknown as ComponentClass<T>
     return {
         definition: def as T,
         bytesPerElement,

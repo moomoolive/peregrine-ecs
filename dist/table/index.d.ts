@@ -6,7 +6,7 @@ declare class TableWorkerMemory {
     constructor(length: number, components: Component<ComponentDef>[], entities: Int32Array);
 }
 export declare class Table {
-    type: Int32Array;
+    components: Uint8Array;
     removeEdges: Map<number, Table>;
     addEdges: Map<number, Table>;
     workerMemory: TableWorkerMemory;

@@ -4,12 +4,12 @@ export declare type ComponentRegistry<T extends ComponentsDeclaration> = {
 };
 export declare const MAX_COMPONENTS = 256;
 export declare function componentRegistryMacro<T extends ComponentsDeclaration>(declartion: T): ComponentRegistry<T>;
-export declare type ComponentDebug = {
-    definition: ComponentDef;
+export declare type ComponentDebug<T extends ComponentDef> = {
+    definition: T;
     id: number;
     bytesPerElement: number;
     name: string;
 };
-export declare type ComponentId = number | ComponentDef;
-export declare function debugComponent(component: ComponentId, componentClasses: ComponentClasses): ComponentDebug;
+export declare type ComponentId<T extends ComponentDef> = number | T;
+export declare function debugComponent<T extends ComponentDef>(component: ComponentId<T>, componentClasses: ComponentClasses): ComponentDebug<T>;
 //# sourceMappingURL=index.d.ts.map

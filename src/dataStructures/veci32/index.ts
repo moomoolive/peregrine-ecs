@@ -1,17 +1,4 @@
-const BYTES = Int32Array.BYTES_PER_ELEMENT
-
-/**
- * Returns a Int32Array that is 
- * backed by a SharedArrayBuffer
- * 
- * @param {number} capacity number of elements
- * array can carry
- * @returns {Int32Array}
- */
-export function SharedInt32Array(capacity: number): Int32Array {
-    const bytes = new SharedArrayBuffer(BYTES * capacity)
-    return new Int32Array(bytes)
-}
+import {SharedInt32Array} from "../sharedArrays"
 
 const enum defaults {
     collectionLimit = 34

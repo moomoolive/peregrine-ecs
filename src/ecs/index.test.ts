@@ -11,9 +11,6 @@ describe("ecs defines components correctly", () => {
             }
         })
         const ecs = new Ecs()
-        ecs.updateEntity(0)
-            .remove(1)
-            .update()
         {
             const {
                 definition,

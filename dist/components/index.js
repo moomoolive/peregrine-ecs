@@ -6,11 +6,17 @@ const errors_1 = require("../debugging/errors");
 const GARBAGE_COLLECTION_LIMIT = 15;
 function componentMacro(name, def) {
     const { componentName, fieldToConstructor, allFields, elementSize } = (0, tokenizeDef_1.tokenizeComponentDef)(name, def);
-    const generatedClass = Function(`return class ${componentName} {
-        static def = ${JSON.stringify(def)}
-        static bytesPerElement = ${elementSize}
-        
-        static push(component, obj, length) {
+    const generatedClass = Function(`return {
+        name: ${componentName},
+        bytesPerElement: ${elementSize},
+
+        new: (initialCapacity) => {
+            ${fieldToConstructor.map(({ name, construct }) => {
+        return `this.${name} = new ${construct}(initialCapacity)`;
+    }).join("\n\t\t")}
+        },
+        def: () => (${JSON.stringify(def)}),
+        push: (component, obj, length) => {
             const mutIndex = length
             const len = length + 1
             if (len > component.${allFields[0]}.length) {
@@ -23,9 +29,8 @@ function componentMacro(name, def) {
         return `component.${field}[mutIndex] = obj.${field}`;
     }).join("\n\t\t")}
             return len
-        }
-
-        static pop(component, length) {
+        },
+        pop: (component, length) => {
             if (length < 1) {
                 return length
             }
@@ -36,16 +41,9 @@ function componentMacro(name, def) {
     }).join("\n\t\t    ")}
             }
             return length - 1
-        }
+        },
+        consume: (consumer, consumed, index) => {
 
-        static consume(consumer, consumed, index) {
-
-        }
-        
-        constructor(initialCapacity) {
-            ${fieldToConstructor.map(({ name, construct }) => {
-        return `this.${name} = new ${construct}(initialCapacity)`;
-    }).join("\n\t\t")}
         }
     }`)();
     return generatedClass;

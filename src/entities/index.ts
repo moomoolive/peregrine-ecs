@@ -1,5 +1,9 @@
 import {Table} from "../table/index"
 
+export const enum encoding {
+    no_archetype = -1
+}
+
 export class EntityRecord {
     table: Table | null
     row: number

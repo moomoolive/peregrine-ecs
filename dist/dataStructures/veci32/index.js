@@ -1,23 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Veci32 = exports.SharedInt32Array = void 0;
-const BYTES = Int32Array.BYTES_PER_ELEMENT;
-/**
- * Returns a Int32Array that is
- * backed by a SharedArrayBuffer
- *
- * @param {number} capacity number of elements
- * array can carry
- * @returns {Int32Array}
- */
-function SharedInt32Array(capacity) {
-    const bytes = new SharedArrayBuffer(BYTES * capacity);
-    return new Int32Array(bytes);
-}
-exports.SharedInt32Array = SharedInt32Array;
+exports.Veci32 = void 0;
+const sharedArrays_1 = require("../sharedArrays");
 class Veci32 {
     constructor(capacity) {
-        this.memory = SharedInt32Array(capacity);
+        this.memory = (0, sharedArrays_1.SharedInt32Array)(capacity);
         this.length = 0;
     }
     static push(vec, i32) {
@@ -25,7 +12,7 @@ class Veci32 {
         const mutIndex = vec.length;
         vec.length += 1;
         if (vec.length > mem.length) {
-            const newMem = SharedInt32Array(mem.length * 2);
+            const newMem = (0, sharedArrays_1.SharedInt32Array)(mem.length * 2);
             newMem.set(mem, 0);
             vec.memory = newMem;
         }
@@ -38,7 +25,7 @@ class Veci32 {
         }
         const mem = vec.memory;
         if ((mem.length - len) > 34 /* collectionLimit */) {
-            const newMem = SharedInt32Array(len + 34 /* collectionLimit */);
+            const newMem = (0, sharedArrays_1.SharedInt32Array)(len + 34 /* collectionLimit */);
             for (let i = 0; i < len; i++) {
                 newMem[i] = mem[i];
             }
@@ -54,7 +41,7 @@ class Veci32 {
         if (additionalMemory < 1) {
             return;
         }
-        const newMem = SharedInt32Array(vec.memory.length + additionalMemory);
+        const newMem = (0, sharedArrays_1.SharedInt32Array)(vec.memory.length + additionalMemory);
         newMem.set(vec.memory, 0);
         vec.memory = newMem;
     }
@@ -68,7 +55,7 @@ class Veci32 {
         if (currentCapcity <= minCapacity) {
             return;
         }
-        const newMem = SharedInt32Array(len + minCapacity);
+        const newMem = (0, sharedArrays_1.SharedInt32Array)(len + minCapacity);
         for (let i = 0; i < len; i++) {
             newMem[i] = mem[i];
         }

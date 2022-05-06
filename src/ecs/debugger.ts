@@ -4,34 +4,32 @@ import {
     ComponentDebug
 } from "../dataStructures/registries/index"
 import {
-    ComponentsDeclaration,
-    ComponentDef
+    ComponentDef,
+    ComponentClasses
 } from "../components/index"
-import type {BaseEcs as Ecs} from "./index"
 
 export class Debugger {
-    private "@self": Ecs<ComponentsDeclaration>
+    readonly componentClasses: ComponentClasses
     readonly componentCount: number
 
-    constructor(self: Ecs<ComponentsDeclaration>) {
-        this["@self"] = self
-        this.componentCount = this["@self"]["_componentClasses"].length
+    constructor(componentClasses: ComponentClasses) {
+        this.componentClasses = componentClasses
+        this.componentCount = componentClasses.length
     }
 
     componentInfo<T extends ComponentDef>(
         componentId: ComponentId<T>
     ): ComponentDebug<T> {
         return debugComponent(
-            componentId,
-            this["@self"]["_componentClasses"]
+            componentId, this.componentClasses
         )
     }
 
     allComponents(): ComponentDebug<ComponentDef>[] {
         const componentsDebug = []
-        const len = this["@self"]["_componentClasses"].length
+        const len = this.componentClasses.length
         for (let i = 0; i < len; i++) {
-            const component = this["@self"]["_componentClasses"][i]
+            const component = this.componentClasses[i]
             componentsDebug.push({
                 id: i,
                 definition: component.def,
