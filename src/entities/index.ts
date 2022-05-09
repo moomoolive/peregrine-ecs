@@ -1,15 +1,15 @@
-import {Table} from "../table/index"
+import {SharedInt32Array} from "../dataStructures/sharedArrays"
 
 export const enum encoding {
     no_archetype = -1
 }
 
-export class EntityRecord {
-    table: Table | null
-    row: number
-    
-    constructor(arch: Table | null, row: number) {
-        this.table = arch
-        this.row = row
+export class EntityRecords {
+    "&tablePtrs": Int32Array
+    row: Int32Array
+
+    constructor(initialCapacity: number) {
+        this["&tablePtrs"] = SharedInt32Array(initialCapacity).fill(encoding.no_archetype)
+        this.row = SharedInt32Array(initialCapacity).fill(encoding.no_archetype)
     }
 }

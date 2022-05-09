@@ -1,27 +1,9 @@
 import {
-    SharedInt32Array,
-    SharedUint8Array
-} from "../dataStructures/sharedArrays"
-import {Component, ComponentDef} from "../components/index"
-
-class TableWorkerMemory {
-    length: number
-    components: Component<ComponentDef>[]
-    entities: Int32Array
-    capacity: number
-
-    constructor(
-        length: number, 
-        capacity: number, 
-        components: Component<ComponentDef>[],  
-        entities: Int32Array
-    ) {
-        this.length = length
-        this.capacity = capacity
-        this.components = components
-        this.entities = entities
-    }
-}
+    RawComponent, 
+    ComponentDef
+} from "../components/index"
+import {Allocator} from "../allocator/index"
+import {Bytes} from "../consts"
 
 // the current implementation of the archetype
 // graph could be significantly sped up
@@ -30,21 +12,59 @@ class TableWorkerMemory {
 // archetype implementation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/private_types.h#L170
 // archetype graph implemenation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/table_graph.c#L192
 export class Table {
-    components: Uint8Array
+    componentIds: Int32Array
+    components: RawComponent<ComponentDef>[]
     removeEdges: Map<number, Table>
     addEdges: Map<number, Table>
-    workerMemory: TableWorkerMemory
+    meta: Int32Array
+    lazyLength: number
 
-    constructor() {
-        this.workerMemory = new TableWorkerMemory(
-            0, 
-            1,
-            [], 
-            SharedInt32Array(1)
+    constructor(
+        initialCapacity: number,
+        componentIds: Int32Array,
+        componentIds_ptr: number,
+        globalAllocator: Allocator
+    ) {
+        const meta_ptr = globalAllocator.malloc(3 * Bytes.i32)
+        this.meta = new Int32Array(
+            globalAllocator.buf,
+            meta_ptr,
+            4
         )
+        this.meta[0] = 0
+        this.meta[1] = initialCapacity
+        this.meta[2] = meta_ptr
+        this.meta[3] = componentIds_ptr
 
-        this.components = SharedUint8Array(1)
+        this.lazyLength = 0
+        this.componentIds = componentIds
+        this.components = []
         this.addEdges = new Map()
         this.removeEdges = new Map()
     }
+
+    get length(): number {
+        return this.lazyLength
+    }
+    
+    get trueLength(): number {
+        return this.meta[0]
+    }
+
+    get capacity(): number {
+        return this.meta[1]
+    }
+
+    get "&metaPtr"() {
+        return this.meta[2]
+    }
+
+    get "&componentIdsPtr"() {
+        return this.meta[3]
+    }
+}
+
+export function updateTableLength(table: Table): Table {
+    table.lazyLength = table.trueLength
+    return table
 }

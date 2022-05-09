@@ -4,8 +4,8 @@ const comps = {
     position: 1,
     velocity: 2
 };
-function fn(q) {
+function fn(...q) {
     return {};
 }
 // works
-const q = fn([comps.position, comps.velocity])[1];
+const q = fn(comps.position, comps.velocity)[1];

@@ -22,9 +22,9 @@ type Query<T extends QueryParams> = {
     ) 
 }
 
-function fn<T extends QueryParams>(q: T): Query<T> {
+function fn<T extends QueryParams>(...q: T): Query<T> {
     return {} as any
 }
 
 // works
-const q = fn([comps.position, comps.velocity] as const)[1]
+const q = fn(comps.position, comps.velocity)[1]

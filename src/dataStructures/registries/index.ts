@@ -2,7 +2,8 @@ import {
     ComponentDef,
     ComponentsDeclaration,
     ComponentClasses,
-    ComponentClass
+    ComponentClass,
+    ComponentTokens,
 } from "../../components/index"
 import {err} from "../../debugging/errors"
 
@@ -35,6 +36,7 @@ export type ComponentDebug<T extends ComponentDef> = {
     id: number
     bytesPerElement: number
     name: string
+    tokens: ComponentTokens
 }
 
 export type ComponentId<T extends ComponentDef> = number | T
@@ -44,11 +46,17 @@ export function debugComponent<T extends ComponentDef>(
     componentClasses: ComponentClasses
 ): ComponentDebug<T> {
     const componentClass = componentClasses[component as number]
-    const {def, name, bytesPerElement} = componentClass as unknown as ComponentClass<T>
+    const {
+        def, 
+        name, 
+        bytesPerElement,
+        tokens
+    } = componentClass as unknown as ComponentClass<T>
     return {
         definition: def as T,
         bytesPerElement,
         name,
-        id: component as number
+        id: component as number,
+        tokens
     }
 }

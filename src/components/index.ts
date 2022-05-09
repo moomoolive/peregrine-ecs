@@ -1,3 +1,4 @@
+import {Allocator} from "../allocator/index"
 import {
     tokenizeComponentDef
 } from "./tokenizeDef"
@@ -43,8 +44,12 @@ export type ComponentData<T extends ComponentDef> = {
 
 export type Component<T extends ComponentDef> = (
     ComponentData<T>
+)
+
+export type RawComponent<T extends ComponentDef> = (
+    ComponentData<T>
     & {
-        "&bufferPtrs": Int32Array
+        "&allocatorPtrs": Int32Array
     }
 )
 
@@ -52,10 +57,20 @@ export type ComponentObject<T extends ComponentDef> = {
     [key in keyof T]: number
 }
 
+export type ComponentTokens = ReadonlyArray<{
+    name: string,
+    type: Types,
+    ptrOffset: number
+}>
+
 export interface ComponentClass<T extends ComponentDef> {
     readonly bytesPerElement: number
     readonly def: T
-    new(initialCapacity: number): Component<T>
+    readonly tokens: ComponentTokens
+    new(
+        initialCapacity: number, 
+        globalAllocator: Allocator
+    ): RawComponent<T>
 }
 
 export function componentMacro<
@@ -69,12 +84,26 @@ export function componentMacro<
     const generatedClass = Function(`return class ${componentName} {
         static def = ${JSON.stringify(def)}
         static bytesPerElement = ${elementSize}
+        static tokens = ${JSON.stringify(
+            Object.keys(def).map((field, offset) => {
+                return {
+                    name: field, 
+                    type: def[field], 
+                    ptrOffset: offset
+                }
+            })
+        )}
 
-        constructor(initialCapacity) {
-            ${fields.map(({name, type}) => {
-                return `this.${name} = new ${type.name}(initialCapacity)`
-            }).join("\n\t\t")}
-            this["&bufferPtrs"] = new Int32Array(${fields.length})
+        constructor(initialCapacity, globalAllocator) {
+            const componentSegmentPtrs_ptr = globalAllocator.malloc(${fields.length + 1} * ${Int32Array.BYTES_PER_ELEMENT})
+            this["&allocatorPtrs"] = new Int32Array(globalAllocator.buf, componentSegmentPtrs_ptr, ${fields.length + 1})
+            this["&allocatorPtrs"][${fields.length}] = componentSegmentPtrs_ptr
+            ${fields.map(({name, type}, ptrOffset) => {
+                return `
+            const ${name}_ptr = globalAllocator.malloc(initialCapacity * ${type.BYTES_PER_ELEMENT})
+            this["&allocatorPtrs"][${ptrOffset}] = ${name}_ptr
+            this.${name} = new ${type.name}(globalAllocator.buf, ${name}_ptr, initialCapacity)
+            `}).join("")}
         }
     }`)()
 

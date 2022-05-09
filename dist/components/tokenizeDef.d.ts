@@ -2,20 +2,12 @@ export declare const DATA_TYPES: readonly ["num", "f64", "f32", "u32", "i32", "i
 export declare const DATA_TYPES_LISTED: string;
 export declare type DefTokens = {
     componentName: string;
-    allFields: string[];
-    fieldToConstructor: {
+    fields: {
         name: string;
-        construct: string;
+        type: (Float64ArrayConstructor | Float32ArrayConstructor | Int32ArrayConstructor | Uint32ArrayConstructor | Uint16ArrayConstructor | Int16ArrayConstructor | Uint16ArrayConstructor | Int8ArrayConstructor | Uint8ArrayConstructor);
     }[];
-    i8: string[];
-    u8: string[];
-    u16: string[];
-    i16: string[];
-    u32: string[];
-    i32: string[];
-    f32: string[];
-    f64: string[];
     elementSize: number;
 };
+export declare const MAX_FIELDS_PER_COMPONENT = 15;
 export declare function tokenizeComponentDef(name: any, def: any): DefTokens;
 //# sourceMappingURL=tokenizeDef.d.ts.map

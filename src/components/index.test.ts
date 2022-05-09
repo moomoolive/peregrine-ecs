@@ -1,5 +1,12 @@
-import {expect, describe, it} from "@jest/globals"
+import {expect, describe, it, afterEach} from "@jest/globals"
+import {createComponentAllocator} from "../allocator/index"
 import {componentMacro} from "./index"
+
+const allocator = createComponentAllocator(1_024, false)
+
+afterEach(() => {
+    allocator.freeAll()
+})
 
 describe("component generation", () => {
     it("components are generated with correct key names and data types", () => {
@@ -8,12 +15,12 @@ describe("component generation", () => {
             y: "f64",
             z: "f64"
         })
-        const p = new position(10)
+        const p = new position(10, allocator)
         expect(p.x).toBeInstanceOf(Float64Array)
         expect(p.y).toBeInstanceOf(Float64Array)
         expect(p.z).toBeInstanceOf(Float64Array)
-        expect(p["&bufferPtrs"]).toBeInstanceOf(Int32Array)
-        expect(p["&bufferPtrs"].length).toBe(3)
+        expect(p["&allocatorPtrs"]).toBeInstanceOf(Int32Array)
+        expect(p["&allocatorPtrs"].length).toBe(position.tokens.length + 1)
         expect(p.x.length).toBe(10)
         expect(p.y.length).toBe(10)
         expect(p.z.length).toBe(10)
@@ -22,11 +29,11 @@ describe("component generation", () => {
             position: "i32",
             face: "i8"
         })
-        const a = new animation(5)
+        const a = new animation(5, allocator)
         expect(a.face).toBeInstanceOf(Int8Array)
         expect(a.position).toBeInstanceOf(Int32Array)
-        expect(a["&bufferPtrs"]).toBeInstanceOf(Int32Array)
-        expect(a["&bufferPtrs"].length).toBe(2)
+        expect(a["&allocatorPtrs"]).toBeInstanceOf(Int32Array)
+        expect(a["&allocatorPtrs"].length).toBe(animation.tokens.length + 1)
         expect(a.face.length).toBe(5)
         expect(a.position.length).toBe(5)
     })

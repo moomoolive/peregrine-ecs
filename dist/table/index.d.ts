@@ -3,7 +3,8 @@ declare class TableWorkerMemory {
     length: number;
     components: Component<ComponentDef>[];
     entities: Int32Array;
-    constructor(length: number, components: Component<ComponentDef>[], entities: Int32Array);
+    capacity: number;
+    constructor(length: number, capacity: number, components: Component<ComponentDef>[], entities: Int32Array);
 }
 export declare class Table {
     components: Uint8Array;

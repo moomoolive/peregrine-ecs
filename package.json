@@ -4,12 +4,12 @@
   "description": "a multi-threaded, archetypal ecs",
   "main": "index.js",
   "scripts": {
-    "build:node": "tsc",
+    "build:node": "tsc --project ./buildTools/tsconfig.dist.json",
     "build": "npm run build:node",
     "prepare": "husky install",
     "pre-commit": "npm run test",
-    "test": "jest --runInBand",
-    "test:watch": "jest --runInBand --watchAll",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
+    "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --watchAll",
     "ci": "npm i && npm run test"
   },
   "repository": {
@@ -32,6 +32,6 @@
     "typescript": "^4.6.3"
   },
   "dependencies": {
-    "struct-vec": "^0.1.2"
+    "@thi.ng/malloc": "^6.1.6"
   }
 }

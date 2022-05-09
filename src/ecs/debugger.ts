@@ -34,7 +34,8 @@ export class Debugger {
                 id: i,
                 definition: component.def,
                 name: component.name,
-                bytesPerElement: component.bytesPerElement
+                bytesPerElement: component.bytesPerElement,
+                tokens: component.tokens
             })
         }
         return componentsDebug
