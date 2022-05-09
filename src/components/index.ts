@@ -1,4 +1,6 @@
-import {tokenizeComponentDef} from "./tokenizeDef"
+import {
+    tokenizeComponentDef
+} from "./tokenizeDef"
 import {err} from "../debugging/errors"
 
 export type Types = (
@@ -39,25 +41,11 @@ export type ComponentData<T extends ComponentDef> = {
     [key in keyof T]: ComponentType<T[key]>
 }
 
-type ComponentGetters<T extends ComponentDef> = {
-    [key in keyof T]: (index: number) => number
-}
-
-type ComponentSetters<T extends ComponentDef> = {
-    [key in keyof T as `set_${key & string}`]: (index: number, val: number) => void
-}
-
 export type Component<T extends ComponentDef> = (
-    {
-        ["@memory"]: ComponentData<T>
-        set: (
-            index: number,
-            offset: number,
-            databuffer: Float64Array
-        ) => void,
+    ComponentData<T>
+    & {
+        "&bufferPtrs": Int32Array
     }
-    & ComponentGetters<T>
-    & ComponentSetters<T>
 )
 
 export type ComponentObject<T extends ComponentDef> = {
@@ -75,8 +63,7 @@ export function componentMacro<
 >(name: string, def: T): ComponentClass<T> {
     const {
         componentName,
-        fieldToConstructor,
-        allFields,
+        fields,
         elementSize
     } = tokenizeComponentDef(name, def)
     const generatedClass = Function(`return class ${componentName} {
@@ -84,24 +71,11 @@ export function componentMacro<
         static bytesPerElement = ${elementSize}
 
         constructor(initialCapacity) {
-            this["@memory"] = {
-                ${fieldToConstructor.map(({name, construct}) => {
-                    return `${name}: new ${construct}(initialCapacity),`
-                }).join("\n\t\t    ")}
-            }
-        }
-
-        set(index, offset, databuffer) {
-            ${allFields.map((field, fieldOffset) => {
-                return `this["@memory"].${field}[index] = databuffer[offset${fieldOffset === 0 ? "" : ` + ${fieldOffset}`}]`
+            ${fields.map(({name, type}) => {
+                return `this.${name} = new ${type.name}(initialCapacity)`
             }).join("\n\t\t")}
+            this["&bufferPtrs"] = new Int32Array(${fields.length})
         }
-
-        ${allFields.map((field) => {
-            const getter = `${field}(index) {return this["@memory"].${field}[index]}`
-            const setter = `set_${field}(index, val) {this["@memory"].${field}[index] = val; return this}`
-            return `${getter};${setter}`
-        }).join("\n\t    ")}
     }`)()
 
     return generatedClass as ComponentClass<T>
