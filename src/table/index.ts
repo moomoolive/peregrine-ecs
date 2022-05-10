@@ -5,6 +5,18 @@ import {
 import {Allocator} from "../allocator/index"
 import {Bytes} from "../consts"
 
+export const enum encoding {
+    meta_size = 5,
+
+    /* metadata members start */
+    length_index = 0,
+    capacity_index = 1,
+    meta_ptr_index = 2,
+    component_ids_ptr_index = 3,
+    tag_ids_ptr_index = 4
+    /* metadata members end */
+}
+
 // the current implementation of the archetype
 // graph could be significantly sped up
 // by using an array for pre-built components id ranges
@@ -14,6 +26,7 @@ import {Bytes} from "../consts"
 export class Table {
     componentIds: Int32Array
     components: RawComponent<ComponentDef>[]
+    tagIds: Int32Array
     removeEdges: Map<number, Table>
     addEdges: Map<number, Table>
     meta: Int32Array
@@ -23,22 +36,29 @@ export class Table {
         initialCapacity: number,
         componentIds: Int32Array,
         componentIds_ptr: number,
+        tagIds: Int32Array,
+        tagIds_ptr: number,
+        components: RawComponent<ComponentDef>[],
         globalAllocator: Allocator
     ) {
-        const meta_ptr = globalAllocator.malloc(3 * Bytes.i32)
+        const meta_ptr = globalAllocator.malloc(
+            encoding.meta_size * Bytes.i32
+        )
         this.meta = new Int32Array(
             globalAllocator.buf,
             meta_ptr,
-            4
+            encoding.meta_size
         )
-        this.meta[0] = 0
-        this.meta[1] = initialCapacity
-        this.meta[2] = meta_ptr
-        this.meta[3] = componentIds_ptr
+        this.meta[encoding.length_index] = 0
+        this.meta[encoding.capacity_index] = initialCapacity
+        this.meta[encoding.meta_ptr_index] = meta_ptr
+        this.meta[encoding.component_ids_ptr_index] = componentIds_ptr
+        this.meta[encoding.tag_ids_ptr_index] = tagIds_ptr
 
         this.lazyLength = 0
         this.componentIds = componentIds
-        this.components = []
+        this.tagIds = tagIds
+        this.components = components
         this.addEdges = new Map()
         this.removeEdges = new Map()
     }
@@ -48,19 +68,23 @@ export class Table {
     }
     
     get trueLength(): number {
-        return this.meta[0]
+        return this.meta[encoding.length_index]
     }
 
     get capacity(): number {
-        return this.meta[1]
+        return this.meta[encoding.capacity_index]
     }
 
     get "&metaPtr"() {
-        return this.meta[2]
+        return this.meta[encoding.meta_ptr_index]
     }
 
     get "&componentIdsPtr"() {
-        return this.meta[3]
+        return this.meta[encoding.component_ids_ptr_index]
+    }
+
+    get "&tagIdsPtr"() {
+        return this.meta[encoding.tag_ids_ptr_index]
     }
 }
 

@@ -25,3 +25,16 @@ export function SharedInt32Array(capacity: number): Int32Array {
     const bytes = new SharedArrayBuffer(Bytes.i32 * capacity)
     return new Int32Array(bytes)
 }
+
+/**
+ * Returns a Float64Array that is 
+ * backed by a SharedArrayBuffer
+ * 
+ * @param {number} capacity number of elements
+ * array can carry
+ * @returns {Float64Array}
+ */
+ export function SharedFloat64Array(capacity: number): Float64Array {
+    const bytes = new SharedArrayBuffer(Bytes.f64 * capacity)
+    return new Float64Array(bytes)
+}
