@@ -4,9 +4,7 @@ import {componentMacro} from "./index"
 
 const allocator = createComponentAllocator(1_024, false)
 
-afterEach(() => {
-    allocator.freeAll()
-})
+afterEach(() => {allocator.freeAll()})
 
 describe("component generation", () => {
     it("components are generated with correct key names and data types", () => {
@@ -58,6 +56,8 @@ describe("component generation", () => {
             blue: "u8",
             green: "u8"
         })
+        expect(typeof color.proxyClass).toBe("function")
+        console.log(color.proxyClass.toString())
         expect(color.bytesPerElement).toBe(3)
         expect(color.tokens).toEqual([
             {

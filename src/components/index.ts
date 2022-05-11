@@ -89,6 +89,7 @@ export interface ComponentClass<
     readonly bytesPerElement: number
     readonly stringifiedDef: string
     readonly tokens: ComponentTokens
+    proxyClass: {new():  ComponentData<Definition>}
     new(
         initialCapacity: number, 
         globalAllocator: Allocator
@@ -123,10 +124,23 @@ export function componentMacro<
         ptrOffset: fields.length
     })
     const segmentsPtrSize = fields.length + encoding.component_ptr_size
-    const generatedClass = Function(`return class ${componentName} {
+    const generatedClass = Function(`
+    class ${componentName}_Proxy {
+        constructor(databuffers) {
+            this["@self"] = databuffers
+        }
+        ${fields.map(({name}, ptrOffset) => {
+            return `
+        get ${name}() { return this["@self"][${ptrOffset}] }
+            `
+        }).join("")}
+    }
+
+    return class ${componentName} {
         static stringifiedDef = '${JSON.stringify(def)}'
         static bytesPerElement = ${elementSize}
         static tokens = ${JSON.stringify(tokens)}
+        static proxyClass = ${componentName}_Proxy
 
         constructor(initialCapacity, globalAllocator) {
             const $component_segments_ptr = globalAllocator.malloc(${segmentsPtrSize} * ${Int32Array.BYTES_PER_ELEMENT})
@@ -139,7 +153,7 @@ export function componentMacro<
             const ${name}_data = new ${type.name}(globalAllocator.buf, ${name}_ptr, initialCapacity)
             `}).join("")}
             this.databuffers = [${fields.map(({name}) => `${name}_data`).join(", ")}]
-            this.data = {${fields.map(({name}) => `${name}: ${name}_data`).join(", ")}}
+            this.data = new ${componentName}_Proxy(this.databuffers)
         }
     }`)()
 
