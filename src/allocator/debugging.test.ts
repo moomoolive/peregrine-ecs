@@ -19,19 +19,19 @@ describe("component pointers debugging", () => {
         const p = new position(5, allocator)
         expect(p.$allocatorPtrs.length).toBe(position.tokens.length)
         const {
-            basePointer, 
+            componentSegmentsPtr, 
             fieldPointers
         } = debugComponentPtrs(
             p.$allocatorPtrs,
             position.tokens
         )
-        expect(typeof basePointer.rawPtrAddress).toBe("number")
-        expect(typeof basePointer.prettyPtrAddress).toBe("string")
+        expect(typeof componentSegmentsPtr.rawPtrAddress).toBe("number")
+        expect(typeof componentSegmentsPtr.prettyPtrAddress).toBe("string")
         expect(
-            basePointer.prettyPtrAddress.includes(basePointer.rawPtrAddress.toString())
+            componentSegmentsPtr.prettyPtrAddress.includes(componentSegmentsPtr.rawPtrAddress.toString())
         ).toBe(true)
         const addressMap: Map<number, true> = new Map()
-        addressMap.set(basePointer.rawPtrAddress, true)
+        addressMap.set(componentSegmentsPtr.rawPtrAddress, true)
         expect(fieldPointers.length).toBe(3)
         fieldPointers.forEach(({
             rawPtrAddress, 
@@ -67,19 +67,19 @@ describe("component pointers debugging", () => {
         const p = new animation(5, allocator)
         expect(p.$allocatorPtrs.length).toBe(animation.tokens.length)
         const {
-            basePointer, 
+            componentSegmentsPtr, 
             fieldPointers
         } = debugComponentPtrs(
             p.$allocatorPtrs,
             animation.tokens
         )
-        expect(typeof basePointer.rawPtrAddress).toBe("number")
-        expect(typeof basePointer.prettyPtrAddress).toBe("string")
+        expect(typeof componentSegmentsPtr.rawPtrAddress).toBe("number")
+        expect(typeof componentSegmentsPtr.prettyPtrAddress).toBe("string")
         expect(
-            basePointer.prettyPtrAddress.includes(basePointer.rawPtrAddress.toString())
+            componentSegmentsPtr.prettyPtrAddress.includes(componentSegmentsPtr.rawPtrAddress.toString())
         ).toBe(true)
         const addressMap: Map<number, true> = new Map()
-        addressMap.set(basePointer.rawPtrAddress, true)
+        addressMap.set(componentSegmentsPtr.rawPtrAddress, true)
         expect(fieldPointers.length).toBe(2)
         fieldPointers.forEach(({
             rawPtrAddress, 

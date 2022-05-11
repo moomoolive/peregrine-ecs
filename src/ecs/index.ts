@@ -19,10 +19,10 @@ import {
     encoding as MutatorEncoding
 } from "../entities/mutator"
 import {
-    SharedInt32Array, 
-    SharedFloat64Array
+    createSharedInt32Array, 
+    createSharedFloat64Array
 } from "../dataStructures/sharedArrays"
-import {Entities, Bytes} from "../consts"
+import {entities, bytes} from "../consts"
 import {Allocator, createComponentAllocator} from "../allocator/index"
 import {MAX_FIELDS_PER_COMPONENT} from "../components/tokenizeDef"
 
@@ -59,10 +59,10 @@ export class BaseEcs<
             stringifiedComponentDeclaration
         } = params
         
-        this._unusedEntityIds = SharedInt32Array(maxEntities)
-        this["&tablePtrs"] = SharedInt32Array(5_000)
+        this._unusedEntityIds = createSharedInt32Array(maxEntities)
+        this["&tablePtrs"] = createSharedInt32Array(5_000)
         this._entityRecords = new EntityRecords(maxEntities)
-        this._mutatorDatabuffer = SharedFloat64Array(
+        this._mutatorDatabuffer = createSharedFloat64Array(
             (10 * (
                 MAX_FIELDS_PER_COMPONENT 
                 + MutatorEncoding.component_id_size
@@ -70,7 +70,7 @@ export class BaseEcs<
         )
         this._tables = []
         this._componentAllocator = createComponentAllocator(
-            Bytes.per_megabytes * allocatorInitialMemoryMB, 
+            bytes.per_megabytes * allocatorInitialMemoryMB, 
             false
         )
 
@@ -99,15 +99,15 @@ export interface EcsClass<
 }
 
 export function defineEcs<
-    T extends ComponentsDeclaration
+    Declaration extends ComponentsDeclaration
 >(params: {
-    readonly components: T
+    readonly components: Declaration
     maxEntities?: number,
     allocatorInitialMemoryMB?: number
-}): EcsClass<T> {
+}): EcsClass<Declaration> {
     const {
         components: componentDeclaration,
-        maxEntities = Entities.limit,
+        maxEntities = entities.limit,
         allocatorInitialMemoryMB = 50
     } = params
     const stringifiedComponentDeclaration = JSON.stringify(componentDeclaration)

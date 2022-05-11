@@ -7,7 +7,7 @@
     "build:node": "tsc --project ./buildTools/tsconfig.dist.json",
     "build": "npm run build:node",
     "prepare": "husky install",
-    "pre-commit": "npm run test",
+    "pre-commit": "npm run test && npm run build",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
     "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --watchAll",
     "ci": "npm i && npm run test"

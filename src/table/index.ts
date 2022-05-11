@@ -3,7 +3,7 @@ import {
     ComponentDef
 } from "../components/index"
 import {Allocator} from "../allocator/index"
-import {Bytes} from "../consts"
+import {bytes} from "../consts"
 
 export const enum encoding {
     meta_size = 5,
@@ -42,7 +42,7 @@ export class Table {
         globalAllocator: Allocator
     ) {
         const meta_ptr = globalAllocator.malloc(
-            encoding.meta_size * Bytes.i32
+            encoding.meta_size * bytes.i32
         )
         this.meta = new Int32Array(
             globalAllocator.buf,
@@ -62,24 +62,34 @@ export class Table {
         this.addEdges = new Map()
         this.removeEdges = new Map()
     }
-    
-    get trueLength(): number {
-        return this.meta[encoding.length_index]
-    }
+}
 
-    get capacity(): number {
-        return this.meta[encoding.capacity_index]
-    }
+export function getTrueLength(
+    tableMeta: Int32Array
+): number {
+    return tableMeta[encoding.length_index]
+}
 
-    get $metaPtr() {
-        return this.meta[encoding.meta_ptr_index]
-    }
+export function getCapacity(
+    tableMeta: Int32Array
+): number {
+    return tableMeta[encoding.capacity_index]
+}
 
-    get $componentIdsPtr() {
-        return this.meta[encoding.component_ids_ptr_index]
-    }
+export function get$metaPtr(
+    tableMeta: Int32Array
+): number {
+    return tableMeta[encoding.meta_ptr_index]
+}
 
-    get $tagIdsPtr() {
-        return this.meta[encoding.tag_ids_ptr_index]
-    }
+export function get$componentIdsPtr(
+    tableMeta: Int32Array
+): number {
+    return tableMeta[encoding.component_ids_ptr_index]
+}
+
+export function get$tagIdsPtr(
+    tableMeta: Int32Array
+): number {
+    return tableMeta[encoding.tag_ids_ptr_index]
 }

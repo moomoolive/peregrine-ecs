@@ -92,7 +92,7 @@ function reservedJsKeyword(word: string): boolean {
     }
 }
 
-export const MAX_FIELDS_PER_COMPONENT = 10
+export const MAX_FIELDS_PER_COMPONENT = 9
 
 export function tokenizeComponentDef(
     name: any, 

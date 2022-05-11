@@ -16,22 +16,22 @@ export type Types = (
     | "num"
 )
 
-export type i8<T extends Types> = T extends "i8" ? Int8Array : never
-export type u8<T extends Types> = T extends "u8" ? Uint8Array : never
-export type i16<T extends Types> = T extends "i16" ? Int16Array : never
-export type u16<T extends Types> = T extends "u16" ? Uint16Array : never
-export type i32<T extends Types> = T extends "i32" ? Int32Array : never
-export type u32<T extends Types> = T extends "u32" ? Uint32Array : never
-export type f32<T extends Types> = T extends "f32" ? Float32Array : never
-export type f64<T extends Types> = T extends "f64" ? Float64Array : never
+export type i8<Type extends Types> = Type extends "i8" ? Int8Array : never
+export type u8<Type extends Types> = Type extends "u8" ? Uint8Array : never
+export type i16<Type extends Types> = Type extends "i16" ? Int16Array : never
+export type u16<Type extends Types> = Type extends "u16" ? Uint16Array : never
+export type i32<Type extends Types> = Type extends "i32" ? Int32Array : never
+export type u32<Type extends Types> = Type extends "u32" ? Uint32Array : never
+export type f32<Type extends Types> = Type extends "f32" ? Float32Array : never
+export type f64<Type extends Types> = Type extends "f64" ? Float64Array : never
 /* alias for f64 */
-export type num <T extends Types> = T extends "num" ? Float64Array : never
+export type num <Type extends Types> = Type extends "num" ? Float64Array : never
 
-export type ComponentType<T extends Types> = (
-    f64<T> | num<T>
-    | f32<T> | i32<T> | u32<T>
-    | i16<T> | u16<T>
-    | i8<T> | u8<T>
+export type ComponentType<Type extends Types> = (
+    f64<Type> | num<Type>
+    | f32<Type> | i32<Type> | u32<Type>
+    | i16<Type> | u16<Type>
+    | i8<Type> | u8<Type>
 )
 
 export type ComponentDef = {
@@ -49,24 +49,32 @@ export type ComponentTypedArray = (
     | Float64Array
 )
 
-export type ComponentData<T extends ComponentDef> = {
-    [key in keyof T]: ComponentType<T[key]>
+export function getComponentSegmentsPtr(
+    $allocatorPtrs: Int32Array
+): number {
+    return $allocatorPtrs[$allocatorPtrs.length - 1]
 }
 
-export type Component<T extends ComponentDef> = (
-    ComponentData<T>
+export type ComponentData<Definition extends ComponentDef> = {
+    [key in keyof Definition]: ComponentType<Definition[key]>
+}
+
+export type Component<Definition extends ComponentDef> = (
+    ComponentData<Definition>
 )
 
-export type RawComponent<T extends ComponentDef> = (
-    {data: ComponentData<T>}
+export type RawComponent<Definition extends ComponentDef> = (
+    {data: ComponentData<Definition>}
     & {
         $allocatorPtrs: Int32Array
         databuffers: ComponentTypedArray[]
     }
 )
 
-export type ComponentObject<T extends ComponentDef> = {
-    [key in keyof T]: number
+export type ComponentObject<
+    Definition extends ComponentDef
+> = {
+    [key in keyof Definition]: number
 }
 
 export type ComponentTokens = ReadonlyArray<{
@@ -75,14 +83,16 @@ export type ComponentTokens = ReadonlyArray<{
     ptrOffset: number
 }>
 
-export interface ComponentClass<T extends ComponentDef> {
+export interface ComponentClass<
+    Definition extends ComponentDef
+> {
     readonly bytesPerElement: number
     readonly stringifiedDef: string
     readonly tokens: ComponentTokens
     new(
         initialCapacity: number, 
         globalAllocator: Allocator
-    ): RawComponent<T>
+    ): RawComponent<Definition>
 }
 
 export const enum encoding {
@@ -90,8 +100,11 @@ export const enum encoding {
 }
 
 export function componentMacro<
-    T extends ComponentDef
->(name: string, def: T): ComponentClass<T> {
+    Definition extends ComponentDef
+>(
+    name: string, 
+    def: Definition
+): ComponentClass<Definition> {
     const {
         componentName,
         fields,
@@ -130,7 +143,7 @@ export function componentMacro<
         }
     }`)()
 
-    return generatedClass as ComponentClass<T>
+    return generatedClass as ComponentClass<Definition>
 }
 
 export type ComponentsDeclaration = {

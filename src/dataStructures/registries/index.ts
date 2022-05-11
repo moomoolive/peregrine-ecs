@@ -7,15 +7,19 @@ import {
 } from "../../components/index"
 import {err} from "../../debugging/errors"
 
-export type ComponentRegistry<T extends ComponentsDeclaration> = {
-    readonly [key in keyof T]: number | T[key]
+export type ComponentRegistry<
+    Declaration extends ComponentsDeclaration
+> = {
+    readonly [key in keyof Declaration]: number | Declaration[key]
 }
 
 export const MAX_COMPONENTS = 256
 
 export function componentRegistryMacro<
-    T extends ComponentsDeclaration
->(declartion: T): ComponentRegistry<T> {
+    Declartion extends ComponentsDeclaration
+>(
+    declartion: Declartion
+): ComponentRegistry<Declartion> {
     const keys = Object.keys(declartion)
     if (keys.length < 1) {
         throw SyntaxError(err("component declaration must have at least one component"))
@@ -25,6 +29,12 @@ export function componentRegistryMacro<
     let components = ""
     const len = keys.length
     for (let i = 0; i < len; i++) {
+        /* 
+        the component name and fields are sanitized by 
+        the macro that creates the components classes,
+        which runs before this. So there is no need to check
+        if fields/component names are correct. 
+        */
         const field = keys[i]
         components += `\n\t\t${field}: ${i},`
     }

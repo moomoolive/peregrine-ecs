@@ -1,4 +1,9 @@
-import {ComponentTokens, Types, encoding} from "../components/index"
+import {
+    ComponentTokens, 
+    Types, 
+    encoding,
+    getComponentSegmentsPtr
+} from "../components/index"
 
 const GLOBAL_ALLOCATOR_NAME = "global_allocator"
 
@@ -37,7 +42,7 @@ export type ComponentPtrsDebug = {
         typeof GLOBAL_ALLOCATOR_NAME, 
         number
     >[],
-    basePointer: PtrInfo<
+    componentSegmentsPtr: PtrInfo<
         typeof GLOBAL_ALLOCATOR_NAME, 
         number
     >
@@ -47,7 +52,7 @@ export function debugComponentPtrs(
     ptrs: Int32Array,
     tokens: ComponentTokens
 ): ComponentPtrsDebug {
-    const basePointer = ptrs[ptrs.length - 1]
+    const componentSegmentsPtr = getComponentSegmentsPtr(ptrs)
     const fieldPointers: FieldPtrInfo<
         typeof GLOBAL_ALLOCATOR_NAME,
         number
@@ -65,9 +70,9 @@ export function debugComponentPtrs(
     }
     return {
         fieldPointers,
-        basePointer: {
-            rawPtrAddress: basePointer,
-            prettyPtrAddress: globalAllocatorAddress(basePointer)
+        componentSegmentsPtr: {
+            rawPtrAddress: componentSegmentsPtr,
+            prettyPtrAddress: globalAllocatorAddress(componentSegmentsPtr)
         }
     }
 }

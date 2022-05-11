@@ -1,4 +1,4 @@
-import {Bytes} from "../consts"
+import {bytes} from "../consts"
 
 /**
  * Returns a Uint8Array that is 
@@ -8,9 +8,9 @@ import {Bytes} from "../consts"
  * array can carry
  * @returns {Uint8Array}
  */
-export function SharedUint8Array(capacity: number): Uint8Array {
-    const bytes = new SharedArrayBuffer(Bytes.u8 * capacity)
-    return new Uint8Array(bytes)
+export function createSharedUint8Array(capacity: number): Uint8Array {
+    const buffer = new SharedArrayBuffer(bytes.u8 * capacity)
+    return new Uint8Array(buffer)
 }
 
 /**
@@ -21,9 +21,9 @@ export function SharedUint8Array(capacity: number): Uint8Array {
  * array can carry
  * @returns {Int32Array}
  */
-export function SharedInt32Array(capacity: number): Int32Array {
-    const bytes = new SharedArrayBuffer(Bytes.i32 * capacity)
-    return new Int32Array(bytes)
+export function createSharedInt32Array(capacity: number): Int32Array {
+    const buffer = new SharedArrayBuffer(bytes.i32 * capacity)
+    return new Int32Array(buffer)
 }
 
 /**
@@ -34,7 +34,7 @@ export function SharedInt32Array(capacity: number): Int32Array {
  * array can carry
  * @returns {Float64Array}
  */
- export function SharedFloat64Array(capacity: number): Float64Array {
-    const bytes = new SharedArrayBuffer(Bytes.f64 * capacity)
-    return new Float64Array(bytes)
+ export function createSharedFloat64Array(capacity: number): Float64Array {
+    const buffer = new SharedArrayBuffer(bytes.f64 * capacity)
+    return new Float64Array(buffer)
 }
