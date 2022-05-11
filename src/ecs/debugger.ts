@@ -4,40 +4,43 @@ import {
     ComponentDebug
 } from "../dataStructures/registries/index"
 import {
-    ComponentDef,
     ComponentClasses
 } from "../components/index"
 
 export class Debugger {
     readonly componentClasses: ComponentClasses
-    readonly componentCount: number
+    readonly componentDebugInfo: ComponentDebug[]
+    protected readonly _stringifiedComponentDeclaration: string
 
-    constructor(componentClasses: ComponentClasses) {
+    constructor(
+        componentClasses: ComponentClasses,
+        stringifiedComponentDeclaration: string
+    ) {
         this.componentClasses = componentClasses
-        this.componentCount = componentClasses.length
+        this._stringifiedComponentDeclaration = stringifiedComponentDeclaration
+        this.componentDebugInfo = []
+        for (let i = 0; i < componentClasses.length; i++) {
+            this.componentDebugInfo.push(
+                debugComponent(i, componentClasses)
+            )
+        } 
     }
 
-    componentInfo<T extends ComponentDef>(
-        componentId: ComponentId<T>
-    ): ComponentDebug<T> {
-        return debugComponent(
-            componentId, this.componentClasses
-        )
+    get componentCount(): number {
+        return this.componentDebugInfo.length
     }
 
-    allComponents(): ComponentDebug<ComponentDef>[] {
-        const componentsDebug = []
-        const len = this.componentClasses.length
-        for (let i = 0; i < len; i++) {
-            const component = this.componentClasses[i]
-            componentsDebug.push({
-                id: i,
-                definition: component.def,
-                name: component.name,
-                bytesPerElement: component.bytesPerElement,
-                tokens: component.tokens
-            })
-        }
-        return componentsDebug
+    get stringifiedComponentDeclaration(): string {
+        return this._stringifiedComponentDeclaration
+    }
+
+    componentInfo(
+        componentId: ComponentId
+    ): ComponentDebug {
+        return this.componentDebugInfo[componentId as number]
+    }
+
+    allComponents(): ComponentDebug[] {
+        return this.componentDebugInfo
     }
 }

@@ -17,12 +17,12 @@ describe("component pointers debugging", () => {
             z: "f64"
         })
         const p = new position(5, allocator)
-        expect(p["&allocatorPtrs"].length).toBe(position.tokens.length + 1)
+        expect(p.$allocatorPtrs.length).toBe(position.tokens.length)
         const {
             basePointer, 
             fieldPointers
         } = debugComponentPtrs(
-            p["&allocatorPtrs"],
+            p.$allocatorPtrs,
             position.tokens
         )
         expect(typeof basePointer.rawPtrAddress).toBe("number")
@@ -65,12 +65,12 @@ describe("component pointers debugging", () => {
             face: "i8"
         })
         const p = new animation(5, allocator)
-        expect(p["&allocatorPtrs"].length).toBe(animation.tokens.length + 1)
+        expect(p.$allocatorPtrs.length).toBe(animation.tokens.length)
         const {
             basePointer, 
             fieldPointers
         } = debugComponentPtrs(
-            p["&allocatorPtrs"],
+            p.$allocatorPtrs,
             animation.tokens
         )
         expect(typeof basePointer.rawPtrAddress).toBe("number")

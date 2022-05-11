@@ -1,4 +1,4 @@
-import {ComponentTokens, Types} from "../components/index"
+import {ComponentTokens, Types, encoding} from "../components/index"
 
 const GLOBAL_ALLOCATOR_NAME = "global_allocator"
 
@@ -52,7 +52,7 @@ export function debugComponentPtrs(
         typeof GLOBAL_ALLOCATOR_NAME,
         number
     >[] = []
-    const len = tokens.length
+    const len = tokens.length - encoding.component_ptr_size
     for (let i = 0; i < len; i++) {
         const {name, ptrOffset, type} = tokens[i]
         const rawPtrAddress = ptrs[ptrOffset]

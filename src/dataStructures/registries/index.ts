@@ -31,32 +31,32 @@ export function componentRegistryMacro<
     return Function(`return Object.freeze({${components}})`)()
 }
 
-export type ComponentDebug<T extends ComponentDef> = {
-    definition: T
+export type ComponentDebug = {
     id: number
     bytesPerElement: number
     name: string
-    tokens: ComponentTokens
+    definition: ComponentTokens
+    stringifiedDef: string
 }
 
-export type ComponentId<T extends ComponentDef> = number | T
+export type ComponentId = number | ComponentDef
 
-export function debugComponent<T extends ComponentDef>(
-    component: ComponentId<T>,
+export function debugComponent(
+    component: ComponentId,
     componentClasses: ComponentClasses
-): ComponentDebug<T> {
+): ComponentDebug {
     const componentClass = componentClasses[component as number]
     const {
-        def, 
         name, 
         bytesPerElement,
-        tokens
-    } = componentClass as unknown as ComponentClass<T>
+        tokens,
+        stringifiedDef
+    } = componentClass as unknown as ComponentClass<ComponentDef>
     return {
-        definition: def as T,
+        definition: tokens,
         bytesPerElement,
         name,
-        id: component as number,
-        tokens
+        stringifiedDef,
+        id: component as number
     }
 }

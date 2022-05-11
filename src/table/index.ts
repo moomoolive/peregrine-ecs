@@ -30,7 +30,7 @@ export class Table {
     removeEdges: Map<number, Table>
     addEdges: Map<number, Table>
     meta: Int32Array
-    lazyLength: number
+    length: number
 
     constructor(
         initialCapacity: number,
@@ -55,16 +55,12 @@ export class Table {
         this.meta[encoding.component_ids_ptr_index] = componentIds_ptr
         this.meta[encoding.tag_ids_ptr_index] = tagIds_ptr
 
-        this.lazyLength = 0
+        this.length = 0
         this.componentIds = componentIds
         this.tagIds = tagIds
         this.components = components
         this.addEdges = new Map()
         this.removeEdges = new Map()
-    }
-
-    get length(): number {
-        return this.lazyLength
     }
     
     get trueLength(): number {
@@ -75,20 +71,15 @@ export class Table {
         return this.meta[encoding.capacity_index]
     }
 
-    get "&metaPtr"() {
+    get $metaPtr() {
         return this.meta[encoding.meta_ptr_index]
     }
 
-    get "&componentIdsPtr"() {
+    get $componentIdsPtr() {
         return this.meta[encoding.component_ids_ptr_index]
     }
 
-    get "&tagIdsPtr"() {
+    get $tagIdsPtr() {
         return this.meta[encoding.tag_ids_ptr_index]
     }
-}
-
-export function updateTableLength(table: Table): Table {
-    table.lazyLength = table.trueLength
-    return table
 }

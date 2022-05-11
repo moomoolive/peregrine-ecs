@@ -29,11 +29,8 @@ import {MAX_FIELDS_PER_COMPONENT} from "../components/tokenizeDef"
 export class BaseEcs<
     Components extends ComponentsDeclaration
 > {
-    /** entity ids that were recycled or not used yet */
     protected _unusedEntityIds: Int32Array
-    /** which archetype and row an entity resides in */
     protected _entityRecords: EntityRecords
-    /** a table holds entities that have the exact same components */
     protected _tables: Table[]
     protected "&tablePtrs": Int32Array
     protected _componentAllocator: Allocator
@@ -51,13 +48,15 @@ export class BaseEcs<
         componentClasses: ComponentClasses,
         componentRegistry: ComponentRegistry<Components>
         maxEntities: number,
-        allocatorInitialMemoryMB: number
+        allocatorInitialMemoryMB: number,
+        stringifiedComponentDeclaration: string
     }) {
         const {
             componentClasses,
             componentRegistry,
             maxEntities,
-            allocatorInitialMemoryMB
+            allocatorInitialMemoryMB,
+            stringifiedComponentDeclaration
         } = params
         
         this._unusedEntityIds = SharedInt32Array(maxEntities)
@@ -81,7 +80,8 @@ export class BaseEcs<
         /* ends here */
 
         this.debugger = new Debugger(
-            this._componentClasses
+            this._componentClasses,
+            stringifiedComponentDeclaration
         )
         this._mutator = new EntityMutator<Components>(
             this._entityRecords,
@@ -110,12 +110,13 @@ export function defineEcs<
         maxEntities = Entities.limit,
         allocatorInitialMemoryMB = 50
     } = params
+    const stringifiedComponentDeclaration = JSON.stringify(componentDeclaration)
     const componentClasses = generateComponentClasses(componentDeclaration)
     const componentRegistry = componentRegistryMacro(componentDeclaration)
     return Function(`return (
         BaseEcs, componentClasses, componentRegistry,
         Debugger, EntityMutator, maxEntities,
-        allocatorInitialMemoryMB,
+        allocatorInitialMemoryMB, stringifiedComponentDeclaration
     ) => {
     return class GeneratedEcs extends BaseEcs {
         constructor() {
@@ -123,13 +124,14 @@ export function defineEcs<
                 componentClasses,
                 maxEntities,
                 componentRegistry,
-                allocatorInitialMemoryMB
+                allocatorInitialMemoryMB,
+                stringifiedComponentDeclaration
             })
         }
     }
 }`)()(
         BaseEcs, componentClasses, componentRegistry,
         Debugger, EntityMutator, maxEntities,
-        allocatorInitialMemoryMB
+        allocatorInitialMemoryMB, stringifiedComponentDeclaration
     )
 }

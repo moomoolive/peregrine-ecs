@@ -38,6 +38,17 @@ export type ComponentDef = {
     readonly [key: string]: Types
 }
 
+export type ComponentTypedArray = (
+    Uint8Array
+    | Int8Array
+    | Uint16Array
+    | Int16Array
+    | Uint32Array
+    | Int32Array
+    | Float32Array
+    | Float64Array
+)
+
 export type ComponentData<T extends ComponentDef> = {
     [key in keyof T]: ComponentType<T[key]>
 }
@@ -47,9 +58,10 @@ export type Component<T extends ComponentDef> = (
 )
 
 export type RawComponent<T extends ComponentDef> = (
-    ComponentData<T>
+    {data: ComponentData<T>}
     & {
-        "&allocatorPtrs": Int32Array
+        $allocatorPtrs: Int32Array
+        databuffers: ComponentTypedArray[]
     }
 )
 
@@ -65,12 +77,16 @@ export type ComponentTokens = ReadonlyArray<{
 
 export interface ComponentClass<T extends ComponentDef> {
     readonly bytesPerElement: number
-    readonly def: T
+    readonly stringifiedDef: string
     readonly tokens: ComponentTokens
     new(
         initialCapacity: number, 
         globalAllocator: Allocator
     ): RawComponent<T>
+}
+
+export const enum encoding {
+    component_ptr_size = 1
 }
 
 export function componentMacro<
@@ -81,29 +97,36 @@ export function componentMacro<
         fields,
         elementSize
     } = tokenizeComponentDef(name, def)
+    const tokens = Object.keys(def).map((field, offset) => {
+        return {
+            name: field, 
+            type: def[field], 
+            ptrOffset: offset
+        }
+    })
+    tokens.push({
+        name: "$component_segments_ptr", 
+        type: "i32", 
+        ptrOffset: fields.length
+    })
+    const segmentsPtrSize = fields.length + encoding.component_ptr_size
     const generatedClass = Function(`return class ${componentName} {
-        static def = ${JSON.stringify(def)}
+        static stringifiedDef = '${JSON.stringify(def)}'
         static bytesPerElement = ${elementSize}
-        static tokens = ${JSON.stringify(
-            Object.keys(def).map((field, offset) => {
-                return {
-                    name: field, 
-                    type: def[field], 
-                    ptrOffset: offset
-                }
-            })
-        )}
+        static tokens = ${JSON.stringify(tokens)}
 
         constructor(initialCapacity, globalAllocator) {
-            const componentSegmentPtrs_ptr = globalAllocator.malloc(${fields.length + 1} * ${Int32Array.BYTES_PER_ELEMENT})
-            this["&allocatorPtrs"] = new Int32Array(globalAllocator.buf, componentSegmentPtrs_ptr, ${fields.length + 1})
-            this["&allocatorPtrs"][${fields.length}] = componentSegmentPtrs_ptr
+            const $component_segments_ptr = globalAllocator.malloc(${segmentsPtrSize} * ${Int32Array.BYTES_PER_ELEMENT})
+            this.$allocatorPtrs = new Int32Array(globalAllocator.buf, $component_segments_ptr, ${segmentsPtrSize})
+            this.$allocatorPtrs[${fields.length}] = $component_segments_ptr
             ${fields.map(({name, type}, ptrOffset) => {
                 return `
             const ${name}_ptr = globalAllocator.malloc(initialCapacity * ${type.BYTES_PER_ELEMENT})
-            this["&allocatorPtrs"][${ptrOffset}] = ${name}_ptr
-            this.${name} = new ${type.name}(globalAllocator.buf, ${name}_ptr, initialCapacity)
+            this.$allocatorPtrs[${ptrOffset}] = ${name}_ptr
+            const ${name}_data = new ${type.name}(globalAllocator.buf, ${name}_ptr, initialCapacity)
             `}).join("")}
+            this.databuffers = [${fields.map(({name}) => `${name}_data`).join(", ")}]
+            this.data = {${fields.map(({name}) => `${name}: ${name}_data`).join(", ")}}
         }
     }`)()
 

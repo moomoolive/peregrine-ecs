@@ -61,24 +61,36 @@ describe("component registry debug tools", () => {
         const registry = componentRegistryMacro(defs)
         {
             const {
-                definition, name, bytesPerElement, id
+                definition, name, bytesPerElement, id,
+                stringifiedDef
             } = debugComponent(
                 registry.cat, 
                 components
             )
-            expect(definition).toEqual({cuteness: "u8", angry: "u8"})
+            expect(definition).toEqual([
+                {name: "cuteness", type: "u8", ptrOffset: 0},
+                {name: "angry", type: "u8", ptrOffset: 1},
+                {name: "$component_segments_ptr", type: "i32", ptrOffset: 2},
+            ])
+            expect(JSON.parse(stringifiedDef)).toEqual({cuteness: "u8", angry: "u8"})
             expect(id).toBe(0)
             expect(name).toBe("cat")
             expect(bytesPerElement).toBe(2)
         }
         {
             const {
-                definition, name, bytesPerElement, id
+                definition, name, bytesPerElement, id,
+                stringifiedDef
             } = debugComponent(
                 registry.bird, 
                 components
             )
-            expect(definition).toEqual({maxFlightHeight: "i32", weight: "u16"})
+            expect(definition).toEqual([
+                {name: "maxFlightHeight", type: "i32", ptrOffset: 0},
+                {name: "weight", type: "u16", ptrOffset: 1},
+                {name: "$component_segments_ptr", type: "i32", ptrOffset: 2},
+            ])
+            expect(JSON.parse(stringifiedDef)).toEqual({maxFlightHeight: "i32", weight: "u16"})
             expect(id).toBe(1)
             expect(name).toBe("bird")
             expect(bytesPerElement).toBe(6)
