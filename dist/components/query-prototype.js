@@ -1,11 +1,33 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const comps = {
+/*
+import {Component, ComponentDefinition} from "./index"
+
+type CX = {
+    readonly position: number | {x: "i32"}
+    readonly velocity: number | {x: "f32", y: "f32", z: "f32"}
+}
+
+const comps: CX = {
     position: 1,
     velocity: 2
-};
-function fn(...q) {
-    return {};
 }
+
+type QueryParams = ReadonlyArray<number | ComponentDefinition>
+
+// this beautiful generic was made with the help of
+// this answer: https://stackoverflow.com/questions/71931020/creating-a-readonly-array-from-another-readonly-array/71933754#71933754
+type Query<T extends QueryParams> = {
+    [I in keyof T]: (
+        T[I] extends number | ComponentDefinition ?
+            Component<Exclude<T[I], number>>
+            : never
+    )
+}
+
+function fn<T extends QueryParams>(...q: T): Query<T> {
+    return {} as any
+}
+
 // works
-const q = fn(comps.position, comps.velocity)[1];
+const q = fn(comps.position, comps.velocity)[1]
+*/

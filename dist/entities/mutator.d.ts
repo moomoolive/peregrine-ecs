@@ -1,6 +1,7 @@
-import { ComponentsDeclaration } from "../components/index";
+import { ComponentsDeclaration, ComponentViews } from "../components/index";
 import { EntityRecords } from "./index";
 import { Table } from "../table/index";
+import { Allocator } from "../allocator/index";
 export declare type MutatorStatusCode = (0 | 1 | 2 | 3);
 export declare const enum status_codes {
     entity_uninitialized = 1,
@@ -19,9 +20,10 @@ export declare class EntityMutator<Components extends ComponentsDeclaration> {
     records: EntityRecords;
     tables: Table[];
     databuffer: Float64Array;
-    $tablePtrs: Int32Array;
-    constructor(records: EntityRecords, tables: Table[], databuffer: Float64Array, tablePtrs: Int32Array);
-    createTable(): Table;
+    tableHashes: Map<string, number>;
+    componentAllocator: Allocator;
+    componentClasses: ComponentViews;
+    constructor(records: EntityRecords, tables: Table[], databuffer: Float64Array, tableHashes: Map<string, number>, componentAllocator: Allocator, componentClasses: ComponentViews);
     addTag(entityId: number, tagId: number): MutatorStatusCode;
     addRelation(entityId: number, relationId: number, relatedEntityId: number): MutatorStatusCode;
     removeTag(entityId: number, tagId: number): MutatorStatusCode;

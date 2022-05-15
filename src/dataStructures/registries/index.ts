@@ -1,8 +1,8 @@
 import {
-    ComponentDef,
+    ComponentDefinition,
     ComponentsDeclaration,
-    ComponentClasses,
-    ComponentClass,
+    ComponentViews,
+    ComponentViewClass,
     ComponentTokens,
 } from "../../components/index"
 import {err} from "../../debugging/errors"
@@ -26,19 +26,17 @@ export function componentRegistryMacro<
     } else if (keys.length > MAX_COMPONENTS) {
         throw SyntaxError(err(`too many components, allowed=${MAX_COMPONENTS}, got=${keys.length}`))
     }
-    let components = ""
-    const len = keys.length
-    for (let i = 0; i < len; i++) {
+    const registry = {}
+    for (let i = 0; i < keys.length; i++) {
         /* 
         the component name and fields are sanitized by 
         the macro that creates the components classes,
         which runs before this. So there is no need to check
         if fields/component names are correct. 
         */
-        const field = keys[i]
-        components += `\n\t\t${field}: ${i},`
+        Object.defineProperty(registry, keys[i], {value: i})
     }
-    return Function(`return Object.freeze({${components}})`)()
+    return Object.freeze(registry) as ComponentRegistry<Declartion>
 }
 
 export type ComponentDebug = {
@@ -49,24 +47,24 @@ export type ComponentDebug = {
     stringifiedDef: string
 }
 
-export type ComponentId = number | ComponentDef
+export type ComponentId = number | ComponentDefinition
 
 export function debugComponent(
     component: ComponentId,
-    componentClasses: ComponentClasses
+    ComponentViews: ComponentViews
 ): ComponentDebug {
-    const componentClass = componentClasses[component as number]
+    const componentClass = ComponentViews[component as number]
     const {
         name, 
         bytesPerElement,
         tokens,
-        stringifiedDef
-    } = componentClass as unknown as ComponentClass<ComponentDef>
+        stringifiedDefinition
+    } = componentClass as unknown as ComponentViewClass<ComponentDefinition>
     return {
         definition: tokens,
         bytesPerElement,
         name,
-        stringifiedDef,
+        stringifiedDef: stringifiedDefinition,
         id: component as number
     }
 }

@@ -4,16 +4,16 @@ import {
     ComponentDebug
 } from "../dataStructures/registries/index"
 import {
-    ComponentClasses
+    ComponentViews
 } from "../components/index"
 
 export class Debugger {
-    readonly componentClasses: ComponentClasses
+    readonly componentClasses: ComponentViews
     readonly componentDebugInfo: ComponentDebug[]
     protected readonly _stringifiedComponentDeclaration: string
 
     constructor(
-        componentClasses: ComponentClasses,
+        componentClasses: ComponentViews,
         stringifiedComponentDeclaration: string
     ) {
         this.componentClasses = componentClasses

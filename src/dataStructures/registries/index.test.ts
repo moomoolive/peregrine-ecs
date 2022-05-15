@@ -2,18 +2,13 @@ import {expect, describe, it} from "@jest/globals"
 import {
     componentRegistryMacro, 
     MAX_COMPONENTS,
-    debugComponent
 } from "./index"
-import {
-    componentMacro,
-    ComponentClasses
-} from "../../components/index"
 
 describe("component registry", () => {
     it("should generate object will inputted keys", () => {
         const components = componentRegistryMacro({
-            likeability: {x: "i8"},
-            pets: {age: "u16", type: "u8"}
+            likeability: {x: "i32"},
+            pets: {age: "i32", type: "i32"}
         })
         expect(components.likeability).toBe(0)
         expect(components.pets).toBe(1)
@@ -28,8 +23,8 @@ describe("component registry", () => {
 
     it("should throw error if attempting to set key", () => {
         const components = componentRegistryMacro({
-            likeability: {x: "i8"},
-            pets: {age: "u16", type: "u8"}
+            likeability: {x: "i32"},
+            pets: {age: "i32", type: "i32"}
         })
         // @ts-ignore
         expect(() => components.likeability = 2).toThrow()
@@ -45,55 +40,5 @@ describe("component registry", () => {
             max["field" + i.toString()] = {}
         }
         expect(() => componentRegistryMacro(max)).toThrow()
-    })
-})
-
-describe("component registry debug tools", () => {
-    it("debug tools returns correct metrics", () => {
-        const defs = {
-            cat: {cuteness: "u8", angry: "u8"},
-            bird: {maxFlightHeight: "i32", weight: "u16"}
-        } as const
-        const components = [
-            componentMacro("cat", defs.cat),
-            componentMacro("bird", defs.bird),
-        ] as unknown as ComponentClasses
-        const registry = componentRegistryMacro(defs)
-        {
-            const {
-                definition, name, bytesPerElement, id,
-                stringifiedDef
-            } = debugComponent(
-                registry.cat, 
-                components
-            )
-            expect(definition).toEqual([
-                {name: "cuteness", type: "u8", ptrOffset: 0},
-                {name: "angry", type: "u8", ptrOffset: 1},
-                {name: "$component_segments_ptr", type: "i32", ptrOffset: 2},
-            ])
-            expect(JSON.parse(stringifiedDef)).toEqual({cuteness: "u8", angry: "u8"})
-            expect(id).toBe(0)
-            expect(name).toBe("cat")
-            expect(bytesPerElement).toBe(2)
-        }
-        {
-            const {
-                definition, name, bytesPerElement, id,
-                stringifiedDef
-            } = debugComponent(
-                registry.bird, 
-                components
-            )
-            expect(definition).toEqual([
-                {name: "maxFlightHeight", type: "i32", ptrOffset: 0},
-                {name: "weight", type: "u16", ptrOffset: 1},
-                {name: "$component_segments_ptr", type: "i32", ptrOffset: 2},
-            ])
-            expect(JSON.parse(stringifiedDef)).toEqual({maxFlightHeight: "i32", weight: "u16"})
-            expect(id).toBe(1)
-            expect(name).toBe("bird")
-            expect(bytesPerElement).toBe(6)
-        }
     })
 })

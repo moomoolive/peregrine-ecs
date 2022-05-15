@@ -1,183 +1,199 @@
-import {Allocator} from "../allocator/index"
 import {
-    tokenizeComponentDef
+    tokenizeComponentDef,
+    Types,
+    ComponentTypedArrayConstructor,
+    ComponentTokens,
+    ComponentTypedArray
 } from "./tokenizeDef"
 import {err} from "../debugging/errors"
 
-export type Types = (
-    "i8"
-    | "u8"
-    | "i16"
-    | "u16"
-    | "i32"
-    | "u32"
-    | "f32"
-    | "f64"
-    | "num"
-)
+export {Types, ComponentTokens} from "./tokenizeDef"
 
-export type i8<Type extends Types> = Type extends "i8" ? Int8Array : never
-export type u8<Type extends Types> = Type extends "u8" ? Uint8Array : never
-export type i16<Type extends Types> = Type extends "i16" ? Int16Array : never
-export type u16<Type extends Types> = Type extends "u16" ? Uint16Array : never
 export type i32<Type extends Types> = Type extends "i32" ? Int32Array : never
-export type u32<Type extends Types> = Type extends "u32" ? Uint32Array : never
 export type f32<Type extends Types> = Type extends "f32" ? Float32Array : never
 export type f64<Type extends Types> = Type extends "f64" ? Float64Array : never
 /* alias for f64 */
 export type num <Type extends Types> = Type extends "num" ? Float64Array : never
 
 export type ComponentType<Type extends Types> = (
-    f64<Type> | num<Type>
-    | f32<Type> | i32<Type> | u32<Type>
-    | i16<Type> | u16<Type>
-    | i8<Type> | u8<Type>
+    f64<Type> | num<Type> | f32<Type> | i32<Type>
 )
 
-export type ComponentDef = {
+export type ComponentDefinition = {
     readonly [key: string]: Types
 }
 
-export type ComponentTypedArray = (
-    Uint8Array
-    | Int8Array
-    | Uint16Array
-    | Int16Array
-    | Uint32Array
-    | Int32Array
-    | Float32Array
-    | Float64Array
-)
-
-export function getComponentSegmentsPtr(
-    $allocatorPtrs: Int32Array
-): number {
-    return $allocatorPtrs[$allocatorPtrs.length - 1]
-}
-
-export type ComponentData<Definition extends ComponentDef> = {
+export type ComponentData<
+    Definition extends ComponentDefinition
+> = {
     [key in keyof Definition]: ComponentType<Definition[key]>
 }
 
-export type Component<Definition extends ComponentDef> = (
+export type RawComponentView<
+    Definition extends ComponentDefinition
+> = (
     ComponentData<Definition>
+    & {"@self": ComponentTypedArray[]}
 )
 
-export type RawComponent<Definition extends ComponentDef> = (
-    {data: ComponentData<Definition>}
-    & {
-        $allocatorPtrs: Int32Array
+export interface ComponentViewFactory<
+    Definition extends ComponentDefinition
+> {
+    new(
         databuffers: ComponentTypedArray[]
+    ): RawComponentView<Definition>
+}
+
+function createComponentViewClass<
+    Definition extends ComponentDefinition
+>(
+    tokens: ComponentTokens
+): ComponentViewFactory<Definition> {
+    const BaseView = function(
+        this: RawComponentView<ComponentDefinition>,
+        self: ComponentTypedArray[]
+    ) {
+        this["@self"] = self
     }
-)
+    const viewPrototype = {}
+    for (let i = 0; i < tokens.fields.length; i++) {
+        const {name, databufferOffset} = tokens.fields[i]
+        /* create getter methods that map field names
+        to a buffer
+        */
+        Object.defineProperty(viewPrototype, name, {
+            get() { return this["@self"][databufferOffset] }
+        })
+    }
+    BaseView.prototype = viewPrototype
+    return BaseView as unknown as ComponentViewFactory<Definition>
+}
+
+export class RawComponent<Definition extends ComponentDefinition> {
+    readonly id: number
+    readonly bytesPerElement: number
+    readonly componentSegements: number
+    readonly bytesPerField: number
+    memoryConstructor: ComponentTypedArrayConstructor
+    databuffers: ComponentTypedArray[]
+    data: RawComponentView<Definition>
+
+    constructor(
+        {
+            View,
+            bytesPerElement,
+            componentSegements,
+            bytesPerField,
+            memoryConstructor,
+            id
+        }: ComponentViewClass<Definition>,
+        memoryBuffer: SharedArrayBuffer,
+        componentPtr: number,
+        initialCapacity: number
+    ) {
+        this.databuffers = []
+        this.memoryConstructor = memoryConstructor
+        this.bytesPerElement = bytesPerElement
+        this.componentSegements = componentSegements
+        this.bytesPerField = bytesPerField
+
+        const databuffers = this.databuffers
+        let ptr = componentPtr
+        const segementSize = bytesPerElement * initialCapacity
+        for (let i = 0; i < componentSegements; i++) {
+            const segment = new memoryConstructor(
+                memoryBuffer, ptr, initialCapacity
+            )
+            databuffers.push(segment)
+            ptr += segementSize
+        }
+
+        this.data = new View(databuffers)
+        this.id = id
+    }
+}
 
 export type ComponentObject<
-    Definition extends ComponentDef
+    Definition extends ComponentDefinition
 > = {
     [key in keyof Definition]: number
 }
 
-export type ComponentTokens = ReadonlyArray<{
-    name: string,
-    type: Types,
-    ptrOffset: number
-}>
-
-export interface ComponentClass<
-    Definition extends ComponentDef
+export class ComponentViewClass<
+    Definition extends ComponentDefinition
 > {
     readonly bytesPerElement: number
-    readonly stringifiedDef: string
+    readonly stringifiedDefinition: string
     readonly tokens: ComponentTokens
-    proxyClass: {new():  ComponentData<Definition>}
-    new(
-        initialCapacity: number, 
-        globalAllocator: Allocator
-    ): RawComponent<Definition>
+    readonly name: string
+    readonly componentSegements: number
+    readonly bytesPerField: number
+    readonly id: number
+    memoryConstructor: ComponentTypedArrayConstructor
+    View: ComponentViewFactory<Definition>
+
+    constructor(
+        id: number,
+        tokens: ComponentTokens,
+        View: ComponentViewFactory<Definition>
+    ) {
+        const {
+            bytesPerElement, stringifiedDefinition,
+            componentName, componentSegments,
+            bytesPerField, memoryConstructor
+        } = tokens
+        this.View = View
+        this.memoryConstructor = memoryConstructor
+        this.bytesPerElement = bytesPerElement
+        this.componentSegements = componentSegments
+        this.bytesPerField = bytesPerField
+        this.stringifiedDefinition = stringifiedDefinition
+        this.tokens = tokens
+        this.name = componentName
+        this.id = id
+    }
 }
 
-export const enum encoding {
-    component_ptr_size = 1
-}
-
-export function componentMacro<
-    Definition extends ComponentDef
+export function componentViewMacro<
+    Definition extends ComponentDefinition
 >(
+    id: number,
     name: string, 
     def: Definition
-): ComponentClass<Definition> {
-    const {
-        componentName,
-        fields,
-        elementSize
-    } = tokenizeComponentDef(name, def)
-    const tokens = Object.keys(def).map((field, offset) => {
-        return {
-            name: field, 
-            type: def[field], 
-            ptrOffset: offset
-        }
-    })
-    tokens.push({
-        name: "$component_segments_ptr", 
-        type: "i32", 
-        ptrOffset: fields.length
-    })
-    const segmentsPtrSize = fields.length + encoding.component_ptr_size
-    const generatedClass = Function(`
-    class ${componentName}_Proxy {
-        constructor(databuffers) {
-            this["@self"] = databuffers
-        }
-        ${fields.map(({name}, ptrOffset) => {
-            return `
-        get ${name}() { return this["@self"][${ptrOffset}] }
-            `
-        }).join("")}
-    }
-
-    return class ${componentName} {
-        static stringifiedDef = '${JSON.stringify(def)}'
-        static bytesPerElement = ${elementSize}
-        static tokens = ${JSON.stringify(tokens)}
-        static proxyClass = ${componentName}_Proxy
-
-        constructor(initialCapacity, globalAllocator) {
-            const $component_segments_ptr = globalAllocator.malloc(${segmentsPtrSize} * ${Int32Array.BYTES_PER_ELEMENT})
-            this.$allocatorPtrs = new Int32Array(globalAllocator.buf, $component_segments_ptr, ${segmentsPtrSize})
-            this.$allocatorPtrs[${fields.length}] = $component_segments_ptr
-            ${fields.map(({name, type}, ptrOffset) => {
-                return `
-            const ${name}_ptr = globalAllocator.malloc(initialCapacity * ${type.BYTES_PER_ELEMENT})
-            this.$allocatorPtrs[${ptrOffset}] = ${name}_ptr
-            const ${name}_data = new ${type.name}(globalAllocator.buf, ${name}_ptr, initialCapacity)
-            `}).join("")}
-            this.databuffers = [${fields.map(({name}) => `${name}_data`).join(", ")}]
-            this.data = new ${componentName}_Proxy(this.databuffers)
-        }
-    }`)()
-
-    return generatedClass as ComponentClass<Definition>
+): ComponentViewClass<Definition> {
+    const tokens = tokenizeComponentDef(name, def)
+    const ViewClass = createComponentViewClass<Definition>(tokens)
+    const componentViewClass = new ComponentViewClass(
+        id, tokens, ViewClass
+    )
+    return componentViewClass
 }
 
 export type ComponentsDeclaration = {
-    readonly [key: string]: ComponentDef
+    readonly [key: string]: ComponentDefinition
 }
 
-export type ComponentClasses = ReadonlyArray<ComponentClass<ComponentDef>>
+export type ComponentViews = ReadonlyArray<
+ComponentViewClass<ComponentDefinition>
+>
 
-export function generateComponentClasses(
+export function generateComponentViewClasses(
     declaration: ComponentsDeclaration
-): ComponentClasses {
+): ComponentViews {
     const components = []
-    const keys = Object.keys(declaration)
-    if (keys.length < 1) {
+    const componentNames = Object.keys(declaration)
+    if (componentNames.length < 1) {
         throw SyntaxError(err(`you must declare at least one component`))
     }
-    const len = keys.length
-    for (let i = 0; i < len; i++) {
-        const key = keys[i]
-        components.push(componentMacro(key, declaration[key]))
+
+    for (let i = 0; i < componentNames.length; i++) {
+        const name = componentNames[i]
+        const definition = declaration[name]
+        const id = i
+        const componentView = componentViewMacro(
+            id, name, definition
+        )
+        components.push(componentView)
     }
     return components
 }

@@ -1,21 +1,19 @@
 import {
     ComponentTokens, 
-    Types, 
-    encoding,
-    getComponentSegmentsPtr
+    Types,
 } from "../components/index"
 
-const GLOBAL_ALLOCATOR_NAME = "global_allocator"
+const TABLE_ALLOCATOR_NAME = "global_allocator"
 
 export type PrettyPtrAddress<
     AllocatorName extends string,
     PtrAddress extends number
 > = `${AllocatorName}[${PtrAddress}]`
 
-function globalAllocatorAddress(
+function TableAllocatorAddress(
     rawAddress: number
-): PrettyPtrAddress<typeof GLOBAL_ALLOCATOR_NAME, number> {
-    return `${GLOBAL_ALLOCATOR_NAME}[${rawAddress}]`
+): PrettyPtrAddress<typeof TABLE_ALLOCATOR_NAME, number> {
+    return `${TABLE_ALLOCATOR_NAME}[${rawAddress}]`
 }
 
 export type PtrInfo<
@@ -39,22 +37,23 @@ export type FieldPtrInfo<
 
 export type ComponentPtrsDebug = {
     fieldPointers: FieldPtrInfo<
-        typeof GLOBAL_ALLOCATOR_NAME, 
+        typeof TABLE_ALLOCATOR_NAME, 
         number
     >[],
     componentSegmentsPtr: PtrInfo<
-        typeof GLOBAL_ALLOCATOR_NAME, 
+        typeof TABLE_ALLOCATOR_NAME, 
         number
     >
 }
 
+/*
 export function debugComponentPtrs(
     ptrs: Int32Array,
     tokens: ComponentTokens
 ): ComponentPtrsDebug {
     const componentSegmentsPtr = getComponentSegmentsPtr(ptrs)
     const fieldPointers: FieldPtrInfo<
-        typeof GLOBAL_ALLOCATOR_NAME,
+        typeof TABLE_ALLOCATOR_NAME,
         number
     >[] = []
     const len = tokens.length - encoding.component_ptr_size
@@ -76,3 +75,4 @@ export function debugComponentPtrs(
         }
     }
 }
+*/

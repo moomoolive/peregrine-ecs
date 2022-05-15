@@ -3,7 +3,7 @@ export const enum bytes {
     u8 = 1,
     f64 = 8,
     per_kilobyte = 1_024,
-    per_megabytes = bytes.per_kilobyte * 1_024
+    per_megabyte = bytes.per_kilobyte * 1_024
 }
 
 export const enum entities {

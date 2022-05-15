@@ -5,11 +5,11 @@ export const enum encoding {
 }
 
 export class EntityRecords {
-    tablePtrIds: Int32Array
+    tablePtrs: Int32Array
     row: Int32Array
 
     constructor(initialCapacity: number) {
-        this.tablePtrIds = createSharedInt32Array(initialCapacity).fill(encoding.unintialized)
+        this.tablePtrs = createSharedInt32Array(initialCapacity).fill(encoding.unintialized)
         this.row = createSharedInt32Array(initialCapacity).fill(encoding.unintialized)
     }
 }

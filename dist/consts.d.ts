@@ -3,7 +3,7 @@ export declare const enum bytes {
     u8 = 1,
     f64 = 8,
     per_kilobyte = 1024,
-    per_megabytes = 1048576
+    per_megabyte = 1048576
 }
 export declare const enum entities {
     limit = 500000

@@ -1,5 +1,5 @@
-import { ComponentTokens, Types } from "../components/index";
-declare const GLOBAL_ALLOCATOR_NAME = "global_allocator";
+import { Types } from "../components/index";
+declare const TABLE_ALLOCATOR_NAME = "global_allocator";
 export declare type PrettyPtrAddress<AllocatorName extends string, PtrAddress extends number> = `${AllocatorName}[${PtrAddress}]`;
 export declare type PtrInfo<AllocatorName extends string, PtrAddress extends number> = {
     rawPtrAddress: PtrAddress;
@@ -10,9 +10,8 @@ export declare type FieldPtrInfo<AllocatorName extends string, FieldPtrAddress e
     type: Types;
 });
 export declare type ComponentPtrsDebug = {
-    fieldPointers: FieldPtrInfo<typeof GLOBAL_ALLOCATOR_NAME, number>[];
-    componentSegmentsPtr: PtrInfo<typeof GLOBAL_ALLOCATOR_NAME, number>;
+    fieldPointers: FieldPtrInfo<typeof TABLE_ALLOCATOR_NAME, number>[];
+    componentSegmentsPtr: PtrInfo<typeof TABLE_ALLOCATOR_NAME, number>;
 };
-export declare function debugComponentPtrs(ptrs: Int32Array, tokens: ComponentTokens): ComponentPtrsDebug;
 export {};
 //# sourceMappingURL=debugging.d.ts.map
