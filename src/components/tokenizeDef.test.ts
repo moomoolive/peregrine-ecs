@@ -31,23 +31,10 @@ describe("component naming convention", () => {
         expect(() => tokenizeComponentDef("", {x: "i32"})).toThrow()
     })
 
-    it("should throw if component name doesn't conform to js variable naming standard (minus unicode)", () => {
-        expect(() => tokenizeComponentDef("🥰", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("1component", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("comp@nent", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("comp*nent", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("#component", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("(component)", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("component%", {x: "i32"})).toThrow()
-    })
-
-    it("should throw if component name is a reserved ecma keyword", () => {
-        expect(() => tokenizeComponentDef("class", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("await", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("true", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("const", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("let", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("throw", {x: "i32"})).toThrow()
+    it("should throw if component name starts with '@@'", () => {
+        expect(() => tokenizeComponentDef("@@memory", {x: "i32"})).toThrow()
+        expect(() => tokenizeComponentDef("@@coolio", {x: "i32"})).toThrow()
+        expect(() => tokenizeComponentDef("@@", {x: "i32"})).toThrow()
     })
 })
 
@@ -60,6 +47,12 @@ describe("component field restrictions", () => {
         expect(() => tokenizeComponentDef("c", {"field%": "i32"})).toThrow()
         expect(() => tokenizeComponentDef("c", {"*field_generator": "i32"})).toThrow()
         expect(() => tokenizeComponentDef("c", {"🥰": "i32"})).toThrow()
+    })
+
+    it("should throw if field name starts with 'set_'", () => {
+        expect(() => tokenizeComponentDef("c", {"set_myval": "i32"})).toThrow()
+        expect(() => tokenizeComponentDef("c", {"set_": "i32"})).toThrow()
+        expect(() => tokenizeComponentDef("c", {"set_random": "i32"})).toThrow()
     })
 
     it("should throw if invalid datatype is inputted", () => {

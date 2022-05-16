@@ -3,7 +3,8 @@ import {
     Types,
     ComponentTypedArrayConstructor,
     ComponentTokens,
-    ComponentTypedArray
+    ComponentTypedArray,
+    component_viewer_encoding
 } from "./tokenizeDef"
 import {err} from "../debugging/errors"
 
@@ -23,46 +24,98 @@ export type ComponentDefinition = {
     readonly [key: string]: Types
 }
 
-export type ComponentData<
+export type ComponentGetters<
     Definition extends ComponentDefinition
 > = {
-    [key in keyof Definition]: ComponentType<Definition[key]>
+    [key in keyof Definition]: (index: number) => number
 }
+
+export type ComponentSetters<
+    Definition extends ComponentDefinition
+> = {
+    [key in keyof Definition as `set_${key & string}`]: (
+        index: number, value: number
+    ) => void
+}
+
+export type ComponentFieldAccessors<
+    Definition extends ComponentDefinition
+> = (
+    ComponentGetters<Definition>
+    & ComponentSetters<Definition>
+)
 
 export type RawComponentView<
     Definition extends ComponentDefinition
 > = (
-    ComponentData<Definition>
-    & {"@self": ComponentTypedArray[]}
+    ComponentFieldAccessors<Definition>
+    & {"@@databuffer": ComponentTypedArray}
 )
 
 export interface ComponentViewFactory<
     Definition extends ComponentDefinition
 > {
     new(
-        databuffers: ComponentTypedArray[]
+        databuffers: ComponentTypedArray
     ): RawComponentView<Definition>
 }
 
 function createComponentViewClass<
     Definition extends ComponentDefinition
 >(
-    tokens: ComponentTokens
+    {
+        fields,
+        componentSegments
+    }: ComponentTokens
 ): ComponentViewFactory<Definition> {
     const BaseView = function(
         this: RawComponentView<ComponentDefinition>,
-        self: ComponentTypedArray[]
+        self: ComponentTypedArray
     ) {
-        this["@self"] = self
+        this[component_viewer_encoding.databuffer_ref] = self
     }
     const viewPrototype = {}
-    for (let i = 0; i < tokens.fields.length; i++) {
-        const {name, databufferOffset} = tokens.fields[i]
-        /* create getter methods that map field names
-        to a buffer
-        */
-        Object.defineProperty(viewPrototype, name, {
-            get() { return this["@self"][databufferOffset] }
+    const indexesPerElement = componentSegments
+    
+    const {name: firstField} = fields[0]
+    /* ideally these setters & getters will be compiled 
+    away by a build tool -> to make code more efficent */
+    /* create getter method that maps field name
+    to index in typed array */
+    Object.defineProperty(viewPrototype, firstField, {
+        value(index: number) { 
+            return this[component_viewer_encoding.databuffer_ref][index * indexesPerElement]
+        }
+    })
+    /* create setter method that maps field name
+    to index in typed array */
+    const firstSetterName = (
+        component_viewer_encoding.field_setter_prefix
+        + firstField
+    )
+    Object.defineProperty(viewPrototype, firstSetterName, {
+        value(index: number, value: number) { 
+            this[component_viewer_encoding.databuffer_ref][index * indexesPerElement] = value
+        }
+    })
+
+
+    /* create rest of members */
+    for (let i = 1; i < fields.length; i++) {
+        const {name: fieldName, databufferOffset} = fields[i]
+        Object.defineProperty(viewPrototype, fieldName, {
+            value(index: number) { 
+                return this["@@databuffer"][(index * indexesPerElement) + databufferOffset] 
+            }
+        })
+        const setterName = (
+            component_viewer_encoding.field_setter_prefix
+            + fieldName
+        )
+        Object.defineProperty(viewPrototype, setterName, {
+            value(index: number, value: number) { 
+                this["@@databuffer"][(index * indexesPerElement) + databufferOffset] = value
+            }
         })
     }
     BaseView.prototype = viewPrototype
@@ -74,8 +127,8 @@ export class RawComponent<Definition extends ComponentDefinition> {
     readonly bytesPerElement: number
     readonly componentSegements: number
     readonly bytesPerField: number
+    databuffer: ComponentTypedArray
     memoryConstructor: ComponentTypedArrayConstructor
-    databuffers: ComponentTypedArray[]
     data: RawComponentView<Definition>
 
     constructor(
@@ -91,24 +144,15 @@ export class RawComponent<Definition extends ComponentDefinition> {
         componentPtr: number,
         initialCapacity: number
     ) {
-        this.databuffers = []
         this.memoryConstructor = memoryConstructor
+        const databuffer = new memoryConstructor(
+            memoryBuffer, componentPtr, initialCapacity
+        )
+        this.databuffer = databuffer
         this.bytesPerElement = bytesPerElement
         this.componentSegements = componentSegements
         this.bytesPerField = bytesPerField
-
-        const databuffers = this.databuffers
-        let ptr = componentPtr
-        const segementSize = bytesPerElement * initialCapacity
-        for (let i = 0; i < componentSegements; i++) {
-            const segment = new memoryConstructor(
-                memoryBuffer, ptr, initialCapacity
-            )
-            databuffers.push(segment)
-            ptr += segementSize
-        }
-
-        this.data = new View(databuffers)
+        this.data = new View(databuffer)
         this.id = id
     }
 }
@@ -159,9 +203,9 @@ export function componentViewMacro<
 >(
     id: number,
     name: string, 
-    def: Definition
+    definition: Definition
 ): ComponentViewClass<Definition> {
-    const tokens = tokenizeComponentDef(name, def)
+    const tokens = tokenizeComponentDef(name, definition)
     const ViewClass = createComponentViewClass<Definition>(tokens)
     const componentViewClass = new ComponentViewClass(
         id, tokens, ViewClass

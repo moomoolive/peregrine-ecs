@@ -3,18 +3,45 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateComponentViewClasses = exports.componentViewMacro = exports.ComponentViewClass = exports.RawComponent = void 0;
 const tokenizeDef_1 = require("./tokenizeDef");
 const errors_1 = require("../debugging/errors");
-function createComponentViewClass(tokens) {
+function createComponentViewClass({ fields, componentSegments }) {
     const BaseView = function (self) {
-        this["@self"] = self;
+        this["@@databuffer" /* databuffer_ref */] = self;
     };
     const viewPrototype = {};
-    for (let i = 0; i < tokens.fields.length; i++) {
-        const { name, databufferOffset } = tokens.fields[i];
-        /* create getter methods that map field names
-        to a buffer
-        */
-        Object.defineProperty(viewPrototype, name, {
-            get() { return this["@self"][databufferOffset]; }
+    const indexesPerElement = componentSegments;
+    const { name: firstField } = fields[0];
+    /* ideally these setters & getters will be compiled
+    away by a build tool -> to make code more efficent */
+    /* create getter method that maps field name
+    to index in typed array */
+    Object.defineProperty(viewPrototype, firstField, {
+        value(index) {
+            return this["@@databuffer" /* databuffer_ref */][index * indexesPerElement];
+        }
+    });
+    /* create setter method that maps field name
+    to index in typed array */
+    const firstSetterName = ("set_" /* field_setter_prefix */
+        + firstField);
+    Object.defineProperty(viewPrototype, firstSetterName, {
+        value(index, value) {
+            this["@@databuffer" /* databuffer_ref */][index * indexesPerElement] = value;
+        }
+    });
+    /* create rest of members */
+    for (let i = 1; i < fields.length; i++) {
+        const { name: fieldName, databufferOffset } = fields[i];
+        Object.defineProperty(viewPrototype, fieldName, {
+            value(index) {
+                return this["@@databuffer"][(index * indexesPerElement) + databufferOffset];
+            }
+        });
+        const setterName = ("set_" /* field_setter_prefix */
+            + fieldName);
+        Object.defineProperty(viewPrototype, setterName, {
+            value(index, value) {
+                this["@@databuffer"][(index * indexesPerElement) + databufferOffset] = value;
+            }
         });
     }
     BaseView.prototype = viewPrototype;
@@ -22,20 +49,13 @@ function createComponentViewClass(tokens) {
 }
 class RawComponent {
     constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }, memoryBuffer, componentPtr, initialCapacity) {
-        this.databuffers = [];
         this.memoryConstructor = memoryConstructor;
+        const databuffer = new memoryConstructor(memoryBuffer, componentPtr, initialCapacity);
+        this.databuffer = databuffer;
         this.bytesPerElement = bytesPerElement;
         this.componentSegements = componentSegements;
         this.bytesPerField = bytesPerField;
-        const databuffers = this.databuffers;
-        let ptr = componentPtr;
-        const segementSize = bytesPerElement * initialCapacity;
-        for (let i = 0; i < componentSegements; i++) {
-            const segment = new memoryConstructor(memoryBuffer, ptr, initialCapacity);
-            databuffers.push(segment);
-            ptr += segementSize;
-        }
-        this.data = new View(databuffers);
+        this.data = new View(databuffer);
         this.id = id;
     }
 }
@@ -55,8 +75,8 @@ class ComponentViewClass {
     }
 }
 exports.ComponentViewClass = ComponentViewClass;
-function componentViewMacro(id, name, def) {
-    const tokens = (0, tokenizeDef_1.tokenizeComponentDef)(name, def);
+function componentViewMacro(id, name, definition) {
+    const tokens = (0, tokenizeDef_1.tokenizeComponentDef)(name, definition);
     const ViewClass = createComponentViewClass(tokens);
     const componentViewClass = new ComponentViewClass(id, tokens, ViewClass);
     return componentViewClass;

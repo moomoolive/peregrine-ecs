@@ -8,22 +8,26 @@ export declare type ComponentType<Type extends Types> = (f64<Type> | num<Type> |
 export declare type ComponentDefinition = {
     readonly [key: string]: Types;
 };
-export declare type ComponentData<Definition extends ComponentDefinition> = {
-    [key in keyof Definition]: ComponentType<Definition[key]>;
+export declare type ComponentGetters<Definition extends ComponentDefinition> = {
+    [key in keyof Definition]: (index: number) => number;
 };
-export declare type RawComponentView<Definition extends ComponentDefinition> = (ComponentData<Definition> & {
-    "@self": ComponentTypedArray[];
+export declare type ComponentSetters<Definition extends ComponentDefinition> = {
+    [key in keyof Definition as `set_${key & string}`]: (index: number, value: number) => void;
+};
+export declare type ComponentFieldAccessors<Definition extends ComponentDefinition> = (ComponentGetters<Definition> & ComponentSetters<Definition>);
+export declare type RawComponentView<Definition extends ComponentDefinition> = (ComponentFieldAccessors<Definition> & {
+    "@@databuffer": ComponentTypedArray;
 });
 export interface ComponentViewFactory<Definition extends ComponentDefinition> {
-    new (databuffers: ComponentTypedArray[]): RawComponentView<Definition>;
+    new (databuffers: ComponentTypedArray): RawComponentView<Definition>;
 }
 export declare class RawComponent<Definition extends ComponentDefinition> {
     readonly id: number;
     readonly bytesPerElement: number;
     readonly componentSegements: number;
     readonly bytesPerField: number;
+    databuffer: ComponentTypedArray;
     memoryConstructor: ComponentTypedArrayConstructor;
-    databuffers: ComponentTypedArray[];
     data: RawComponentView<Definition>;
     constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }: ComponentViewClass<Definition>, memoryBuffer: SharedArrayBuffer, componentPtr: number, initialCapacity: number);
 }
@@ -42,7 +46,7 @@ export declare class ComponentViewClass<Definition extends ComponentDefinition> 
     View: ComponentViewFactory<Definition>;
     constructor(id: number, tokens: ComponentTokens, View: ComponentViewFactory<Definition>);
 }
-export declare function componentViewMacro<Definition extends ComponentDefinition>(id: number, name: string, def: Definition): ComponentViewClass<Definition>;
+export declare function componentViewMacro<Definition extends ComponentDefinition>(id: number, name: string, definition: Definition): ComponentViewClass<Definition>;
 export declare type ComponentsDeclaration = {
     readonly [key: string]: ComponentDefinition;
 };

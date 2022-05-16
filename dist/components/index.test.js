@@ -4,11 +4,12 @@ const globals_1 = require("@jest/globals");
 const index_1 = require("./index");
 (0, globals_1.describe)("component generation", () => {
     (0, globals_1.it)("components are generated with correct key names and data types", () => {
-        const { View, componentSegements, bytesPerElement, bytesPerField, memoryConstructor, tokens, id } = (0, index_1.componentViewMacro)(0, "position", {
+        const { View, componentSegements, bytesPerElement, bytesPerField, memoryConstructor, tokens, id, name } = (0, index_1.componentViewMacro)(0, "position", {
             x: "f64",
             y: "f64",
             z: "f64"
         });
+        (0, globals_1.expect)(name).toBe("position");
         (0, globals_1.expect)(id).toBe(0);
         (0, globals_1.expect)(componentSegements).toBe(3);
         (0, globals_1.expect)(bytesPerField).toBe(8);
@@ -20,19 +21,26 @@ const index_1 = require("./index");
             { name: "y", databufferOffset: 1 },
             { name: "z", databufferOffset: 2 },
         ]);
-        const databuffers = [];
-        for (let i = 0; i < componentSegements; i++) {
-            databuffers.push(new memoryConstructor(1));
-        }
-        const pos = new View(databuffers);
-        (0, globals_1.expect)(pos.x).toBeInstanceOf(Float64Array);
-        (0, globals_1.expect)(pos.y).toBeInstanceOf(Float64Array);
-        (0, globals_1.expect)(pos.z).toBeInstanceOf(Float64Array);
+        const memory = new memoryConstructor(5 * componentSegements);
+        const pos = new View(memory);
+        (0, globals_1.expect)(typeof pos.x).toBe("function");
+        (0, globals_1.expect)(typeof pos.set_x).toBe("function");
+        (0, globals_1.expect)(typeof pos.y).toBe("function");
+        (0, globals_1.expect)(typeof pos.set_y).toBe("function");
+        (0, globals_1.expect)(typeof pos.z).toBe("function");
+        (0, globals_1.expect)(typeof pos.set_z).toBe("function");
+        pos.set_x(3, 10.2);
+        (0, globals_1.expect)(pos.x(3)).toBe(10.2);
+        pos.set_y(1, 5.0);
+        (0, globals_1.expect)(pos.y(1)).toBe(5.0);
+        pos.set_z(0, 350230.33);
+        (0, globals_1.expect)(pos.z(0)).toBe(350230.33);
         {
-            const { View, componentSegements, bytesPerElement, bytesPerField, memoryConstructor, tokens, id } = (0, index_1.componentViewMacro)(1, "animation", {
+            const { View, componentSegements, bytesPerElement, bytesPerField, memoryConstructor, tokens, id, name } = (0, index_1.componentViewMacro)(1, "animation", {
                 position: "i32",
                 face: "i32"
             });
+            (0, globals_1.expect)(name).toBe("animation");
             (0, globals_1.expect)(id).toBe(1);
             (0, globals_1.expect)(componentSegements).toBe(2);
             (0, globals_1.expect)(bytesPerField).toBe(4);
@@ -43,13 +51,18 @@ const index_1 = require("./index");
                 { name: "position", databufferOffset: 0 },
                 { name: "face", databufferOffset: 1 },
             ]);
-            const databuffers = [];
-            for (let i = 0; i < componentSegements; i++) {
-                databuffers.push(new memoryConstructor(1));
-            }
-            const pos = new View(databuffers);
-            (0, globals_1.expect)(pos.position).toBeInstanceOf(Int32Array);
-            (0, globals_1.expect)(pos.face).toBeInstanceOf(Int32Array);
+            const memory = new memoryConstructor(componentSegements * 5);
+            const anim = new View(memory);
+            (0, globals_1.expect)(typeof anim.position).toBe("function");
+            (0, globals_1.expect)(typeof anim.set_position).toBe("function");
+            (0, globals_1.expect)(typeof anim.face).toBe("function");
+            (0, globals_1.expect)(typeof anim.set_face).toBe("function");
+            anim.set_face(0, 2);
+            (0, globals_1.expect)(anim.face(0)).toBe(2);
+            anim.set_face(3, 1000);
+            (0, globals_1.expect)(anim.face(3)).toBe(1000);
+            anim.set_position(1, 5);
+            (0, globals_1.expect)(anim.position(1)).toBe(5);
         }
     });
 });

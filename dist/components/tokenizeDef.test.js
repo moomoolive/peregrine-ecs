@@ -29,22 +29,10 @@ const tokenizeDef_1 = require("./tokenizeDef");
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)(Symbol(), { x: "i32" })).toThrow();
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("", { x: "i32" })).toThrow();
     });
-    (0, globals_1.it)("should throw if component name doesn't conform to js variable naming standard (minus unicode)", () => {
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("🥰", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("1component", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("comp@nent", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("comp*nent", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("#component", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("(component)", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("component%", { x: "i32" })).toThrow();
-    });
-    (0, globals_1.it)("should throw if component name is a reserved ecma keyword", () => {
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("class", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("await", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("true", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("const", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("let", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("throw", { x: "i32" })).toThrow();
+    (0, globals_1.it)("should throw if component name starts with '@@'", () => {
+        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("@@memory", { x: "i32" })).toThrow();
+        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("@@coolio", { x: "i32" })).toThrow();
+        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("@@", { x: "i32" })).toThrow();
     });
 });
 (0, globals_1.describe)("component field restrictions", () => {
@@ -56,6 +44,11 @@ const tokenizeDef_1 = require("./tokenizeDef");
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "field%": "i32" })).toThrow();
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "*field_generator": "i32" })).toThrow();
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "🥰": "i32" })).toThrow();
+    });
+    (0, globals_1.it)("should throw if field name starts with 'set_'", () => {
+        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "set_myval": "i32" })).toThrow();
+        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "set_": "i32" })).toThrow();
+        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "set_random": "i32" })).toThrow();
     });
     (0, globals_1.it)("should throw if invalid datatype is inputted", () => {
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "f": null })).toThrow();
