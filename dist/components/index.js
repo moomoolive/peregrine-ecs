@@ -5,7 +5,7 @@ const tokenizeDef_1 = require("./tokenizeDef");
 const errors_1 = require("../debugging/errors");
 function createComponentViewClass({ fields, componentSegments }) {
     const BaseView = function (self) {
-        this["@@databuffer" /* databuffer_ref */] = self;
+        this["@@self" /* databuffer_ref */] = self;
     };
     const viewPrototype = {};
     const indexesPerElement = componentSegments;
@@ -16,7 +16,7 @@ function createComponentViewClass({ fields, componentSegments }) {
     to index in typed array */
     Object.defineProperty(viewPrototype, firstField, {
         value(index) {
-            return this["@@databuffer" /* databuffer_ref */][index * indexesPerElement];
+            return this["@@self" /* databuffer_ref */].databuffer[index * indexesPerElement];
         }
     });
     /* create setter method that maps field name
@@ -25,7 +25,7 @@ function createComponentViewClass({ fields, componentSegments }) {
         + firstField);
     Object.defineProperty(viewPrototype, firstSetterName, {
         value(index, value) {
-            this["@@databuffer" /* databuffer_ref */][index * indexesPerElement] = value;
+            this["@@self" /* databuffer_ref */].databuffer[index * indexesPerElement] = value;
         }
     });
     /* create rest of members */
@@ -33,14 +33,14 @@ function createComponentViewClass({ fields, componentSegments }) {
         const { name: fieldName, databufferOffset } = fields[i];
         Object.defineProperty(viewPrototype, fieldName, {
             value(index) {
-                return this["@@databuffer"][(index * indexesPerElement) + databufferOffset];
+                return this["@@self" /* databuffer_ref */].databuffer[(index * indexesPerElement) + databufferOffset];
             }
         });
         const setterName = ("set_" /* field_setter_prefix */
             + fieldName);
         Object.defineProperty(viewPrototype, setterName, {
             value(index, value) {
-                this["@@databuffer"][(index * indexesPerElement) + databufferOffset] = value;
+                this["@@self" /* databuffer_ref */].databuffer[(index * indexesPerElement) + databufferOffset] = value;
             }
         });
     }
@@ -48,14 +48,13 @@ function createComponentViewClass({ fields, componentSegments }) {
     return BaseView;
 }
 class RawComponent {
-    constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }, memoryBuffer, componentPtr, initialCapacity) {
+    constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }, databuffer) {
         this.memoryConstructor = memoryConstructor;
-        const databuffer = new memoryConstructor(memoryBuffer, componentPtr, initialCapacity);
         this.databuffer = databuffer;
         this.bytesPerElement = bytesPerElement;
         this.componentSegements = componentSegements;
         this.bytesPerField = bytesPerField;
-        this.data = new View(databuffer);
+        this.data = new View(this);
         this.id = id;
     }
 }

@@ -17,12 +17,12 @@ const index_1 = require("./index");
         (0, globals_1.expect)(memoryConstructor).toBe(Float64Array);
         (0, globals_1.expect)(tokens.memoryType).toBe("f64");
         (0, globals_1.expect)(tokens.fields).toEqual([
-            { name: "x", databufferOffset: 0 },
-            { name: "y", databufferOffset: 1 },
-            { name: "z", databufferOffset: 2 },
+            { name: "x", databufferOffset: 0, originalDatabufferOffset: 0 },
+            { name: "y", databufferOffset: 1, originalDatabufferOffset: 1 },
+            { name: "z", databufferOffset: 2, originalDatabufferOffset: 2 },
         ]);
-        const memory = new memoryConstructor(5 * componentSegements);
-        const pos = new View(memory);
+        const databuffer = new memoryConstructor(5 * componentSegements);
+        const pos = new View({ databuffer });
         (0, globals_1.expect)(typeof pos.x).toBe("function");
         (0, globals_1.expect)(typeof pos.set_x).toBe("function");
         (0, globals_1.expect)(typeof pos.y).toBe("function");
@@ -47,12 +47,21 @@ const index_1 = require("./index");
             (0, globals_1.expect)(bytesPerElement).toBe(8);
             (0, globals_1.expect)(memoryConstructor).toBe(Int32Array);
             (0, globals_1.expect)(tokens.memoryType).toBe("i32");
+            /* fields are sorted alphabetically by name */
             (0, globals_1.expect)(tokens.fields).toEqual([
-                { name: "position", databufferOffset: 0 },
-                { name: "face", databufferOffset: 1 },
+                {
+                    name: "face",
+                    databufferOffset: 0,
+                    originalDatabufferOffset: 1
+                },
+                {
+                    name: "position",
+                    databufferOffset: 1,
+                    originalDatabufferOffset: 0
+                },
             ]);
-            const memory = new memoryConstructor(componentSegements * 5);
-            const anim = new View(memory);
+            const databuffer = new memoryConstructor(componentSegements * 5);
+            const anim = new View({ databuffer });
             (0, globals_1.expect)(typeof anim.position).toBe("function");
             (0, globals_1.expect)(typeof anim.set_position).toBe("function");
             (0, globals_1.expect)(typeof anim.face).toBe("function");

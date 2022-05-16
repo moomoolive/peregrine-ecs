@@ -13,4 +13,5 @@ export interface Allocator {
 }
 export declare type AllocatorDebugInfo = Readonly<MemPoolStats>;
 export declare function debugComponentAllocator(allocator: Allocator): AllocatorDebugInfo;
+export declare function i32Malloc(allocator: Allocator, size: number): Int32Array;
 //# sourceMappingURL=index.d.ts.map

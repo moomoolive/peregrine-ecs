@@ -9,17 +9,20 @@ export declare type ComponentTokens = {
     fields: {
         name: string;
         databufferOffset: number;
+        originalDatabufferOffset: number;
     }[];
     bytesPerElement: number;
     bytesPerField: (4 | 8);
     componentSegments: number;
     stringifiedDefinition: string;
+    originalStringifiedDefinition: string;
 };
 export declare const MAX_FIELDS_PER_COMPONENT = 9;
 export declare const enum component_viewer_encoding {
     field_setter_prefix = "set_",
+    field_getter_prefix = "get_",
     internal_field_prefix = "@@",
-    databuffer_ref = "@@databuffer"
+    databuffer_ref = "@@self"
 }
 export declare function tokenizeComponentDef(name: any, definition: any): ComponentTokens;
 //# sourceMappingURL=tokenizeDef.d.ts.map

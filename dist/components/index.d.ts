@@ -15,11 +15,14 @@ export declare type ComponentSetters<Definition extends ComponentDefinition> = {
     [key in keyof Definition as `set_${key & string}`]: (index: number, value: number) => void;
 };
 export declare type ComponentFieldAccessors<Definition extends ComponentDefinition> = (ComponentGetters<Definition> & ComponentSetters<Definition>);
+interface DatabufferReference {
+    databuffer: ComponentTypedArray;
+}
 export declare type RawComponentView<Definition extends ComponentDefinition> = (ComponentFieldAccessors<Definition> & {
-    "@@databuffer": ComponentTypedArray;
+    "@@self": DatabufferReference;
 });
 export interface ComponentViewFactory<Definition extends ComponentDefinition> {
-    new (databuffers: ComponentTypedArray): RawComponentView<Definition>;
+    new (self: DatabufferReference): RawComponentView<Definition>;
 }
 export declare class RawComponent<Definition extends ComponentDefinition> {
     readonly id: number;
@@ -29,7 +32,7 @@ export declare class RawComponent<Definition extends ComponentDefinition> {
     databuffer: ComponentTypedArray;
     memoryConstructor: ComponentTypedArrayConstructor;
     data: RawComponentView<Definition>;
-    constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }: ComponentViewClass<Definition>, memoryBuffer: SharedArrayBuffer, componentPtr: number, initialCapacity: number);
+    constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }: ComponentViewClass<Definition>, databuffer: ComponentTypedArray);
 }
 export declare type ComponentObject<Definition extends ComponentDefinition> = {
     [key in keyof Definition]: number;

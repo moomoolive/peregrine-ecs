@@ -7,6 +7,7 @@ export const enum bytes {
 }
 
 export const enum entities {
-    /* actual limit is 2^19, but this number is easier to remember */
+    /* actual entity limit is 524,287 (19 bits), 
+    but this number is easier to remember */
     limit = 500_000
 }

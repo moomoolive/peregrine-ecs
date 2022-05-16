@@ -3,7 +3,7 @@ import { EntityRecords } from "./index";
 import { Table } from "../table/index";
 import { Allocator } from "../allocator/index";
 export declare type MutatorStatusCode = (0 | 1 | 2 | 3);
-export declare const enum status_codes {
+export declare const enum mutation_status {
     entity_uninitialized = 1,
     successful_update = 0,
     tag_exists = 2,
@@ -16,6 +16,9 @@ export declare const enum encoding {
     first_component_id_index = 1,
     first_component_data_index = 2
 }
+export declare function findTableOrCreate(tableHashes: Map<string, number>, previousTable: Table, tagId: number, tables: Table[], allocator: Allocator, componentViews: ComponentViews): Table;
+export declare function shiftComponentDataAligned(source: Table, destination: Table, sourceRow: number, allocator: Allocator): number;
+export declare function addTagComponent(entityId: number, tagId: number, records: EntityRecords, tables: Table[], tableHashes: Map<string, number>, allocator: Allocator, componentViews: ComponentViews): MutatorStatusCode;
 export declare class EntityMutator<Components extends ComponentsDeclaration> {
     records: EntityRecords;
     tables: Table[];

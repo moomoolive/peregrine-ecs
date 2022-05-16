@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.debugComponentAllocator = exports.createComponentAllocator = void 0;
+exports.i32Malloc = exports.debugComponentAllocator = exports.createComponentAllocator = void 0;
 /*
 this import is a slightly modified fork of the
 awesome "@thi.ng/malloc" npm package (v6.1.6).
@@ -18,3 +18,8 @@ function debugComponentAllocator(allocator) {
     return allocator.stats();
 }
 exports.debugComponentAllocator = debugComponentAllocator;
+function i32Malloc(allocator, size) {
+    const ptr = allocator.malloc(size * 4 /* i32 */);
+    return new Int32Array(allocator.buf, ptr, size);
+}
+exports.i32Malloc = i32Malloc;

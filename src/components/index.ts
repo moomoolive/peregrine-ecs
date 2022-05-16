@@ -45,18 +45,22 @@ export type ComponentFieldAccessors<
     & ComponentSetters<Definition>
 )
 
+interface DatabufferReference {
+    databuffer: ComponentTypedArray
+}
+
 export type RawComponentView<
     Definition extends ComponentDefinition
 > = (
     ComponentFieldAccessors<Definition>
-    & {"@@databuffer": ComponentTypedArray}
+    & {"@@self": DatabufferReference}
 )
 
 export interface ComponentViewFactory<
     Definition extends ComponentDefinition
 > {
     new(
-        databuffers: ComponentTypedArray
+        self: DatabufferReference
     ): RawComponentView<Definition>
 }
 
@@ -70,7 +74,7 @@ function createComponentViewClass<
 ): ComponentViewFactory<Definition> {
     const BaseView = function(
         this: RawComponentView<ComponentDefinition>,
-        self: ComponentTypedArray
+        self: DatabufferReference
     ) {
         this[component_viewer_encoding.databuffer_ref] = self
     }
@@ -84,7 +88,7 @@ function createComponentViewClass<
     to index in typed array */
     Object.defineProperty(viewPrototype, firstField, {
         value(index: number) { 
-            return this[component_viewer_encoding.databuffer_ref][index * indexesPerElement]
+            return this[component_viewer_encoding.databuffer_ref].databuffer[index * indexesPerElement]
         }
     })
     /* create setter method that maps field name
@@ -95,7 +99,7 @@ function createComponentViewClass<
     )
     Object.defineProperty(viewPrototype, firstSetterName, {
         value(index: number, value: number) { 
-            this[component_viewer_encoding.databuffer_ref][index * indexesPerElement] = value
+            this[component_viewer_encoding.databuffer_ref].databuffer[index * indexesPerElement] = value
         }
     })
 
@@ -105,7 +109,7 @@ function createComponentViewClass<
         const {name: fieldName, databufferOffset} = fields[i]
         Object.defineProperty(viewPrototype, fieldName, {
             value(index: number) { 
-                return this["@@databuffer"][(index * indexesPerElement) + databufferOffset] 
+                return this[component_viewer_encoding.databuffer_ref].databuffer[(index * indexesPerElement) + databufferOffset] 
             }
         })
         const setterName = (
@@ -114,7 +118,7 @@ function createComponentViewClass<
         )
         Object.defineProperty(viewPrototype, setterName, {
             value(index: number, value: number) { 
-                this["@@databuffer"][(index * indexesPerElement) + databufferOffset] = value
+                this[component_viewer_encoding.databuffer_ref].databuffer[(index * indexesPerElement) + databufferOffset] = value
             }
         })
     }
@@ -140,19 +144,14 @@ export class RawComponent<Definition extends ComponentDefinition> {
             memoryConstructor,
             id
         }: ComponentViewClass<Definition>,
-        memoryBuffer: SharedArrayBuffer,
-        componentPtr: number,
-        initialCapacity: number
+        databuffer: ComponentTypedArray
     ) {
         this.memoryConstructor = memoryConstructor
-        const databuffer = new memoryConstructor(
-            memoryBuffer, componentPtr, initialCapacity
-        )
         this.databuffer = databuffer
         this.bytesPerElement = bytesPerElement
         this.componentSegements = componentSegements
         this.bytesPerField = bytesPerField
-        this.data = new View(databuffer)
+        this.data = new View(this)
         this.id = id
     }
 }

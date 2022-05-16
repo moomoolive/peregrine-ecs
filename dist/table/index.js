@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.computeNewTableHashAdditionalTag = exports.get$componentIdsPtr = exports.get$metaPtr = exports.getCapacity = exports.getTrueLength = exports.Table = void 0;
+exports.computeNewTableHashAdditionalTag = exports.Table = void 0;
 // the current implementation of the archetype
 // graph could be significantly sped up
 // by using an array for pre-built components id ranges
@@ -8,51 +8,66 @@ exports.computeNewTableHashAdditionalTag = exports.get$componentIdsPtr = exports
 // archetype implementation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/private_types.h#L170
 // archetype graph implemenation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/table_graph.c#L192
 class Table {
-    constructor(id, initialCapacity, componentIds, componentIds_ptr, components, globalAllocator) {
-        const meta_ptr = globalAllocator.malloc(4 /* meta_size */ * 4 /* i32 */);
-        this.meta = new Int32Array(globalAllocator.buf, meta_ptr, 4 /* meta_size */);
-        this.meta[0 /* length_index */] = 0;
-        this.meta[1 /* capacity_index */] = initialCapacity;
-        this.meta[2 /* meta_ptr_index */] = meta_ptr;
-        this.meta[3 /* component_ids_ptr_index */] = componentIds_ptr;
+    constructor(id, hash, componentIds, components, meta, componentBufferPtrs, entities) {
+        this.meta = meta;
         this.id = id;
-        this.length = 0;
+        this.hash = hash;
         this.componentIds = componentIds;
-        this.orderedComponents = components;
-        this.components = components.slice();
+        this.componentBufferPtrs = componentBufferPtrs;
+        this.components = components;
         this.addEdges = new Map();
         this.removeEdges = new Map();
-        this.entities = new Int32Array();
-        this.componentIndexes = new Map();
+        this.entities = entities;
+        const indexes = new Map();
         for (let i = 0; i < componentIds.length; i++) {
             const id = componentIds[i];
-            this.componentIndexes.set(id, i);
+            indexes.set(id, i);
         }
+        this.componentIndexes = indexes;
     }
-    get trueLength() {
+    get length() {
         return this.meta[0 /* length_index */];
     }
-    set trueLength(newLength) {
+    set length(newLength) {
         this.meta[0 /* length_index */] = newLength;
+    }
+    get capacity() {
+        return this.meta[1 /* capacity_index */];
+    }
+    set capacity(newCapacity) {
+        this.meta[1 /* capacity_index */] = newCapacity;
+    }
+    ensureSize(additional, allocator) {
+        const capacity = this.capacity;
+        if (this.length + additional <= capacity) {
+            return;
+        }
+        const targetCapacity = (capacity
+            * 2 /* resize_factor */);
+        this.resizeComponents(targetCapacity, allocator);
+    }
+    resizeComponents(targetCapacity, allocator) {
+        const components = this.components;
+        const componentPtrs = this.componentBufferPtrs;
+        for (let i = 0; i < components.length; i++) {
+            const component = components[i];
+            const oldPtr = componentPtrs[i];
+            const newPtr = allocator.realloc(oldPtr, component.bytesPerElement * targetCapacity);
+            component.databuffer = new component.memoryConstructor(allocator.buf, newPtr, targetCapacity);
+            componentPtrs[i] = newPtr;
+        }
+    }
+    reclaimMemory(allocator) {
+        const len = this.length;
+        const capacity = this.capacity;
+        if (capacity - len < 50 /* memory_reclaimation_limit */) {
+            return;
+        }
+        const targetCapacity = (len + 50 /* memory_reclaimation_limit */);
+        this.resizeComponents(targetCapacity, allocator);
     }
 }
 exports.Table = Table;
-function getTrueLength(tableMeta) {
-    return tableMeta[0 /* length_index */];
-}
-exports.getTrueLength = getTrueLength;
-function getCapacity(tableMeta) {
-    return tableMeta[1 /* capacity_index */];
-}
-exports.getCapacity = getCapacity;
-function get$metaPtr(tableMeta) {
-    return tableMeta[2 /* meta_ptr_index */];
-}
-exports.get$metaPtr = get$metaPtr;
-function get$componentIdsPtr(tableMeta) {
-    return tableMeta[3 /* component_ids_ptr_index */];
-}
-exports.get$componentIdsPtr = get$componentIdsPtr;
 let hashCarrier = { hash: "", insertIndex: 0 };
 function computeNewTableHashAdditionalTag(referingTableComponentIds, tag, componentsLength) {
     let hash = "";

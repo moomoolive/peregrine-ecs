@@ -25,13 +25,13 @@ describe("component generation", () => {
         expect(memoryConstructor).toBe(Float64Array)
         expect(tokens.memoryType).toBe("f64")
         expect(tokens.fields).toEqual([
-            {name: "x", databufferOffset: 0},
-            {name: "y", databufferOffset: 1},
-            {name: "z", databufferOffset: 2},
+            {name: "x", databufferOffset: 0, originalDatabufferOffset: 0},
+            {name: "y", databufferOffset: 1, originalDatabufferOffset: 1},
+            {name: "z", databufferOffset: 2, originalDatabufferOffset: 2},
         ])
 
-        const memory = new memoryConstructor(5 * componentSegements)
-        const pos = new View(memory)
+        const databuffer = new memoryConstructor(5 * componentSegements)
+        const pos = new View({databuffer})
         expect(typeof pos.x).toBe("function")
         expect(typeof pos.set_x).toBe("function")
         expect(typeof pos.y).toBe("function")
@@ -66,13 +66,22 @@ describe("component generation", () => {
         expect(bytesPerElement).toBe(8)
         expect(memoryConstructor).toBe(Int32Array)
         expect(tokens.memoryType).toBe("i32")
+        /* fields are sorted alphabetically by name */
         expect(tokens.fields).toEqual([
-            {name: "position", databufferOffset: 0},
-            {name: "face", databufferOffset: 1},
+            {
+                name: "face", 
+                databufferOffset: 0,
+                originalDatabufferOffset: 1
+            },
+            {
+                name: "position", 
+                databufferOffset: 1,
+                originalDatabufferOffset: 0
+            },
         ])
 
-        const memory = new memoryConstructor(componentSegements * 5)
-        const anim = new View(memory)
+        const databuffer = new memoryConstructor(componentSegements * 5)
+        const anim = new View({databuffer})
         expect(typeof anim.position).toBe("function")
         expect(typeof anim.set_position).toBe("function")
         expect(typeof anim.face).toBe("function")

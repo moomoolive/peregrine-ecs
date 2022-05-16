@@ -1,31 +1,35 @@
-import { RawComponent, ComponentDefinition } from "../components/index";
 import { Allocator } from "../allocator/index";
-export declare const enum encoding {
-    meta_size = 4,
+import { RawComponent, ComponentDefinition } from "../components/index";
+export declare const enum table_encoding {
+    meta_size = 2,
     length_index = 0,
-    capacity_index = 1,
-    meta_ptr_index = 2,
-    component_ids_ptr_index = 3
+    capacity_index = 1
+}
+export declare const enum table_defaults {
+    initial_capacity = 1,
+    resize_factor = 2,
+    memory_reclaimation_limit = 50
 }
 export declare class Table {
-    id: string;
+    id: number;
+    hash: string;
     componentIds: Int32Array;
-    orderedComponents: RawComponent<ComponentDefinition>[];
     components: RawComponent<ComponentDefinition>[];
     componentIndexes: Map<number, number>;
-    removeEdges: Map<number, Table>;
-    addEdges: Map<number, Table>;
+    componentBufferPtrs: Int32Array;
+    removeEdges: Map<number, number>;
+    addEdges: Map<number, number>;
     meta: Int32Array;
-    length: number;
     entities: Int32Array;
-    constructor(id: string, initialCapacity: number, componentIds: Int32Array, componentIds_ptr: number, components: RawComponent<ComponentDefinition>[], globalAllocator: Allocator);
-    get trueLength(): number;
-    set trueLength(newLength: number);
+    constructor(id: number, hash: string, componentIds: Int32Array, components: RawComponent<ComponentDefinition>[], meta: Int32Array, componentBufferPtrs: Int32Array, entities: Int32Array);
+    get length(): number;
+    set length(newLength: number);
+    get capacity(): number;
+    set capacity(newCapacity: number);
+    ensureSize(additional: number, allocator: Allocator): void;
+    private resizeComponents;
+    reclaimMemory(allocator: Allocator): void;
 }
-export declare function getTrueLength(tableMeta: Int32Array): number;
-export declare function getCapacity(tableMeta: Int32Array): number;
-export declare function get$metaPtr(tableMeta: Int32Array): number;
-export declare function get$componentIdsPtr(tableMeta: Int32Array): number;
 export declare const enum table_hashes {
     tag_component_divider = "-",
     last_index = -1

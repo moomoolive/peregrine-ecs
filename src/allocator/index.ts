@@ -4,6 +4,7 @@ awesome "@thi.ng/malloc" npm package (v6.1.6).
 Check out the docs inside the library: /lib/malloc/readme.md
 */
 import {MemPool, MemPoolStats} from "./lib/malloc/index"
+import {bytes} from "../consts"
 
 export function createComponentAllocator(
     byteSize: number,
@@ -33,4 +34,12 @@ export function debugComponentAllocator(
     allocator: Allocator
 ): AllocatorDebugInfo {
     return allocator.stats()
+}
+
+export function i32Malloc(
+    allocator: Allocator,
+    size: number
+): Int32Array {
+    const ptr = allocator.malloc(size * bytes.i32)
+    return new Int32Array(allocator.buf, ptr, size)
 }
