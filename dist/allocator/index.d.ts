@@ -7,6 +7,7 @@ export interface Allocator {
     buf: ArrayBufferLike;
     malloc: (bytes: number) => number;
     free: (ptr: number) => boolean;
+    realloc: (ptr: number, bytes: number) => number;
     freeAll: () => void;
     stats: () => AllocatorDebugInfo;
 }
