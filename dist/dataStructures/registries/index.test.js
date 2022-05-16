@@ -8,14 +8,14 @@ const index_1 = require("./index");
             likeability: { x: "i32" },
             pets: { age: "i32", type: "i32" }
         });
-        (0, globals_1.expect)(components.likeability).toBe(0);
-        (0, globals_1.expect)(components.pets).toBe(1);
+        (0, globals_1.expect)(components.likeability).toBe(50 /* reserved_end */ + 0);
+        (0, globals_1.expect)(components.pets).toBe(50 /* reserved_end */ + 1);
         const components2 = (0, index_1.componentRegistryMacro)({
             position: { x: "f32", y: "f32", z: "f32" },
             velocity: { x: "f32", y: "f32", z: "f32" }
         });
-        (0, globals_1.expect)(components2.position).toBe(0);
-        (0, globals_1.expect)(components2.velocity).toBe(1);
+        (0, globals_1.expect)(components2.position).toBe(50 /* reserved_end */ + 0);
+        (0, globals_1.expect)(components2.velocity).toBe(50 /* reserved_end */ + 1);
     });
     (0, globals_1.it)("should throw error if attempting to set key", () => {
         const components = (0, index_1.componentRegistryMacro)({

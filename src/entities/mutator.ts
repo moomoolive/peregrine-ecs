@@ -19,7 +19,6 @@ import {
     Allocator,
     i32Malloc
 } from "../allocator/index"
-import {bytes} from "../consts"
 
 export type MutatorStatusCode = (
     0 | 1 | 2 | 3

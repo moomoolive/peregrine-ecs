@@ -7,7 +7,8 @@ import { MutatorStatusCode } from "../entities/mutator";
 import { Allocator } from "../allocator/index";
 export declare type EcsMode = "development" | "production";
 export declare class BaseEcs {
-    protected _unusedEntityIds: Int32Array;
+    protected unusedEntities: Int32Array;
+    protected unusedEntityCount: number;
     protected entityRecords: EntityRecords;
     protected tables: Table[];
     protected tableAllocator: Allocator;
@@ -22,20 +23,18 @@ export declare class BaseEcs {
         stringifiedComponentDeclaration: string;
         mode: EcsMode;
     });
+    init(): Promise<void>;
     addTag(entityId: number, tagId: number): MutatorStatusCode;
 }
-export declare type GeneratedEcs<Components extends ComponentsDeclaration> = (BaseEcs & {
+export declare type Ecs<Components extends ComponentsDeclaration> = (BaseEcs & {
     readonly components: ComponentRegistry<Components>;
-});
-export declare type EcsClass<Components extends ComponentsDeclaration> = {
     readonly componentSchemas: Components;
-    new (): GeneratedEcs<Components>;
-};
+});
 export declare function defineEcs<Components extends ComponentsDeclaration>(params: {
     readonly components: Components;
 }, { maxEntities, allocatorInitialMemoryMB, mode }?: {
     maxEntities?: number;
     allocatorInitialMemoryMB?: number;
     mode?: EcsMode;
-}): EcsClass<Components>;
+}): Ecs<Components>;
 //# sourceMappingURL=index.d.ts.map

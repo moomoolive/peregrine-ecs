@@ -3,6 +3,13 @@ export declare const enum record_encoding {
     size_per_element = 2,
     table_offset = 1
 }
+export declare const enum standard_entity {
+    reserved_end = 50,
+    reserved_start = 0,
+    reserved_count = 50,
+    ecs_id = 0,
+    ecs_component = 1
+}
 export declare class EntityRecords {
     records: Int32Array;
     protected _index: number;

@@ -6,6 +6,16 @@ export const enum record_encoding {
     table_offset = 1
 }
 
+export const enum standard_entity {
+    reserved_end = 50,
+    reserved_start = 0,
+    reserved_count = reserved_end - reserved_start, 
+
+    /* reserved entity ids */
+    ecs_id = 0,
+    ecs_component = 1
+}
+
 export class EntityRecords {
     records: Int32Array
     protected _index: number
@@ -13,7 +23,7 @@ export class EntityRecords {
     constructor(initialCapacity: number) {
         this.records = createSharedInt32Array(
             initialCapacity * record_encoding.size_per_element
-        ).fill(record_encoding.unintialized)
+        )
         this._index = 0
     }
 

@@ -1,5 +1,6 @@
 import { Types, ComponentTypedArrayConstructor, ComponentTokens, ComponentTypedArray } from "./tokenizeDef";
-export { Types, ComponentTokens } from "./tokenizeDef";
+export type { Types, ComponentTokens } from "./tokenizeDef";
+export { MAX_FIELDS_PER_COMPONENT } from "./tokenizeDef";
 export declare type i32<Type extends Types> = Type extends "i32" ? Int32Array : never;
 export declare type f32<Type extends Types> = Type extends "f32" ? Float32Array : never;
 export declare type f64<Type extends Types> = Type extends "f64" ? Float64Array : never;

@@ -3,6 +3,7 @@ import {
     componentRegistryMacro, 
     MAX_COMPONENTS,
 } from "./index"
+import {standard_entity} from "../../entities/index"
 
 describe("component registry", () => {
     it("should generate object will inputted keys", () => {
@@ -10,15 +11,22 @@ describe("component registry", () => {
             likeability: {x: "i32"},
             pets: {age: "i32", type: "i32"}
         })
-        expect(components.likeability).toBe(0)
-        expect(components.pets).toBe(1)
+        expect(components.likeability).toBe(
+            standard_entity.reserved_end + 0
+        )
+        expect(components.pets).toBe(
+            standard_entity.reserved_end + 1
+        )
 
         const components2 = componentRegistryMacro({
             position: {x: "f32", y: "f32", z: "f32"},
             velocity: {x: "f32", y: "f32", z: "f32"}
         })
-        expect(components2.position).toBe(0)
-        expect(components2.velocity).toBe(1)
+        expect(components2.position).toBe(
+            standard_entity.reserved_end + 0
+        )
+        expect(components2.velocity).toBe(
+            standard_entity.reserved_end + 1)
     })
 
     it("should throw error if attempting to set key", () => {

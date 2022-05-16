@@ -6,6 +6,7 @@ import {
     ComponentTokens,
 } from "../../components/index"
 import {err} from "../../debugging/errors"
+import {standard_entity} from "../../entities/index"
 
 export type ComponentRegistry<
     Declaration extends ComponentsDeclaration
@@ -13,7 +14,11 @@ export type ComponentRegistry<
     readonly [key in keyof Declaration]: number | Declaration[key]
 }
 
-export const MAX_COMPONENTS = 256
+export const enum registry_encoding {
+    max_components = 256
+}
+
+export const MAX_COMPONENTS = registry_encoding.max_components
 
 export function componentRegistryMacro<
     Declartion extends ComponentsDeclaration
@@ -23,7 +28,7 @@ export function componentRegistryMacro<
     const keys = Object.keys(declartion)
     if (keys.length < 1) {
         throw SyntaxError(err("component declaration must have at least one component"))
-    } else if (keys.length > MAX_COMPONENTS) {
+    } else if (keys.length > registry_encoding.max_components) {
         throw SyntaxError(err(`too many components, allowed=${MAX_COMPONENTS}, got=${keys.length}`))
     }
     const registry = {}
@@ -34,7 +39,8 @@ export function componentRegistryMacro<
         which runs before this. So there is no need to check
         if fields/component names are correct. 
         */
-        Object.defineProperty(registry, keys[i], {value: i})
+        const entityId = i + standard_entity.reserved_end
+        Object.defineProperty(registry, keys[i], {value: entityId})
     }
     return Object.freeze(registry) as ComponentRegistry<Declartion>
 }

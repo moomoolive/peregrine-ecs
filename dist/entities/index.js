@@ -4,7 +4,7 @@ exports.EntityRecords = void 0;
 const sharedArrays_1 = require("../dataStructures/sharedArrays");
 class EntityRecords {
     constructor(initialCapacity) {
-        this.records = (0, sharedArrays_1.createSharedInt32Array)(initialCapacity * 2 /* size_per_element */).fill(-1 /* unintialized */);
+        this.records = (0, sharedArrays_1.createSharedInt32Array)(initialCapacity * 2 /* size_per_element */);
         this._index = 0;
     }
     index(entityId) {

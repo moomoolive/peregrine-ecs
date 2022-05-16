@@ -8,7 +8,8 @@ import {
 } from "./tokenizeDef"
 import {err} from "../debugging/errors"
 
-export {Types, ComponentTokens} from "./tokenizeDef"
+export type {Types, ComponentTokens} from "./tokenizeDef"
+export {MAX_FIELDS_PER_COMPONENT} from "./tokenizeDef"
 
 export type i32<Type extends Types> = Type extends "i32" ? Int32Array : never
 export type f32<Type extends Types> = Type extends "f32" ? Float32Array : never

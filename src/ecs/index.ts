@@ -2,6 +2,9 @@ import {
     Table
 } from "../table/index"
 import {
+    createDefaultTables
+} from "../table/standardTables"
+import {
     EntityRecords,
     record_encoding
 } from "../entities/index"
@@ -30,11 +33,14 @@ import {
 import {entities, bytes} from "../consts"
 import {Allocator, createComponentAllocator} from "../allocator/index"
 import {MAX_FIELDS_PER_COMPONENT} from "../components/tokenizeDef"
+import {sleep} from "../utils"
 
 export type EcsMode = "development" | "production"
 
 export class BaseEcs {
-    protected _unusedEntityIds: Int32Array
+    protected unusedEntities: Int32Array
+    protected unusedEntityCount: number
+
     protected entityRecords: EntityRecords
     protected tables: Table[]
     protected tableAllocator: Allocator
@@ -58,7 +64,9 @@ export class BaseEcs {
             stringifiedComponentDeclaration
         } = params
         
-        this._unusedEntityIds = createSharedInt32Array(maxEntities)
+        this.unusedEntities = createSharedInt32Array(maxEntities)
+        this.unusedEntityCount = 0
+        
         this.entityRecords = new EntityRecords(maxEntities)
         this._mutatorDatabuffer = createSharedFloat64Array(
             (10 * (
@@ -88,6 +96,20 @@ export class BaseEcs {
             this.hashToTableIndex,
             this.tableAllocator,
             this.componentViews
+        )
+    }
+
+    async init() {
+        this.entityRecords.records.fill(
+            record_encoding.unintialized
+        )
+        await sleep(0)
+        this.tables.push(
+            ...createDefaultTables(
+                this.tableAllocator,
+                this.entityRecords,
+                this.debugger.componentCount
+            )
         )
     }
 
@@ -121,21 +143,15 @@ export class BaseEcs {
     }
 }
 
-export type GeneratedEcs<
+export type Ecs<
     Components extends ComponentsDeclaration
 > = (
     BaseEcs
     & {
         readonly components: ComponentRegistry<Components>
+        readonly componentSchemas: Components
     }
 )
-
-export type EcsClass<
-    Components extends ComponentsDeclaration
-> = {
-    readonly componentSchemas: Components
-    new(): GeneratedEcs<Components>
-}
 
 export function defineEcs<
     Components extends ComponentsDeclaration
@@ -152,15 +168,16 @@ export function defineEcs<
         allocatorInitialMemoryMB?: number
         mode?: EcsMode
     } = {}
-): EcsClass<Components> {
+): Ecs<Components> {
     const {
         components: componentDeclaration,
     } = params
     const componentRegistry = componentRegistryMacro(componentDeclaration)
+    const frozenDeclartion = Object.freeze(
+        JSON.parse(JSON.stringify(componentDeclaration))
+    )
     
     class GeneratedEcs extends BaseEcs {
-        static readonly componentSchemas = componentDeclaration
-
         readonly components: ComponentRegistry<Components>
         
         constructor() {
@@ -174,7 +191,11 @@ export function defineEcs<
             })
             this.components = componentRegistry
         }
+
+        get componentSchemas() {
+            return frozenDeclartion
+        }
     }
     
-    return GeneratedEcs
+    return new GeneratedEcs()
 }

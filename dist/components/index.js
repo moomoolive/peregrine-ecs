@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateComponentViewClasses = exports.componentViewMacro = exports.ComponentViewClass = exports.RawComponent = void 0;
+exports.generateComponentViewClasses = exports.componentViewMacro = exports.ComponentViewClass = exports.RawComponent = exports.MAX_FIELDS_PER_COMPONENT = void 0;
 const tokenizeDef_1 = require("./tokenizeDef");
 const errors_1 = require("../debugging/errors");
+var tokenizeDef_2 = require("./tokenizeDef");
+Object.defineProperty(exports, "MAX_FIELDS_PER_COMPONENT", { enumerable: true, get: function () { return tokenizeDef_2.MAX_FIELDS_PER_COMPONENT; } });
 function createComponentViewClass({ fields, componentSegments }) {
     const BaseView = function (self) {
         this["@@self" /* databuffer_ref */] = self;

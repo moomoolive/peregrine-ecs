@@ -2,13 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.debugComponent = exports.componentRegistryMacro = exports.MAX_COMPONENTS = void 0;
 const errors_1 = require("../../debugging/errors");
-exports.MAX_COMPONENTS = 256;
+exports.MAX_COMPONENTS = 256 /* max_components */;
 function componentRegistryMacro(declartion) {
     const keys = Object.keys(declartion);
     if (keys.length < 1) {
         throw SyntaxError((0, errors_1.err)("component declaration must have at least one component"));
     }
-    else if (keys.length > exports.MAX_COMPONENTS) {
+    else if (keys.length > 256 /* max_components */) {
         throw SyntaxError((0, errors_1.err)(`too many components, allowed=${exports.MAX_COMPONENTS}, got=${keys.length}`));
     }
     const registry = {};
@@ -19,7 +19,8 @@ function componentRegistryMacro(declartion) {
         which runs before this. So there is no need to check
         if fields/component names are correct.
         */
-        Object.defineProperty(registry, keys[i], { value: i });
+        const entityId = i + 50 /* reserved_end */;
+        Object.defineProperty(registry, keys[i], { value: entityId });
     }
     return Object.freeze(registry);
 }
