@@ -42,18 +42,6 @@ describe("component naming convention", () => {
         expect(() => tokenizeComponentDef("@@coolio", {x: "i32"})).toThrow()
         expect(() => tokenizeComponentDef("@@", {x: "i32"})).toThrow()
     })
-
-    it("should throw if component name starts with 'set_'", () => {
-        expect(() => tokenizeComponentDef("set_", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("set_x", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("set_cool", {x: "i32"})).toThrow()
-    })
-
-    it("should throw if component name starts with 'get_'", () => {
-        expect(() => tokenizeComponentDef("get_", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("get_x", {x: "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("get_cool", {x: "i32"})).toThrow()
-    })
 })
 
 describe("component field restrictions", () => {
@@ -61,18 +49,6 @@ describe("component field restrictions", () => {
         expect(() => tokenizeComponentDef("c", {"@@": "i32"})).toThrow()
         expect(() => tokenizeComponentDef("c", {"@@my-component": "i32"})).toThrow()
         expect(() => tokenizeComponentDef("c", {"@@comp_type": "i32"})).toThrow()
-    })
-
-    it("should throw if field name starts with 'set_'", () => {
-        expect(() => tokenizeComponentDef("c", {"set_myval": "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("c", {"set_": "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("c", {"set_random": "i32"})).toThrow()
-    })
-
-    it("should throw if field name starts with 'get_'", () => {
-        expect(() => tokenizeComponentDef("c", {"get_myval": "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("c", {"get_": "i32"})).toThrow()
-        expect(() => tokenizeComponentDef("c", {"get_random": "i32"})).toThrow()
     })
 
     it("should throw if invalid datatype is inputted", () => {

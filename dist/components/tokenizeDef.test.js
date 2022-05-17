@@ -39,32 +39,12 @@ const tokenizeDef_1 = require("./tokenizeDef");
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("@@coolio", { x: "i32" })).toThrow();
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("@@", { x: "i32" })).toThrow();
     });
-    (0, globals_1.it)("should throw if component name starts with 'set_'", () => {
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("set_", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("set_x", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("set_cool", { x: "i32" })).toThrow();
-    });
-    (0, globals_1.it)("should throw if component name starts with 'get_'", () => {
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("get_", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("get_x", { x: "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("get_cool", { x: "i32" })).toThrow();
-    });
 });
 (0, globals_1.describe)("component field restrictions", () => {
     (0, globals_1.it)("should throw if component name starts with '@@'", () => {
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "@@": "i32" })).toThrow();
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "@@my-component": "i32" })).toThrow();
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "@@comp_type": "i32" })).toThrow();
-    });
-    (0, globals_1.it)("should throw if field name starts with 'set_'", () => {
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "set_myval": "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "set_": "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "set_random": "i32" })).toThrow();
-    });
-    (0, globals_1.it)("should throw if field name starts with 'get_'", () => {
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "get_myval": "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "get_": "i32" })).toThrow();
-        (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "get_random": "i32" })).toThrow();
     });
     (0, globals_1.it)("should throw if invalid datatype is inputted", () => {
         (0, globals_1.expect)(() => (0, tokenizeDef_1.tokenizeComponentDef)("c", { "f": null })).toThrow();

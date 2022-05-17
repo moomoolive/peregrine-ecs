@@ -14,8 +14,8 @@ import {
 } from "../dataStructures/registries/index"
 import {
     ComponentsDeclaration,
-    ComponentViews,
-    generateComponentViewClasses,
+    StructProxyClasses,
+    generateComponentStructProxies,
 } from "../components/index"
 import {Debugger} from "./debugger"
 import {
@@ -47,7 +47,7 @@ export class BaseEcs {
     protected _mutatorDatabuffer: Float64Array
     protected hashToTableIndex: Map<string, number>
 
-    protected readonly componentViews: ComponentViews
+    protected readonly componentViews: StructProxyClasses
 
     readonly debugger: Debugger
     private _mutator: EntityMutator<ComponentsDeclaration>
@@ -81,7 +81,7 @@ export class BaseEcs {
         )
         this.hashToTableIndex = new Map()
 
-        this.componentViews = generateComponentViewClasses(
+        this.componentViews = generateComponentStructProxies(
             JSON.parse(stringifiedComponentDeclaration)
         )
 

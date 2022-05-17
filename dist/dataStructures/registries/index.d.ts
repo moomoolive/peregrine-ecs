@@ -1,4 +1,4 @@
-import { ComponentDefinition, ComponentsDeclaration, ComponentViews, ComponentTokens } from "../../components/index";
+import { ComponentDefinition, ComponentsDeclaration, StructProxyClasses, ComponentTokens } from "../../components/index";
 export declare type ComponentRegistry<Declaration extends ComponentsDeclaration> = {
     readonly [key in keyof Declaration]: number | Declaration[key];
 };
@@ -15,5 +15,5 @@ export declare type ComponentDebug = {
     stringifiedDef: string;
 };
 export declare type ComponentId = number | ComponentDefinition;
-export declare function debugComponent(component: ComponentId, ComponentViews: ComponentViews): ComponentDebug;
+export declare function debugComponent(component: ComponentId, StructProxyClasses: StructProxyClasses): ComponentDebug;
 //# sourceMappingURL=index.d.ts.map

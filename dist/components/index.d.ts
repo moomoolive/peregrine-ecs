@@ -9,21 +9,18 @@ export declare type ComponentType<Type extends Types> = (f64<Type> | num<Type> |
 export declare type ComponentDefinition = {
     readonly [key: string]: Types;
 };
-export declare type ComponentGetters<Definition extends ComponentDefinition> = {
-    [key in keyof Definition]: (index: number) => number;
+export declare type StructProxy<Definition extends ComponentDefinition> = {
+    [key in keyof Definition]: number;
 };
-export declare type ComponentSetters<Definition extends ComponentDefinition> = {
-    [key in keyof Definition as `set_${key & string}`]: (index: number, value: number) => void;
-};
-export declare type ComponentFieldAccessors<Definition extends ComponentDefinition> = (ComponentGetters<Definition> & ComponentSetters<Definition>);
-interface DatabufferReference {
+interface ComponentReference {
     databuffer: ComponentTypedArray;
 }
-export declare type RawComponentView<Definition extends ComponentDefinition> = (ComponentFieldAccessors<Definition> & {
-    "@@self": DatabufferReference;
+export declare type RawStructProxy<Definition extends ComponentDefinition> = (StructProxy<Definition> & {
+    "@@component": ComponentReference;
+    "@@offset": number;
 });
 export interface ComponentViewFactory<Definition extends ComponentDefinition> {
-    new (self: DatabufferReference): RawComponentView<Definition>;
+    new (component: ComponentReference, offset: number): RawStructProxy<Definition>;
 }
 export declare class RawComponent<Definition extends ComponentDefinition> {
     readonly id: number;
@@ -32,13 +29,11 @@ export declare class RawComponent<Definition extends ComponentDefinition> {
     readonly bytesPerField: number;
     databuffer: ComponentTypedArray;
     memoryConstructor: ComponentTypedArrayConstructor;
-    data: RawComponentView<Definition>;
-    constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }: ComponentViewClass<Definition>, databuffer: ComponentTypedArray);
+    structProxyFactory: ComponentViewFactory<Definition>;
+    constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }: StructProxyClass<Definition>, databuffer: ComponentTypedArray);
+    index(index: number): StructProxy<Definition>;
 }
-export declare type ComponentObject<Definition extends ComponentDefinition> = {
-    [key in keyof Definition]: number;
-};
-export declare class ComponentViewClass<Definition extends ComponentDefinition> {
+export declare class StructProxyClass<Definition extends ComponentDefinition> {
     readonly bytesPerElement: number;
     readonly stringifiedDefinition: string;
     readonly tokens: ComponentTokens;
@@ -50,10 +45,10 @@ export declare class ComponentViewClass<Definition extends ComponentDefinition> 
     View: ComponentViewFactory<Definition>;
     constructor(id: number, tokens: ComponentTokens, View: ComponentViewFactory<Definition>);
 }
-export declare function componentViewMacro<Definition extends ComponentDefinition>(id: number, name: string, definition: Definition): ComponentViewClass<Definition>;
+export declare function structProxyMacro<Definition extends ComponentDefinition>(id: number, name: string, definition: Definition): StructProxyClass<Definition>;
 export declare type ComponentsDeclaration = {
     readonly [key: string]: ComponentDefinition;
 };
-export declare type ComponentViews = ReadonlyArray<ComponentViewClass<ComponentDefinition>>;
-export declare function generateComponentViewClasses(declaration: ComponentsDeclaration): ComponentViews;
+export declare type StructProxyClasses = ReadonlyArray<StructProxyClass<ComponentDefinition>>;
+export declare function generateComponentStructProxies(declaration: ComponentsDeclaration): StructProxyClasses;
 //# sourceMappingURL=index.d.ts.map

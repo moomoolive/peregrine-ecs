@@ -4,7 +4,7 @@ import {
     ComponentTypedArrayConstructor,
     ComponentTokens,
     ComponentTypedArray,
-    component_viewer_encoding
+    struct_proxy_encoding
 } from "./tokenizeDef"
 import {err} from "../debugging/errors"
 
@@ -25,101 +25,63 @@ export type ComponentDefinition = {
     readonly [key: string]: Types
 }
 
-export type ComponentGetters<
+export type StructProxy<
     Definition extends ComponentDefinition
 > = {
-    [key in keyof Definition]: (index: number) => number
+    [key in keyof Definition]: number
 }
 
-export type ComponentSetters<
-    Definition extends ComponentDefinition
-> = {
-    [key in keyof Definition as `set_${key & string}`]: (
-        index: number, value: number
-    ) => void
-}
-
-export type ComponentFieldAccessors<
-    Definition extends ComponentDefinition
-> = (
-    ComponentGetters<Definition>
-    & ComponentSetters<Definition>
-)
-
-interface DatabufferReference {
+interface ComponentReference {
     databuffer: ComponentTypedArray
 }
 
-export type RawComponentView<
+export type RawStructProxy<
     Definition extends ComponentDefinition
 > = (
-    ComponentFieldAccessors<Definition>
-    & {"@@self": DatabufferReference}
+    StructProxy<Definition>
+    & {
+        "@@component": ComponentReference,
+        "@@offset": number
+    }
 )
 
 export interface ComponentViewFactory<
     Definition extends ComponentDefinition
 > {
     new(
-        self: DatabufferReference
-    ): RawComponentView<Definition>
+        component: ComponentReference,
+        offset: number
+    ): RawStructProxy<Definition>
 }
 
 function createComponentViewClass<
     Definition extends ComponentDefinition
 >(
-    {
-        fields,
-        componentSegments
-    }: ComponentTokens
+    {fields}: ComponentTokens
 ): ComponentViewFactory<Definition> {
     const BaseView = function(
-        this: RawComponentView<ComponentDefinition>,
-        self: DatabufferReference
+        this: RawStructProxy<ComponentDefinition>,
+        component: ComponentReference,
+        offset: number
     ) {
-        this[component_viewer_encoding.databuffer_ref] = self
+        this[struct_proxy_encoding.databuffer_ref] = component
+        this[struct_proxy_encoding.buffer_offset] = offset
     }
+
     const viewPrototype = {}
-    const indexesPerElement = componentSegments
-    
-    const {name: firstField} = fields[0]
-    /* ideally these setters & getters will be compiled 
-    away by a build tool -> to make code more efficent */
-    /* create getter method that maps field name
-    to index in typed array */
-    Object.defineProperty(viewPrototype, firstField, {
-        value(index: number) { 
-            return this[component_viewer_encoding.databuffer_ref].databuffer[index * indexesPerElement]
-        }
-    })
-    /* create setter method that maps field name
-    to index in typed array */
-    const firstSetterName = (
-        component_viewer_encoding.field_setter_prefix
-        + firstField
-    )
-    Object.defineProperty(viewPrototype, firstSetterName, {
-        value(index: number, value: number) { 
-            this[component_viewer_encoding.databuffer_ref].databuffer[index * indexesPerElement] = value
-        }
-    })
-
-
-    /* create rest of members */
-    for (let i = 1; i < fields.length; i++) {
-        const {name: fieldName, databufferOffset} = fields[i]
+    /* create setter & getter methods that map field names
+    to offset in typed array */
+    for (let i = 0; i < fields.length; i++) {
+        const {
+            name: fieldName, 
+            databufferOffset
+        } = fields[i]
         Object.defineProperty(viewPrototype, fieldName, {
-            value(index: number) { 
-                return this[component_viewer_encoding.databuffer_ref].databuffer[(index * indexesPerElement) + databufferOffset] 
-            }
-        })
-        const setterName = (
-            component_viewer_encoding.field_setter_prefix
-            + fieldName
-        )
-        Object.defineProperty(viewPrototype, setterName, {
-            value(index: number, value: number) { 
-                this[component_viewer_encoding.databuffer_ref].databuffer[(index * indexesPerElement) + databufferOffset] = value
+            get(this: RawStructProxy<Definition>) {
+                return this["@@component"].databuffer[this["@@offset"] + databufferOffset]
+            },
+            set(this: RawStructProxy<Definition>, value: number) {
+                this["@@component"].databuffer[this["@@offset"] + databufferOffset] = value
             }
         })
     }
@@ -127,14 +89,16 @@ function createComponentViewClass<
     return BaseView as unknown as ComponentViewFactory<Definition>
 }
 
-export class RawComponent<Definition extends ComponentDefinition> {
+export class RawComponent<
+    Definition extends ComponentDefinition
+> {
     readonly id: number
     readonly bytesPerElement: number
     readonly componentSegements: number
     readonly bytesPerField: number
     databuffer: ComponentTypedArray
     memoryConstructor: ComponentTypedArrayConstructor
-    data: RawComponentView<Definition>
+    structProxyFactory: ComponentViewFactory<Definition>
 
     constructor(
         {
@@ -144,26 +108,26 @@ export class RawComponent<Definition extends ComponentDefinition> {
             bytesPerField,
             memoryConstructor,
             id
-        }: ComponentViewClass<Definition>,
+        }: StructProxyClass<Definition>,
         databuffer: ComponentTypedArray
     ) {
         this.memoryConstructor = memoryConstructor
-        this.databuffer = databuffer
         this.bytesPerElement = bytesPerElement
         this.componentSegements = componentSegements
+        this.databuffer = databuffer
+        this.structProxyFactory = View
         this.bytesPerField = bytesPerField
-        this.data = new View(this)
         this.id = id
+    }
+
+    index(index: number): StructProxy<Definition> {
+        return new this.structProxyFactory(
+            this, index * this.componentSegements
+        )
     }
 }
 
-export type ComponentObject<
-    Definition extends ComponentDefinition
-> = {
-    [key in keyof Definition]: number
-}
-
-export class ComponentViewClass<
+export class StructProxyClass<
     Definition extends ComponentDefinition
 > {
     readonly bytesPerElement: number
@@ -198,16 +162,16 @@ export class ComponentViewClass<
     }
 }
 
-export function componentViewMacro<
+export function structProxyMacro<
     Definition extends ComponentDefinition
 >(
     id: number,
     name: string, 
     definition: Definition
-): ComponentViewClass<Definition> {
+): StructProxyClass<Definition> {
     const tokens = tokenizeComponentDef(name, definition)
     const ViewClass = createComponentViewClass<Definition>(tokens)
-    const componentViewClass = new ComponentViewClass(
+    const componentViewClass = new StructProxyClass(
         id, tokens, ViewClass
     )
     return componentViewClass
@@ -217,13 +181,13 @@ export type ComponentsDeclaration = {
     readonly [key: string]: ComponentDefinition
 }
 
-export type ComponentViews = ReadonlyArray<
-ComponentViewClass<ComponentDefinition>
+export type StructProxyClasses = ReadonlyArray<
+    StructProxyClass<ComponentDefinition>
 >
 
-export function generateComponentViewClasses(
+export function generateComponentStructProxies(
     declaration: ComponentsDeclaration
-): ComponentViews {
+): StructProxyClasses {
     const components = []
     const componentNames = Object.keys(declaration)
     if (componentNames.length < 1) {
@@ -234,7 +198,7 @@ export function generateComponentViewClasses(
         const name = componentNames[i]
         const definition = declaration[name]
         const id = i
-        const componentView = componentViewMacro(
+        const componentView = structProxyMacro(
             id, name, definition
         )
         components.push(componentView)

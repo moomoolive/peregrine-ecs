@@ -1,8 +1,8 @@
 import {
     ComponentDefinition,
     ComponentsDeclaration,
-    ComponentViews,
-    ComponentViewClass,
+    StructProxyClasses,
+    StructProxyClass,
     ComponentTokens,
 } from "../../components/index"
 import {err} from "../../debugging/errors"
@@ -57,15 +57,15 @@ export type ComponentId = number | ComponentDefinition
 
 export function debugComponent(
     component: ComponentId,
-    ComponentViews: ComponentViews
+    StructProxyClasses: StructProxyClasses
 ): ComponentDebug {
-    const componentClass = ComponentViews[component as number]
+    const componentClass = StructProxyClasses[component as number]
     const {
         name, 
         bytesPerElement,
         tokens,
         stringifiedDefinition
-    } = componentClass as unknown as ComponentViewClass<ComponentDefinition>
+    } = componentClass as unknown as StructProxyClass<ComponentDefinition>
     return {
         definition: tokens,
         bytesPerElement,

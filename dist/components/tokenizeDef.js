@@ -5,9 +5,7 @@ const errors_1 = require("../debugging/errors");
 exports.DATA_TYPES = ["num", "f64", "f32", "i32"];
 exports.MAX_FIELDS_PER_COMPONENT = 9;
 function validName(name) {
-    return (!name.startsWith("set_" /* field_setter_prefix */)
-        && !name.startsWith("@@" /* internal_field_prefix */)
-        && !name.startsWith("get_" /* field_getter_prefix */));
+    return !name.startsWith("@@" /* internal_field_prefix */);
 }
 function tokenizeComponentDef(name, definition) {
     if (typeof name !== "string" || name.length < 1) {
@@ -48,7 +46,7 @@ function tokenizeComponentDef(name, definition) {
     };
     const firstField = fields[0];
     if (!validName(firstField)) {
-        throw SyntaxError((0, errors_1.err)(`field "${firstField}" of "${name}" must conform to naming standard of js variables (excluding unicode) and cannot start with "${"set_" /* field_setter_prefix */}"`));
+        throw SyntaxError((0, errors_1.err)(`field "${firstField}" of "${name}" must conform to naming standard of js variables (excluding unicode) and cannot start with "${"@@" /* internal_field_prefix */}"`));
     }
     const firstDatatype = definition[firstField];
     if (typeof firstDatatype !== "string") {
@@ -95,11 +93,11 @@ function tokenizeComponentDef(name, definition) {
     for (let i = 1; i < fields.length; i++) {
         const targetField = fields[i];
         if (!validName(targetField)) {
-            throw SyntaxError((0, errors_1.err)(`field "${targetField}" of "${name}" must conform to naming standard of js variables and cannot start with "${"set_" /* field_setter_prefix */}"`));
+            throw SyntaxError((0, errors_1.err)(`field "${targetField}" of "${name}" cannot start with "${"@@" /* internal_field_prefix */}"`));
         }
         const datatype = definition[targetField];
         if (datatype !== firstDatatype) {
-            throw TypeError((0, errors_1.err)(`field "${targetField}" of component "${name}" is  not the same type as field "${firstField}" ("${targetField}": ${datatype}, "${firstField}": ${firstDatatype}). All component fields must all have the same type.`));
+            throw TypeError((0, errors_1.err)(`field "${targetField}" of component "${name}" is  not the same type as field "${firstField}" ("${targetField}": ${datatype}, "${firstField}": ${firstDatatype}). All component fields must have the same type.`));
         }
         tokens.fields.push({
             name: targetField,

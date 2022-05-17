@@ -34,25 +34,15 @@ export type ComponentTokens = {
 
 export const MAX_FIELDS_PER_COMPONENT = 9
 
-export const enum component_viewer_encoding {
-    field_setter_prefix = "set_",
-    /* getter prefix is reserved for future use */
-    field_getter_prefix = "get_",
+export const enum struct_proxy_encoding {
     internal_field_prefix = "@@",
-    databuffer_ref = "@@self"
+    databuffer_ref = "@@component",
+    buffer_offset = "@@offset",
 }
 
 function validName(name: string): boolean {
-    return (
-        !name.startsWith(
-            component_viewer_encoding.field_setter_prefix
-        )
-        && !name.startsWith(
-            component_viewer_encoding.internal_field_prefix
-        )
-        && !name.startsWith(
-            component_viewer_encoding.field_getter_prefix
-        )
+    return !name.startsWith(
+        struct_proxy_encoding.internal_field_prefix
     )
 }
 
@@ -64,7 +54,7 @@ export function tokenizeComponentDef(
         throw SyntaxError(err(`components must be named with a non empty-string. Component with definition ${JSON.stringify(definition)} has no name.`))
     }
     if (!validName(name)) {
-        throw SyntaxError(err(`component name "${name}" cannot start with "${component_viewer_encoding.internal_field_prefix}", as these are for ecs reserved fields.`))
+        throw SyntaxError(err(`component name "${name}" cannot start with "${struct_proxy_encoding.internal_field_prefix}", as these are for ecs reserved fields.`))
     }
     const type = typeof definition
     if (type !== "object" || definition === null || Array.isArray(definition)) {
@@ -99,7 +89,7 @@ export function tokenizeComponentDef(
     
     const firstField = fields[0]
     if (!validName(firstField)) {
-        throw SyntaxError(err(`field "${firstField}" of "${name}" must conform to naming standard of js variables (excluding unicode) and cannot start with "${component_viewer_encoding.field_setter_prefix}"`))
+        throw SyntaxError(err(`field "${firstField}" of "${name}" must conform to naming standard of js variables (excluding unicode) and cannot start with "${struct_proxy_encoding.internal_field_prefix}"`))
     }
     const firstDatatype = definition[firstField]
     if (typeof firstDatatype !== "string") {
@@ -147,11 +137,11 @@ export function tokenizeComponentDef(
     for (let i = 1; i < fields.length; i++) {
         const targetField = fields[i]
         if (!validName(targetField)) {
-            throw SyntaxError(err(`field "${targetField}" of "${name}" must conform to naming standard of js variables and cannot start with "${component_viewer_encoding.field_setter_prefix}"`))
+            throw SyntaxError(err(`field "${targetField}" of "${name}" cannot start with "${struct_proxy_encoding.internal_field_prefix}"`))
         }
         const datatype = definition[targetField]
         if (datatype !== firstDatatype) {
-            throw TypeError(err(`field "${targetField}" of component "${name}" is  not the same type as field "${firstField}" ("${targetField}": ${datatype}, "${firstField}": ${firstDatatype}). All component fields must all have the same type.`))
+            throw TypeError(err(`field "${targetField}" of component "${name}" is  not the same type as field "${firstField}" ("${targetField}": ${datatype}, "${firstField}": ${firstDatatype}). All component fields must have the same type.`))
         }
         tokens.fields.push({
             name: targetField, 

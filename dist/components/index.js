@@ -1,48 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateComponentViewClasses = exports.componentViewMacro = exports.ComponentViewClass = exports.RawComponent = exports.MAX_FIELDS_PER_COMPONENT = void 0;
+exports.generateComponentStructProxies = exports.structProxyMacro = exports.StructProxyClass = exports.RawComponent = exports.MAX_FIELDS_PER_COMPONENT = void 0;
 const tokenizeDef_1 = require("./tokenizeDef");
 const errors_1 = require("../debugging/errors");
 var tokenizeDef_2 = require("./tokenizeDef");
 Object.defineProperty(exports, "MAX_FIELDS_PER_COMPONENT", { enumerable: true, get: function () { return tokenizeDef_2.MAX_FIELDS_PER_COMPONENT; } });
-function createComponentViewClass({ fields, componentSegments }) {
-    const BaseView = function (self) {
-        this["@@self" /* databuffer_ref */] = self;
+function createComponentViewClass({ fields }) {
+    const BaseView = function (component, offset) {
+        this["@@component" /* databuffer_ref */] = component;
+        this["@@offset" /* buffer_offset */] = offset;
     };
     const viewPrototype = {};
-    const indexesPerElement = componentSegments;
-    const { name: firstField } = fields[0];
-    /* ideally these setters & getters will be compiled
-    away by a build tool -> to make code more efficent */
-    /* create getter method that maps field name
-    to index in typed array */
-    Object.defineProperty(viewPrototype, firstField, {
-        value(index) {
-            return this["@@self" /* databuffer_ref */].databuffer[index * indexesPerElement];
-        }
-    });
-    /* create setter method that maps field name
-    to index in typed array */
-    const firstSetterName = ("set_" /* field_setter_prefix */
-        + firstField);
-    Object.defineProperty(viewPrototype, firstSetterName, {
-        value(index, value) {
-            this["@@self" /* databuffer_ref */].databuffer[index * indexesPerElement] = value;
-        }
-    });
-    /* create rest of members */
-    for (let i = 1; i < fields.length; i++) {
+    /* create setter & getter methods that map field names
+    to offset in typed array */
+    for (let i = 0; i < fields.length; i++) {
         const { name: fieldName, databufferOffset } = fields[i];
         Object.defineProperty(viewPrototype, fieldName, {
-            value(index) {
-                return this["@@self" /* databuffer_ref */].databuffer[(index * indexesPerElement) + databufferOffset];
-            }
-        });
-        const setterName = ("set_" /* field_setter_prefix */
-            + fieldName);
-        Object.defineProperty(viewPrototype, setterName, {
-            value(index, value) {
-                this["@@self" /* databuffer_ref */].databuffer[(index * indexesPerElement) + databufferOffset] = value;
+            get() {
+                return this["@@component"].databuffer[this["@@offset"] + databufferOffset];
+            },
+            set(value) {
+                this["@@component"].databuffer[this["@@offset"] + databufferOffset] = value;
             }
         });
     }
@@ -52,16 +30,19 @@ function createComponentViewClass({ fields, componentSegments }) {
 class RawComponent {
     constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }, databuffer) {
         this.memoryConstructor = memoryConstructor;
-        this.databuffer = databuffer;
         this.bytesPerElement = bytesPerElement;
         this.componentSegements = componentSegements;
+        this.databuffer = databuffer;
+        this.structProxyFactory = View;
         this.bytesPerField = bytesPerField;
-        this.data = new View(this);
         this.id = id;
+    }
+    index(index) {
+        return new this.structProxyFactory(this, index * this.componentSegements);
     }
 }
 exports.RawComponent = RawComponent;
-class ComponentViewClass {
+class StructProxyClass {
     constructor(id, tokens, View) {
         const { bytesPerElement, stringifiedDefinition, componentName, componentSegments, bytesPerField, memoryConstructor } = tokens;
         this.View = View;
@@ -75,15 +56,15 @@ class ComponentViewClass {
         this.id = id;
     }
 }
-exports.ComponentViewClass = ComponentViewClass;
-function componentViewMacro(id, name, definition) {
+exports.StructProxyClass = StructProxyClass;
+function structProxyMacro(id, name, definition) {
     const tokens = (0, tokenizeDef_1.tokenizeComponentDef)(name, definition);
     const ViewClass = createComponentViewClass(tokens);
-    const componentViewClass = new ComponentViewClass(id, tokens, ViewClass);
+    const componentViewClass = new StructProxyClass(id, tokens, ViewClass);
     return componentViewClass;
 }
-exports.componentViewMacro = componentViewMacro;
-function generateComponentViewClasses(declaration) {
+exports.structProxyMacro = structProxyMacro;
+function generateComponentStructProxies(declaration) {
     const components = [];
     const componentNames = Object.keys(declaration);
     if (componentNames.length < 1) {
@@ -93,9 +74,9 @@ function generateComponentViewClasses(declaration) {
         const name = componentNames[i];
         const definition = declaration[name];
         const id = i;
-        const componentView = componentViewMacro(id, name, definition);
+        const componentView = structProxyMacro(id, name, definition);
         components.push(componentView);
     }
     return components;
 }
-exports.generateComponentViewClasses = generateComponentViewClasses;
+exports.generateComponentStructProxies = generateComponentStructProxies;

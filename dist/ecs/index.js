@@ -31,7 +31,7 @@ class BaseEcs {
         this.tables = [];
         this.tableAllocator = (0, index_4.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
         this.hashToTableIndex = new Map();
-        this.componentViews = (0, index_3.generateComponentViewClasses)(JSON.parse(stringifiedComponentDeclaration));
+        this.componentViews = (0, index_3.generateComponentStructProxies)(JSON.parse(stringifiedComponentDeclaration));
         this.debugger = new debugger_1.Debugger(this.componentViews, stringifiedComponentDeclaration);
         this._mutator = new mutator_1.EntityMutator(this.entityRecords, this.tables, this._mutatorDatabuffer, this.hashToTableIndex, this.tableAllocator, this.componentViews);
     }

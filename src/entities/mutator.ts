@@ -1,6 +1,6 @@
 import {
     ComponentsDeclaration,
-    ComponentViews,
+    StructProxyClasses,
     RawComponent,
 } from "../components/index"
 import {
@@ -45,7 +45,7 @@ export function findTableOrCreate(
     tagId: number,
     tables: Table[],
     allocator: Allocator,
-    componentViews: ComponentViews
+    componentViews: StructProxyClasses
 ): Table {
     const {
         hash, 
@@ -156,7 +156,7 @@ export function addTagComponent(
     tables: Table[],
     tableHashes: Map<string, number>,
     allocator: Allocator,
-    componentViews: ComponentViews
+    componentViews: StructProxyClasses
 ): MutatorStatusCode {
     const {table: tableId, row} = records.index(entityId)
     if (row === record_encoding.unintialized) {
@@ -187,7 +187,7 @@ export class EntityMutator<
     databuffer: Float64Array
     tableHashes: Map<string, number>
     componentAllocator: Allocator
-    componentClasses: ComponentViews
+    componentClasses: StructProxyClasses
 
     constructor(
         records: EntityRecords,
@@ -195,7 +195,7 @@ export class EntityMutator<
         databuffer: Float64Array,
         tableHashes: Map<string, number>,
         componentAllocator: Allocator,
-        componentClasses: ComponentViews
+        componentClasses: StructProxyClasses
     ) {
         this.records = records
         this.tables = tables

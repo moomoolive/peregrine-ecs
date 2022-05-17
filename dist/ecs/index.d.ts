@@ -1,7 +1,7 @@
 import { Table } from "../table/index";
 import { EntityRecords } from "../entities/index";
 import { ComponentRegistry } from "../dataStructures/registries/index";
-import { ComponentsDeclaration, ComponentViews } from "../components/index";
+import { ComponentsDeclaration, StructProxyClasses } from "../components/index";
 import { Debugger } from "./debugger";
 import { MutatorStatusCode } from "../entities/mutator";
 import { Allocator } from "../allocator/index";
@@ -14,7 +14,7 @@ export declare class BaseEcs {
     protected tableAllocator: Allocator;
     protected _mutatorDatabuffer: Float64Array;
     protected hashToTableIndex: Map<string, number>;
-    protected readonly componentViews: ComponentViews;
+    protected readonly componentViews: StructProxyClasses;
     readonly debugger: Debugger;
     private _mutator;
     constructor(params: {

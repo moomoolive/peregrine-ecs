@@ -25,8 +25,8 @@ function componentRegistryMacro(declartion) {
     return Object.freeze(registry);
 }
 exports.componentRegistryMacro = componentRegistryMacro;
-function debugComponent(component, ComponentViews) {
-    const componentClass = ComponentViews[component];
+function debugComponent(component, StructProxyClasses) {
+    const componentClass = StructProxyClasses[component];
     const { name, bytesPerElement, tokens, stringifiedDefinition } = componentClass;
     return {
         definition: tokens,
