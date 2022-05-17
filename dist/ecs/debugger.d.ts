@@ -1,13 +1,11 @@
 import { ComponentId, ComponentDebug } from "../dataStructures/registries/index";
-import { StructProxyClasses } from "../components/index";
-export declare class Debugger {
-    readonly componentClasses: StructProxyClasses;
-    readonly componentDebugInfo: ComponentDebug[];
-    protected readonly _stringifiedComponentDeclaration: string;
-    constructor(componentClasses: StructProxyClasses, stringifiedComponentDeclaration: string);
+import { StructProxyClasses, ComponentsDeclaration } from "../components/index";
+export declare class Debugger<Components extends ComponentsDeclaration> {
+    private componentDebugInfo;
+    readonly schemas: Components;
+    constructor(componentProxyStructClasses: StructProxyClasses, components: Components);
     get componentCount(): number;
-    get stringifiedComponentDeclaration(): string;
     componentInfo(componentId: ComponentId): ComponentDebug;
-    allComponents(): ComponentDebug[];
+    allComponents(): ReadonlyArray<ComponentDebug>;
 }
 //# sourceMappingURL=debugger.d.ts.map

@@ -29,6 +29,16 @@ describe("component registry", () => {
             standard_entity.reserved_end + 1)
     })
 
+    it("component ids should ascend alphabetically", () => {
+        const {c, b, a} = componentRegistryMacro({
+            c: {val: "i32"},
+            b: {val: "i32"},
+            a: {val: "i32"},
+        })
+        expect(c).toBeGreaterThan(b as number)
+        expect(b).toBeGreaterThan(a as number)
+    })
+
     it("should throw error if attempting to set key", () => {
         const components = componentRegistryMacro({
             likeability: {x: "i32"},

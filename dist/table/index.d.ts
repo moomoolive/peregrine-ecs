@@ -1,9 +1,12 @@
 import { Allocator } from "../allocator/index";
 import { RawComponent, ComponentDefinition } from "../components/index";
 export declare const enum table_encoding {
-    meta_size = 2,
+    meta_size = 5,
     length_index = 0,
-    capacity_index = 1
+    capacity_index = 1,
+    component_buffer_ptrs_ptr = 2,
+    entities_ptr = 3,
+    component_ids_ptr = 4
 }
 export declare const enum table_defaults {
     initial_capacity = 1,
@@ -26,9 +29,15 @@ export declare class Table {
     set length(newLength: number);
     get capacity(): number;
     set capacity(newCapacity: number);
-    ensureSize(additional: number, allocator: Allocator): void;
+    get componentBufferPtrsPtr(): number;
+    set componentBufferPtrsPtr(newPtr: number);
+    get entitiesPtr(): number;
+    set entitiesPtr(newPtr: number);
+    get componentIdsPtr(): number;
+    set componentIdsPtr(newPtr: number);
+    ensureSize(additional: number, allocator: Allocator): number;
     private resizeComponents;
-    reclaimMemory(allocator: Allocator): void;
+    reclaimMemory(allocator: Allocator): number;
 }
 export declare const enum table_hashes {
     tag_component_divider = "-",

@@ -9,21 +9,25 @@ exports.computeNewTableHashAdditionalTag = exports.Table = void 0;
 // archetype graph implemenation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/table_graph.c#L192
 class Table {
     constructor(id, hash, componentIds, components, meta, componentBufferPtrs, entities) {
-        this.meta = meta;
         this.id = id;
         this.hash = hash;
-        this.componentIds = componentIds;
-        this.componentBufferPtrs = componentBufferPtrs;
-        this.components = components;
-        this.addEdges = new Map();
-        this.removeEdges = new Map();
+        this.meta = meta;
+        this.capacity = 1 /* initial_capacity */;
+        this.entitiesPtr = entities.byteOffset;
         this.entities = entities;
+        this.componentBufferPtrs = componentBufferPtrs;
+        this.componentBufferPtrsPtr = componentBufferPtrs.byteOffset;
+        this.componentIds = componentIds;
+        this.componentIdsPtr = componentIds.byteOffset;
         const indexes = new Map();
         for (let i = 0; i < componentIds.length; i++) {
             const id = componentIds[i];
             indexes.set(id, i);
         }
         this.componentIndexes = indexes;
+        this.components = components;
+        this.addEdges = new Map();
+        this.removeEdges = new Map();
     }
     get length() {
         return this.meta[0 /* length_index */];
@@ -37,14 +41,34 @@ class Table {
     set capacity(newCapacity) {
         this.meta[1 /* capacity_index */] = newCapacity;
     }
+    get componentBufferPtrsPtr() {
+        return this.meta[2 /* component_buffer_ptrs_ptr */];
+    }
+    set componentBufferPtrsPtr(newPtr) {
+        this.meta[2 /* component_buffer_ptrs_ptr */] = newPtr;
+    }
+    get entitiesPtr() {
+        return this.meta[3 /* entities_ptr */];
+    }
+    set entitiesPtr(newPtr) {
+        this.meta[3 /* entities_ptr */] = newPtr;
+    }
+    get componentIdsPtr() {
+        return this.meta[4 /* component_ids_ptr */];
+    }
+    set componentIdsPtr(newPtr) {
+        this.meta[4 /* component_ids_ptr */] = newPtr;
+    }
     ensureSize(additional, allocator) {
+        const len = this.length;
         const capacity = this.capacity;
-        if (this.length + additional <= capacity) {
-            return;
+        if (len + additional <= capacity) {
+            return len;
         }
         const targetCapacity = (capacity
             * 2 /* resize_factor */);
         this.resizeComponents(targetCapacity, allocator);
+        return len;
     }
     resizeComponents(targetCapacity, allocator) {
         const components = this.components;
@@ -56,15 +80,21 @@ class Table {
             component.databuffer = new component.memoryConstructor(allocator.buf, newPtr, targetCapacity);
             componentPtrs[i] = newPtr;
         }
+        const oldEntitiesPtr = this.entitiesPtr;
+        const newEntitiesPtr = allocator.realloc(oldEntitiesPtr, 4 /* i32 */ * targetCapacity);
+        this.entities = new Int32Array(allocator.buf, newEntitiesPtr, targetCapacity);
+        this.capacity = targetCapacity;
+        this.entitiesPtr = this.entities.byteOffset;
     }
     reclaimMemory(allocator) {
         const len = this.length;
         const capacity = this.capacity;
         if (capacity - len < 50 /* memory_reclaimation_limit */) {
-            return;
+            return len;
         }
         const targetCapacity = (len + 50 /* memory_reclaimation_limit */);
         this.resizeComponents(targetCapacity, allocator);
+        return len;
     }
 }
 exports.Table = Table;

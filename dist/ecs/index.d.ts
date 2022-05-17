@@ -1,40 +1,30 @@
-import { Table } from "../table/index";
-import { EntityRecords } from "../entities/index";
 import { ComponentRegistry } from "../dataStructures/registries/index";
-import { ComponentsDeclaration, StructProxyClasses } from "../components/index";
+import { ComponentsDeclaration } from "../components/index";
 import { Debugger } from "./debugger";
 import { MutatorStatusCode } from "../entities/mutator";
-import { Allocator } from "../allocator/index";
 export declare type EcsMode = "development" | "production";
-export declare class BaseEcs {
-    protected unusedEntities: Int32Array;
-    protected unusedEntityCount: number;
-    protected entityRecords: EntityRecords;
-    protected tables: Table[];
-    protected tableAllocator: Allocator;
-    protected _mutatorDatabuffer: Float64Array;
-    protected hashToTableIndex: Map<string, number>;
-    protected readonly componentViews: StructProxyClasses;
-    readonly debugger: Debugger;
-    private _mutator;
+export declare type EcsOptions = {
+    maxEntities: number;
+    allocatorInitialMemoryMB: number;
+    mode: "development" | "production";
+};
+export declare class Ecs<Components extends ComponentsDeclaration> {
+    private unusedEntities;
+    private unusedEntityCount;
+    private entityRecords;
+    private tables;
+    private tableAllocator;
+    private hashToTableIndex;
+    private readonly componentStructProxies;
+    private largestEntityId;
+    readonly debug: Debugger<Components>;
+    readonly components: ComponentRegistry<Components>;
     constructor(params: {
-        maxEntities: number;
-        allocatorInitialMemoryMB: number;
-        stringifiedComponentDeclaration: string;
-        mode: EcsMode;
-    });
-    init(): Promise<void>;
+        readonly components: Components;
+    }, { maxEntities, allocatorInitialMemoryMB, mode }?: Partial<EcsOptions>);
+    get entityCount(): number;
+    private addToBlankTable;
+    newEntity(): number;
     addTag(entityId: number, tagId: number): MutatorStatusCode;
 }
-export declare type Ecs<Components extends ComponentsDeclaration> = (BaseEcs & {
-    readonly components: ComponentRegistry<Components>;
-    readonly componentSchemas: Components;
-});
-export declare function defineEcs<Components extends ComponentsDeclaration>(params: {
-    readonly components: Components;
-}, { maxEntities, allocatorInitialMemoryMB, mode }?: {
-    maxEntities?: number;
-    allocatorInitialMemoryMB?: number;
-    mode?: EcsMode;
-}): Ecs<Components>;
 //# sourceMappingURL=index.d.ts.map

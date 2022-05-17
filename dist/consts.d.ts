@@ -5,7 +5,4 @@ export declare const enum bytes {
     per_kilobyte = 1024,
     per_megabyte = 1048576
 }
-export declare const enum entities {
-    limit = 500000
-}
 //# sourceMappingURL=consts.d.ts.map

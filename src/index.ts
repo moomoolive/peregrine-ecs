@@ -1,1 +1,1 @@
-export {defineEcs} from "./ecs/index"
+export {Ecs} from "./ecs/index"

@@ -7,8 +7,8 @@ exports.ECS_ID_TABLE_HASH = "id-01";
 exports.ECS_COMPONENT_TABLE_HASH = "comp-01";
 function ecsIdTable(allocator, records) {
     const componentIds = (0, index_2.i32Malloc)(allocator, 2);
-    const newTableMeta = (0, index_2.i32Malloc)(allocator, 2 /* meta_size */);
-    const entities = (0, index_2.i32Malloc)(allocator, 5);
+    const newTableMeta = (0, index_2.i32Malloc)(allocator, 5 /* meta_size */);
+    const entities = (0, index_2.i32Malloc)(allocator, 50 /* reserved_count */);
     entities[0] = 0 /* ecs_id */;
     entities[1] = 1 /* ecs_component */;
     const entity = records.index(0 /* ecs_id */);
@@ -18,7 +18,7 @@ function ecsIdTable(allocator, records) {
 }
 function ecsComponentTable(allocator, records, componentCount) {
     const componentIds = (0, index_2.i32Malloc)(allocator, 2);
-    const newTableMeta = (0, index_2.i32Malloc)(allocator, 2 /* meta_size */);
+    const newTableMeta = (0, index_2.i32Malloc)(allocator, 5 /* meta_size */);
     const entities = (0, index_2.i32Malloc)(allocator, 50 /* reserved_count */ + componentCount);
     entities[0] = 0 /* ecs_id */;
     entities[1] = 1 /* ecs_component */;

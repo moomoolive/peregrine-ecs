@@ -2,11 +2,14 @@ import {
     Table
 } from "../table/index"
 import {
-    createDefaultTables
+    createDefaultTables,
+    std_tables
 } from "../table/standardTables"
 import {
     EntityRecords,
-    record_encoding
+    record_encoding,
+    entities_encoding,
+    standard_entity
 } from "../entities/index"
 import {
     componentRegistryMacro,
@@ -19,98 +22,116 @@ import {
 } from "../components/index"
 import {Debugger} from "./debugger"
 import {
-    EntityMutator,
-    encoding as MutatorEncoding,
     mutation_status,
     MutatorStatusCode,
     findTableOrCreate,
     shiftComponentDataAligned
 } from "../entities/mutator"
 import {
-    createSharedInt32Array, 
-    createSharedFloat64Array
+    createSharedInt32Array,
 } from "../dataStructures/sharedArrays"
-import {entities, bytes} from "../consts"
+import {bytes} from "../consts"
 import {Allocator, createComponentAllocator} from "../allocator/index"
 import {MAX_FIELDS_PER_COMPONENT} from "../components/tokenizeDef"
-import {sleep} from "../utils"
 
 export type EcsMode = "development" | "production"
 
-export class BaseEcs {
-    protected unusedEntities: Int32Array
-    protected unusedEntityCount: number
+export type EcsOptions = {
+    maxEntities: number,
+    allocatorInitialMemoryMB: number
+    mode: "development" | "production"
+}
 
-    protected entityRecords: EntityRecords
-    protected tables: Table[]
-    protected tableAllocator: Allocator
-    protected _mutatorDatabuffer: Float64Array
-    protected hashToTableIndex: Map<string, number>
+export class Ecs<
+    Components extends ComponentsDeclaration
+> {
+    private unusedEntities: Int32Array
+    private unusedEntityCount: number
 
-    protected readonly componentViews: StructProxyClasses
+    private entityRecords: EntityRecords
+    private tables: Table[]
+    private tableAllocator: Allocator
+    private hashToTableIndex: Map<string, number>
 
-    readonly debugger: Debugger
-    private _mutator: EntityMutator<ComponentsDeclaration>
+    private readonly componentStructProxies: StructProxyClasses
+
+    private largestEntityId: number
+
+    readonly debug: Debugger<Components>
+    readonly components: ComponentRegistry<Components>
 
     constructor(params: {
-        maxEntities: number,
-        allocatorInitialMemoryMB: number,
-        stringifiedComponentDeclaration: string,
-        mode: EcsMode
-    }) {
-        const {
-            maxEntities,
-            allocatorInitialMemoryMB,
-            stringifiedComponentDeclaration
-        } = params
-        
+        readonly components: Components
+    },
+    {
+        maxEntities = entities_encoding.limit,
+        allocatorInitialMemoryMB = 50,
+        mode = "development"
+    }: Partial<EcsOptions> = {}) {
+        const {components} = params
+
+        this.components = componentRegistryMacro(components)
         this.unusedEntities = createSharedInt32Array(maxEntities)
         this.unusedEntityCount = 0
         
-        this.entityRecords = new EntityRecords(maxEntities)
-        this._mutatorDatabuffer = createSharedFloat64Array(
-            (10 * (
-                MAX_FIELDS_PER_COMPONENT 
-                + MutatorEncoding.component_id_size
-            )) + MutatorEncoding.entity_id_size
+        this.entityRecords = new EntityRecords(
+            maxEntities > entities_encoding.minimum ?
+                maxEntities
+                : entities_encoding.minimum
         )
-        this.tables = []
+        
         this.tableAllocator = createComponentAllocator(
             bytes.per_megabyte * allocatorInitialMemoryMB, 
             false
         )
+
         this.hashToTableIndex = new Map()
 
-        this.componentViews = generateComponentStructProxies(
-            JSON.parse(stringifiedComponentDeclaration)
+        this.componentStructProxies = generateComponentStructProxies(
+            components
         )
 
-        this.debugger = new Debugger(
-            this.componentViews,
-            stringifiedComponentDeclaration
-        )
-        this._mutator = new EntityMutator(
-            this.entityRecords,
-            this.tables,
-            this._mutatorDatabuffer,
-            this.hashToTableIndex,
-            this.tableAllocator,
-            this.componentViews
-        )
-    }
+        this.largestEntityId = standard_entity.start_of_user_defined_entities
 
-    async init() {
-        this.entityRecords.records.fill(
-            record_encoding.unintialized
+        this.debug = new Debugger(
+            this.componentStructProxies,
+            components
         )
-        await sleep(0)
-        this.tables.push(
+
+        this.entityRecords.init()
+        this.tables = [
             ...createDefaultTables(
                 this.tableAllocator,
                 this.entityRecords,
-                this.debugger.componentCount
+                this.componentStructProxies.length
             )
+        ]
+    }
+
+    get entityCount(): number {
+        return this.largestEntityId + 1
+    }
+
+    private addToBlankTable(id: number) {
+        const blankTable = this.tables[std_tables.ecs_id]
+        const length = blankTable.ensureSize(1, this.tableAllocator)
+        const row = length - 1
+        blankTable.entities[row] = id
+        this.entityRecords.allocateEntity(
+            id, row, standard_entity.ecs_id
         )
+    }
+
+    newEntity(): number {
+        if (this.unusedEntityCount < 1) {
+            const id = this.largestEntityId++
+            this.addToBlankTable(id)
+            return id
+        }
+        const index = --this.unusedEntityCount
+        const id = this.unusedEntities[index]
+        this.addToBlankTable(this.unusedEntities[index])
+        return id
     }
 
     addTag(entityId: number, tagId: number): MutatorStatusCode {
@@ -124,12 +145,12 @@ export class BaseEcs {
         if (table.componentIndexes.has(tagId)) {
             return mutation_status.tag_exists
         }
-        const graphTable = table.addEdges.get(tagId)
+        const targetTableId = table.addEdges.get(tagId)
         const allocator = this.tableAllocator
-        const targetTable = graphTable !== undefined ?
-            tables[graphTable] : findTableOrCreate(
+        const targetTable = targetTableId !== undefined ?
+            tables[targetTableId] : findTableOrCreate(
                 this.hashToTableIndex, table, tagId,
-                tables, allocator, this.componentViews
+                tables, allocator, this.componentStructProxies
             )
         const newTable = targetTable.id
         // proceed to move entity data from current table to 
@@ -141,61 +162,4 @@ export class BaseEcs {
         entity.row = newRow
         return mutation_status.successful_update
     }
-}
-
-export type Ecs<
-    Components extends ComponentsDeclaration
-> = (
-    BaseEcs
-    & {
-        readonly components: ComponentRegistry<Components>
-        readonly componentSchemas: Components
-    }
-)
-
-export function defineEcs<
-    Components extends ComponentsDeclaration
->(
-    params: {
-        readonly components: Components
-    },
-    {
-        maxEntities = entities.limit,
-        allocatorInitialMemoryMB = 50,
-        mode = "development"
-    }: {
-        maxEntities?: number,
-        allocatorInitialMemoryMB?: number
-        mode?: EcsMode
-    } = {}
-): Ecs<Components> {
-    const {
-        components: componentDeclaration,
-    } = params
-    const componentRegistry = componentRegistryMacro(componentDeclaration)
-    const frozenDeclartion = Object.freeze(
-        JSON.parse(JSON.stringify(componentDeclaration))
-    )
-    
-    class GeneratedEcs extends BaseEcs {
-        readonly components: ComponentRegistry<Components>
-        
-        constructor() {
-            super({
-                maxEntities,
-                allocatorInitialMemoryMB,
-                stringifiedComponentDeclaration: JSON.stringify(
-                    componentDeclaration
-                ),
-                mode
-            })
-            this.components = componentRegistry
-        }
-
-        get componentSchemas() {
-            return frozenDeclartion
-        }
-    }
-    
-    return new GeneratedEcs()
 }

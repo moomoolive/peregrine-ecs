@@ -17,6 +17,15 @@ const index_1 = require("./index");
         (0, globals_1.expect)(components2.position).toBe(50 /* reserved_end */ + 0);
         (0, globals_1.expect)(components2.velocity).toBe(50 /* reserved_end */ + 1);
     });
+    (0, globals_1.it)("component ids should ascend alphabetically", () => {
+        const { c, b, a } = (0, index_1.componentRegistryMacro)({
+            c: { val: "i32" },
+            b: { val: "i32" },
+            a: { val: "i32" },
+        });
+        (0, globals_1.expect)(c).toBeGreaterThan(b);
+        (0, globals_1.expect)(b).toBeGreaterThan(a);
+    });
     (0, globals_1.it)("should throw error if attempting to set key", () => {
         const components = (0, index_1.componentRegistryMacro)({
             likeability: { x: "i32" },

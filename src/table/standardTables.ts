@@ -13,6 +13,7 @@ import {
 
 export const enum std_tables {
     count = 2,
+    
     ecs_id = 0,
     ecs_component = 1,
 }
@@ -29,7 +30,10 @@ function ecsIdTable(
         allocator, 
         table_encoding.meta_size
     )
-    const entities = i32Malloc(allocator, 5)
+    const entities = i32Malloc(
+        allocator, 
+        standard_entity.reserved_count
+    )
     entities[0] = standard_entity.ecs_id
     entities[1] = standard_entity.ecs_component
     const entity = records.index(standard_entity.ecs_id)

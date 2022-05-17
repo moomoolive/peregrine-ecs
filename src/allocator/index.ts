@@ -1,9 +1,4 @@
-/* 
-this import is a slightly modified fork of the 
-awesome "@thi.ng/malloc" npm package (v6.1.6).
-Check out the docs inside the library: /lib/malloc/readme.md
-*/
-import {MemPool, MemPoolStats} from "./lib/malloc/index"
+import {MemPool, MemPoolStats} from "@thi.ng/malloc"
 import {bytes} from "../consts"
 
 export function createComponentAllocator(

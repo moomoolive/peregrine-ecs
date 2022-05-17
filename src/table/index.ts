@@ -1,15 +1,21 @@
-import {Allocator} from "../allocator/index"
+import {
+    Allocator
+} from "../allocator/index"
 import {
     RawComponent, 
     ComponentDefinition
 } from "../components/index"
+import {bytes} from "../consts"
 
 export const enum table_encoding {
-    meta_size = 2,
+    meta_size = 5,
 
     /* metadata members start */
     length_index = 0,
     capacity_index = 1,
+    component_buffer_ptrs_ptr = 2,
+    entities_ptr = 3,
+    component_ids_ptr = 4
     /* metadata members end */
 }
 
@@ -46,22 +52,30 @@ export class Table {
         componentBufferPtrs: Int32Array,
         entities: Int32Array
     ) {
-        this.meta = meta
         this.id = id
         this.hash = hash
-        this.componentIds = componentIds
-        this.componentBufferPtrs = componentBufferPtrs
-        this.components = components
-        this.addEdges = new Map()
-        this.removeEdges = new Map()
-        this.entities = entities
 
+        this.meta = meta
+        this.capacity = table_defaults.initial_capacity
+        
+        this.entitiesPtr = entities.byteOffset
+        this.entities = entities
+        
+        this.componentBufferPtrs = componentBufferPtrs
+        this.componentBufferPtrsPtr = componentBufferPtrs.byteOffset
+
+        this.componentIds = componentIds
+        this.componentIdsPtr = componentIds.byteOffset
         const indexes = new Map()
         for (let i = 0; i < componentIds.length; i++) {
             const id = componentIds[i]
             indexes.set(id, i)
         }
         this.componentIndexes = indexes
+
+        this.components = components
+        this.addEdges = new Map()
+        this.removeEdges = new Map()
     }
 
     get length(): number {
@@ -80,19 +94,45 @@ export class Table {
         this.meta[table_encoding.capacity_index] = newCapacity
     }
 
+    get componentBufferPtrsPtr(): number{
+        return this.meta[table_encoding.component_buffer_ptrs_ptr]
+    }
+
+    set componentBufferPtrsPtr(newPtr: number) {
+        this.meta[table_encoding.component_buffer_ptrs_ptr] = newPtr
+    }
+
+    get entitiesPtr(): number{
+        return this.meta[table_encoding.entities_ptr]
+    }
+
+    set entitiesPtr(newPtr: number) {
+        this.meta[table_encoding.entities_ptr] = newPtr
+    }
+
+    get componentIdsPtr(): number{
+        return this.meta[table_encoding.component_ids_ptr]
+    }
+
+    set componentIdsPtr(newPtr: number) {
+        this.meta[table_encoding.component_ids_ptr] = newPtr
+    }
+
     ensureSize(
         additional: number, 
         allocator: Allocator
-    ) {
+    ): number {
+        const len = this.length
         const capacity = this.capacity
-        if (this.length + additional <= capacity) {
-            return
+        if (len + additional <= capacity) {
+            return len
         }
         const targetCapacity = (
             capacity 
             * table_defaults.resize_factor
         )
         this.resizeComponents(targetCapacity, allocator)
+        return len
     }
 
     private resizeComponents(
@@ -112,18 +152,28 @@ export class Table {
             )
             componentPtrs[i] = newPtr
         }
+        const oldEntitiesPtr = this.entitiesPtr
+        const newEntitiesPtr = allocator.realloc(
+            oldEntitiesPtr, bytes.i32 * targetCapacity
+        )
+        this.entities = new Int32Array(
+            allocator.buf, newEntitiesPtr, targetCapacity
+        )
+        this.capacity = targetCapacity
+        this.entitiesPtr = this.entities.byteOffset
     }
 
-    reclaimMemory(allocator: Allocator) {
+    reclaimMemory(allocator: Allocator): number {
         const len = this.length
         const capacity = this.capacity
         if (capacity - len < table_defaults.memory_reclaimation_limit) {
-            return
+            return len
         }
         const targetCapacity = (
             len + table_defaults.memory_reclaimation_limit
         )
         this.resizeComponents(targetCapacity, allocator)
+        return len
     }
 }
 

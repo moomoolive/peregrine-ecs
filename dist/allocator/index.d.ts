@@ -1,4 +1,4 @@
-import { MemPool, MemPoolStats } from "./lib/malloc/index";
+import { MemPool, MemPoolStats } from "@thi.ng/malloc";
 export declare function createComponentAllocator(byteSize: number, workerThread: boolean): MemPool;
 export declare const enum allocator_encoding {
     failed_to_allocate = 0
