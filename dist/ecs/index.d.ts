@@ -1,6 +1,6 @@
-import { ComponentRegistry } from "../dataStructures/registries/index";
-import { ComponentsDeclaration } from "../components/index";
-import { Debugger } from "./debugger";
+import { ComponentRegistry, registry_encoding } from "../dataStructures/registries/index";
+import { ComponentsDeclaration, struct_proxy_encoding } from "../components/index";
+import { ComponentDebug, ComponentId } from "./debugging";
 import { MutatorStatusCode } from "../entities/mutator";
 export declare type EcsMode = "development" | "production";
 export declare type EcsOptions = {
@@ -9,20 +9,27 @@ export declare type EcsOptions = {
     mode: "development" | "production";
 };
 export declare class Ecs<Components extends ComponentsDeclaration> {
+    static readonly MAX_FIELDS_PER_COMPONENT = struct_proxy_encoding.max_fields;
+    static readonly MAX_COMPONENTS = registry_encoding.max_components;
     private unusedEntities;
     private unusedEntityCount;
+    private largestEntityId;
     private entityRecords;
     private tables;
     private tableAllocator;
     private hashToTableIndex;
-    private readonly componentStructProxies;
-    private largestEntityId;
-    readonly debug: Debugger<Components>;
     readonly components: ComponentRegistry<Components>;
+    private readonly componentStructProxies;
+    private componentDebugInfo;
+    readonly schemas: Components;
     constructor(params: {
         readonly components: Components;
     }, { maxEntities, allocatorInitialMemoryMB, mode }?: Partial<EcsOptions>);
     get entityCount(): number;
+    get preciseEntityCount(): number;
+    get componentCount(): number;
+    allComponentDebugInfo(): ComponentDebug[];
+    debugComponent(componentId: ComponentId): ComponentDebug;
     private addToBlankTable;
     newEntity(): number;
     addTag(entityId: number, tagId: number): MutatorStatusCode;

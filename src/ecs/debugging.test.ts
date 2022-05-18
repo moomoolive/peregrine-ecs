@@ -12,38 +12,53 @@ describe("component debugging", () => {
     })
     
     it("correct number of debug logs should be generated for inputted components", () => {
-        expect(ecs.debug.componentCount).toBe(4)
-        const comps = ecs.debug.allComponents()
+        expect(ecs.componentCount).toBe(4)
+        const comps = ecs.allComponentDebugInfo()
         {
             const {
-                id, name,
+                name,
                 bytesPerElement,
                 stringifiedDef,
-            } = comps[1]
+            } = comps.find(({name}) => name === "controller")!
             expect(name).toBe("controller")
             expect(bytesPerElement).toBe(8)
-            const {controller} = ecs.debug.schemas
+            const {controller} = ecs.schemas
             expect(JSON.parse(stringifiedDef)).toEqual(controller)
-            /* ordering of keys is different */
-            expect(Object.keys(stringifiedDef)).not.toEqual(
-                Object.keys(controller)
-            )
         }
         {
             const {
                 name,
                 bytesPerElement,
                 stringifiedDef,
-            } = comps[3]
+            } = comps.find(({name}) => name === "playerType")!
             expect(name).toBe("playerType")
             expect(bytesPerElement).toBe(4)
-            const {playerType} = ecs.debug.schemas
+            const {playerType} = ecs.schemas
             expect(JSON.parse(stringifiedDef)).toEqual(playerType)
         }
     })
 
-    it("component schemas should be immutable", () => {
-        // @ts-ignore
-        expect(() => ecs.debug.schemas.controller = {}).toThrow()
+    it("should be able to debug component  through it's registry key", () => {
+        const {components, schemas} = ecs
+        {
+        const {
+            name, 
+            stringifiedDef
+        } = ecs.debugComponent(components.controller)
+        expect(name).toBe("controller")
+        expect(JSON.parse(stringifiedDef)).toEqual(
+            schemas.controller
+        )
+        }
+        {
+            const {
+                name, 
+                stringifiedDef
+            } = ecs.debugComponent(components.inventory)
+            expect(name).toBe("inventory")
+            expect(JSON.parse(stringifiedDef)).toEqual(
+                schemas.inventory
+            )
+        }
     })
 })

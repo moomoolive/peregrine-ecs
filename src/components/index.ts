@@ -7,9 +7,10 @@ import {
     struct_proxy_encoding
 } from "./tokenizeDef"
 import {err} from "../debugging/errors"
+import {standard_entity} from "../entities/index"
 
 export type {Types, ComponentTokens} from "./tokenizeDef"
-export {MAX_FIELDS_PER_COMPONENT} from "./tokenizeDef"
+export {struct_proxy_encoding} from "./tokenizeDef"
 
 export type i32<Type extends Types> = Type extends "i32" ? Int32Array : never
 export type f32<Type extends Types> = Type extends "f32" ? Float32Array : never
@@ -185,23 +186,40 @@ export type StructProxyClasses = ReadonlyArray<
     StructProxyClass<ComponentDefinition>
 >
 
+export function computeComponentId(offset: number): number {
+    return offset + standard_entity.reserved_end
+}
+
+export function deserializeComponentId(id: number): number {
+    return id - standard_entity.reserved_count
+}
+
+export function orderComponentsByName(
+    declaration: ComponentsDeclaration
+): string[] {
+    /* components are order alphabetically */
+    return Object.keys(declaration).sort()
+}
+
 export function generateComponentStructProxies(
     declaration: ComponentsDeclaration
-): StructProxyClasses {
-    const components = []
-    const componentNames = Object.keys(declaration)
+): {
+    proxyClasses: StructProxyClasses,
+    orderedComponentNames: string[]
+} {
+    const componentNames = orderComponentsByName(declaration)
     if (componentNames.length < 1) {
         throw SyntaxError(err(`you must declare at least one component`))
     }
-
+    const proxyClasses = []
     for (let i = 0; i < componentNames.length; i++) {
         const name = componentNames[i]
         const definition = declaration[name]
-        const id = i
-        const componentView = structProxyMacro(
+        const id = computeComponentId(i)
+        const proxyStructClass = structProxyMacro(
             id, name, definition
         )
-        components.push(componentView)
+        proxyClasses.push(proxyStructClass)
     }
-    return components
+    return {proxyClasses, orderedComponentNames: componentNames}
 }

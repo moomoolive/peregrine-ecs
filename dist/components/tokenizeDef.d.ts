@@ -17,11 +17,11 @@ export declare type ComponentTokens = {
     stringifiedDefinition: string;
     originalStringifiedDefinition: string;
 };
-export declare const MAX_FIELDS_PER_COMPONENT = 9;
 export declare const enum struct_proxy_encoding {
     internal_field_prefix = "@@",
     databuffer_ref = "@@component",
-    buffer_offset = "@@offset"
+    buffer_offset = "@@offset",
+    max_fields = 9
 }
 export declare function tokenizeComponentDef(name: any, definition: any): ComponentTokens;
 //# sourceMappingURL=tokenizeDef.d.ts.map

@@ -1,10 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateComponentStructProxies = exports.structProxyMacro = exports.StructProxyClass = exports.RawComponent = exports.MAX_FIELDS_PER_COMPONENT = void 0;
+exports.generateComponentStructProxies = exports.orderComponentsByName = exports.deserializeComponentId = exports.computeComponentId = exports.structProxyMacro = exports.StructProxyClass = exports.RawComponent = void 0;
 const tokenizeDef_1 = require("./tokenizeDef");
 const errors_1 = require("../debugging/errors");
-var tokenizeDef_2 = require("./tokenizeDef");
-Object.defineProperty(exports, "MAX_FIELDS_PER_COMPONENT", { enumerable: true, get: function () { return tokenizeDef_2.MAX_FIELDS_PER_COMPONENT; } });
 function createComponentViewClass({ fields }) {
     const BaseView = function (component, offset) {
         this["@@component" /* databuffer_ref */] = component;
@@ -64,19 +62,32 @@ function structProxyMacro(id, name, definition) {
     return componentViewClass;
 }
 exports.structProxyMacro = structProxyMacro;
+function computeComponentId(offset) {
+    return offset + 50 /* reserved_end */;
+}
+exports.computeComponentId = computeComponentId;
+function deserializeComponentId(id) {
+    return id - 50 /* reserved_count */;
+}
+exports.deserializeComponentId = deserializeComponentId;
+function orderComponentsByName(declaration) {
+    /* components are order alphabetically */
+    return Object.keys(declaration).sort();
+}
+exports.orderComponentsByName = orderComponentsByName;
 function generateComponentStructProxies(declaration) {
-    const components = [];
-    const componentNames = Object.keys(declaration);
+    const componentNames = orderComponentsByName(declaration);
     if (componentNames.length < 1) {
         throw SyntaxError((0, errors_1.err)(`you must declare at least one component`));
     }
+    const proxyClasses = [];
     for (let i = 0; i < componentNames.length; i++) {
         const name = componentNames[i];
         const definition = declaration[name];
-        const id = i;
-        const componentView = structProxyMacro(id, name, definition);
-        components.push(componentView);
+        const id = computeComponentId(i);
+        const proxyStructClass = structProxyMacro(id, name, definition);
+        proxyClasses.push(proxyStructClass);
     }
-    return components;
+    return { proxyClasses, orderedComponentNames: componentNames };
 }
 exports.generateComponentStructProxies = generateComponentStructProxies;

@@ -14,13 +14,20 @@ import {
 import {
     componentRegistryMacro,
     ComponentRegistry,
+    registry_encoding
 } from "../dataStructures/registries/index"
 import {
     ComponentsDeclaration,
     StructProxyClasses,
     generateComponentStructProxies,
+    deserializeComponentId,
+    struct_proxy_encoding
 } from "../components/index"
-import {Debugger} from "./debugger"
+import {
+    ComponentDebug,
+    generateComponentDebugInfo,
+    ComponentId
+} from "./debugging"
 import {
     mutation_status,
     MutatorStatusCode,
@@ -31,8 +38,10 @@ import {
     createSharedInt32Array,
 } from "../dataStructures/sharedArrays"
 import {bytes} from "../consts"
-import {Allocator, createComponentAllocator} from "../allocator/index"
-import {MAX_FIELDS_PER_COMPONENT} from "../components/tokenizeDef"
+import {
+    Allocator, 
+    createComponentAllocator
+} from "../allocator/index"
 
 export type EcsMode = "development" | "production"
 
@@ -45,20 +54,25 @@ export type EcsOptions = {
 export class Ecs<
     Components extends ComponentsDeclaration
 > {
+    static readonly MAX_FIELDS_PER_COMPONENT = struct_proxy_encoding.max_fields
+    static readonly MAX_COMPONENTS = registry_encoding.max_components
+
+    /* entity ids / records */
     private unusedEntities: Int32Array
     private unusedEntityCount: number
-
+    private largestEntityId: number
     private entityRecords: EntityRecords
+
+    /* tables (sometimes called archetypes) */
     private tables: Table[]
     private tableAllocator: Allocator
     private hashToTableIndex: Map<string, number>
 
-    private readonly componentStructProxies: StructProxyClasses
-
-    private largestEntityId: number
-
-    readonly debug: Debugger<Components>
+    /* components */
     readonly components: ComponentRegistry<Components>
+    private readonly componentStructProxies: StructProxyClasses
+    private componentDebugInfo: ComponentDebug[]
+    readonly schemas: Components
 
     constructor(params: {
         readonly components: Components
@@ -69,8 +83,14 @@ export class Ecs<
         mode = "development"
     }: Partial<EcsOptions> = {}) {
         const {components} = params
-
-        this.components = componentRegistryMacro(components)
+        this.schemas = components
+        const {
+            proxyClasses,
+            orderedComponentNames
+        } = generateComponentStructProxies(components)
+        this.componentStructProxies = proxyClasses
+        this.components = componentRegistryMacro(orderedComponentNames)
+        
         this.unusedEntities = createSharedInt32Array(maxEntities)
         this.unusedEntityCount = 0
         
@@ -87,16 +107,7 @@ export class Ecs<
 
         this.hashToTableIndex = new Map()
 
-        this.componentStructProxies = generateComponentStructProxies(
-            components
-        )
-
         this.largestEntityId = standard_entity.start_of_user_defined_entities
-
-        this.debug = new Debugger(
-            this.componentStructProxies,
-            components
-        )
 
         this.entityRecords.init()
         this.tables = [
@@ -106,10 +117,30 @@ export class Ecs<
                 this.componentStructProxies.length
             )
         ]
+        this.componentDebugInfo = generateComponentDebugInfo(
+            this.componentStructProxies
+        )
     }
 
     get entityCount(): number {
-        return this.largestEntityId + 1
+        return this.largestEntityId - standard_entity.start_of_user_defined_entities
+    }
+
+    get preciseEntityCount(): number {
+        return this.largestEntityId
+    }
+
+    get componentCount(): number {
+        return this.componentStructProxies.length
+    }
+
+    allComponentDebugInfo(): ComponentDebug[] {
+        return this.componentDebugInfo
+    }
+
+    debugComponent(componentId: ComponentId): ComponentDebug {
+        const id = deserializeComponentId(componentId as number)
+        return this.componentDebugInfo[id]
     }
 
     private addToBlankTable(id: number) {

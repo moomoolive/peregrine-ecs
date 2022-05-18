@@ -32,12 +32,11 @@ export type ComponentTokens = {
     originalStringifiedDefinition: string
 }
 
-export const MAX_FIELDS_PER_COMPONENT = 9
-
 export const enum struct_proxy_encoding {
     internal_field_prefix = "@@",
     databuffer_ref = "@@component",
     buffer_offset = "@@offset",
+    max_fields = 9
 }
 
 function validName(name: string): boolean {
@@ -72,8 +71,8 @@ export function tokenizeComponentDef(
     regardless of the host runtime.*/
     const originalFields = Object.keys(definition)
     const fields = originalFields.slice().sort()
-    if (fields.length < 1 || fields.length > MAX_FIELDS_PER_COMPONENT) {
-        throw SyntaxError(err(`component definition "${name}" must have between 1 - ${MAX_FIELDS_PER_COMPONENT} fields. Got ${fields.length} fields.`))
+    if (fields.length < 1 || fields.length > struct_proxy_encoding.max_fields) {
+        throw SyntaxError(err(`component definition "${name}" must have between 1 - ${struct_proxy_encoding.max_fields} fields. Got ${fields.length} fields.`))
     }
     const tokens: ComponentTokens = {
         componentName: name,

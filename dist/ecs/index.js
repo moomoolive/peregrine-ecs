@@ -5,14 +5,17 @@ const standardTables_1 = require("../table/standardTables");
 const index_1 = require("../entities/index");
 const index_2 = require("../dataStructures/registries/index");
 const index_3 = require("../components/index");
-const debugger_1 = require("./debugger");
+const debugging_1 = require("./debugging");
 const mutator_1 = require("../entities/mutator");
 const sharedArrays_1 = require("../dataStructures/sharedArrays");
 const index_4 = require("../allocator/index");
 class Ecs {
     constructor(params, { maxEntities = 500000 /* limit */, allocatorInitialMemoryMB = 50, mode = "development" } = {}) {
         const { components } = params;
-        this.components = (0, index_2.componentRegistryMacro)(components);
+        this.schemas = components;
+        const { proxyClasses, orderedComponentNames } = (0, index_3.generateComponentStructProxies)(components);
+        this.componentStructProxies = proxyClasses;
+        this.components = (0, index_2.componentRegistryMacro)(orderedComponentNames);
         this.unusedEntities = (0, sharedArrays_1.createSharedInt32Array)(maxEntities);
         this.unusedEntityCount = 0;
         this.entityRecords = new index_1.EntityRecords(maxEntities > 5000 /* minimum */ ?
@@ -20,16 +23,28 @@ class Ecs {
             : 5000 /* minimum */);
         this.tableAllocator = (0, index_4.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
         this.hashToTableIndex = new Map();
-        this.componentStructProxies = (0, index_3.generateComponentStructProxies)(components);
         this.largestEntityId = 4096 /* start_of_user_defined_entities */;
-        this.debug = new debugger_1.Debugger(this.componentStructProxies, components);
         this.entityRecords.init();
         this.tables = [
             ...(0, standardTables_1.createDefaultTables)(this.tableAllocator, this.entityRecords, this.componentStructProxies.length)
         ];
+        this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
     }
     get entityCount() {
-        return this.largestEntityId + 1;
+        return this.largestEntityId - 4096 /* start_of_user_defined_entities */;
+    }
+    get preciseEntityCount() {
+        return this.largestEntityId;
+    }
+    get componentCount() {
+        return this.componentStructProxies.length;
+    }
+    allComponentDebugInfo() {
+        return this.componentDebugInfo;
+    }
+    debugComponent(componentId) {
+        const id = (0, index_3.deserializeComponentId)(componentId);
+        return this.componentDebugInfo[id];
     }
     addToBlankTable(id) {
         const blankTable = this.tables[0 /* ecs_id */];
@@ -74,3 +89,5 @@ class Ecs {
     }
 }
 exports.Ecs = Ecs;
+Ecs.MAX_FIELDS_PER_COMPONENT = 9 /* max_fields */;
+Ecs.MAX_COMPONENTS = 256 /* max_components */;

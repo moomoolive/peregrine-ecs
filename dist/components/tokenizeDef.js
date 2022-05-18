@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.tokenizeComponentDef = exports.MAX_FIELDS_PER_COMPONENT = exports.DATA_TYPES = void 0;
+exports.tokenizeComponentDef = exports.DATA_TYPES = void 0;
 const errors_1 = require("../debugging/errors");
 exports.DATA_TYPES = ["num", "f64", "f32", "i32"];
-exports.MAX_FIELDS_PER_COMPONENT = 9;
 function validName(name) {
     return !name.startsWith("@@" /* internal_field_prefix */);
 }
@@ -30,8 +29,8 @@ function tokenizeComponentDef(name, definition) {
     regardless of the host runtime.*/
     const originalFields = Object.keys(definition);
     const fields = originalFields.slice().sort();
-    if (fields.length < 1 || fields.length > exports.MAX_FIELDS_PER_COMPONENT) {
-        throw SyntaxError((0, errors_1.err)(`component definition "${name}" must have between 1 - ${exports.MAX_FIELDS_PER_COMPONENT} fields. Got ${fields.length} fields.`));
+    if (fields.length < 1 || fields.length > 9 /* max_fields */) {
+        throw SyntaxError((0, errors_1.err)(`component definition "${name}" must have between 1 - ${9 /* max_fields */} fields. Got ${fields.length} fields.`));
     }
     const tokens = {
         componentName: name,
