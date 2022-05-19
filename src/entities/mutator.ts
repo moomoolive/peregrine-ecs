@@ -1,12 +1,7 @@
 import {
-    ComponentsDeclaration,
     StructProxyClasses,
     RawComponent,
 } from "../components/index"
-import {
-    EntityRecords,
-    record_encoding
-} from "./index"
 import {
     Table,
     computeNewTableHashAdditionalTag,
@@ -14,7 +9,6 @@ import {
     table_encoding,
     table_defaults,
 } from "../table/index"
-import {relation} from "../entities/idCreators"
 import {
     Allocator,
     i32Malloc
@@ -30,6 +24,7 @@ export const enum mutation_status {
     tag_exists = 2,
     tag_does_not_exist = 3
 }
+
 
 export function findTableOrCreate(
     tableHashes: Map<string, number>,
@@ -96,6 +91,7 @@ export function findTableOrCreate(
         i32Malloc(allocator, table_encoding.meta_size),
         newTableComponentPtrs,
         i32Malloc(allocator, table_defaults.initial_capacity),
+        table_defaults.initial_capacity
     )
     previousTable.addEdges.set(tagId, newTableId)
     tableHashes.set(hash, newTableId)

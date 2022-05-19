@@ -23,18 +23,22 @@ class Ecs {
             : 5000 /* minimum */);
         this.tableAllocator = (0, index_4.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
         this.hashToTableIndex = new Map();
-        this.largestEntityId = 4096 /* start_of_user_defined_entities */;
+        this.largestEntityId = 14095 /* start_of_user_defined_entities */;
         this.entityRecords.init();
-        this.tables = [
-            ...(0, standardTables_1.createDefaultTables)(this.tableAllocator, this.entityRecords, this.componentStructProxies.length)
-        ];
+        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.entityRecords, this.componentStructProxies.length);
+        this.tables = [...defaultTables];
+        for (const { id, hash } of defaultTables) {
+            this.hashToTableIndex.set(hash, id);
+        }
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
     }
     get entityCount() {
-        return this.largestEntityId - 4096 /* start_of_user_defined_entities */;
+        return this.largestEntityId - 14095 /* start_of_user_defined_entities */;
     }
     get preciseEntityCount() {
-        return this.largestEntityId;
+        return (this.entityCount
+            + 50 /* reserved_count */
+            + this.componentCount);
     }
     get componentCount() {
         return this.componentStructProxies.length;
@@ -47,13 +51,13 @@ class Ecs {
         return this.componentDebugInfo[id];
     }
     addToBlankTable(id) {
-        const blankTable = this.tables[0 /* ecs_id */];
-        const length = blankTable.ensureSize(1, this.tableAllocator);
-        const row = length - 1;
+        const blankTable = this.tables[2 /* ecs_root_table */];
+        blankTable.ensureSize(1, this.tableAllocator);
+        const row = blankTable.length++;
         blankTable.entities[row] = id;
-        this.entityRecords.allocateEntity(id, row, 0 /* ecs_id */);
+        this.entityRecords.recordEntity(id, row, 2 /* ecs_root */);
     }
-    newEntity() {
+    newId() {
         if (this.unusedEntityCount < 1) {
             const id = this.largestEntityId++;
             this.addToBlankTable(id);
@@ -64,10 +68,33 @@ class Ecs {
         this.addToBlankTable(this.unusedEntities[index]);
         return id;
     }
+    hasId(entityId, id) {
+        const { tableId } = this.entityRecords.index(entityId);
+        if (tableId === -1 /* unintialized */) {
+            return false;
+        }
+        return this.tables[tableId].has(id);
+    }
+    isAlive(entityId) {
+        const { tableId } = this.entityRecords.index(entityId);
+        return tableId !== -1 /* unintialized */;
+    }
+    delete(entityId) {
+        const { tableId, row } = this.entityRecords.index(entityId);
+        if (tableId === -1 /* unintialized */) {
+            return false;
+        }
+        this.entityRecords.unsetEntity(entityId);
+        this.tables[tableId].removeEntity(row);
+        /* recycle entity id, stash for later use */
+        const unusedSlot = this.unusedEntityCount++;
+        this.unusedEntities[unusedSlot] = entityId;
+        return true;
+    }
     addTag(entityId, tagId) {
         const entity = this.entityRecords.index(entityId);
-        const { table: tableId, row } = entity;
-        if (row === -1 /* unintialized */) {
+        const { tableId, row } = entity;
+        if (tableId === -1 /* unintialized */) {
             return 1 /* entity_uninitialized */;
         }
         const tables = this.tables;
@@ -83,7 +110,7 @@ class Ecs {
         // proceed to move entity data from current table to 
         // target table, (identical components, tags + new)
         const newRow = (0, mutator_1.shiftComponentDataAligned)(table, targetTable, row, allocator);
-        entity.table = newTable;
+        entity.tableId = newTable;
         entity.row = newRow;
         return 0 /* successful_update */;
     }
@@ -91,3 +118,4 @@ class Ecs {
 exports.Ecs = Ecs;
 Ecs.MAX_FIELDS_PER_COMPONENT = 9 /* max_fields */;
 Ecs.MAX_COMPONENTS = 256 /* max_components */;
+Ecs.MAX_RELATIONS = 1400 /* approx_max_count */;

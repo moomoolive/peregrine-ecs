@@ -1,5 +1,6 @@
 import {
-    Allocator
+    Allocator,
+    i32Malloc
 } from "../allocator/index"
 import {
     RawComponent, 
@@ -8,15 +9,22 @@ import {
 import {bytes} from "../consts"
 
 export const enum table_encoding {
-    meta_size = 5,
+    meta_size = 6,
 
     /* metadata members start */
     length_index = 0,
     capacity_index = 1,
     component_buffer_ptrs_ptr = 2,
     entities_ptr = 3,
-    component_ids_ptr = 4
+    component_ids_ptr = 4,
+    component_count = 5
     /* metadata members end */
+}
+
+export function createTableMeta(
+    allocator: Allocator
+): Int32Array {
+    return i32Malloc(allocator, table_encoding.meta_size)
 }
 
 export const enum table_defaults {
@@ -24,6 +32,10 @@ export const enum table_defaults {
     resize_factor = 2,
     memory_reclaimation_limit = 50
 }
+
+export type Component<Definition extends ComponentDefinition> = (
+    Pick<RawComponent<Definition>, "databuffer" | "index">
+)
 
 // the current implementation of the archetype
 // graph could be significantly sped up
@@ -50,19 +62,22 @@ export class Table {
         components: RawComponent<ComponentDefinition>[],
         meta: Int32Array,
         componentBufferPtrs: Int32Array,
-        entities: Int32Array
+        entities: Int32Array,
+        initialCapacity: number
     ) {
         this.id = id
         this.hash = hash
 
         this.meta = meta
-        this.capacity = table_defaults.initial_capacity
+        this.capacity = initialCapacity
         
         this.entitiesPtr = entities.byteOffset
         this.entities = entities
         
         this.componentBufferPtrs = componentBufferPtrs
         this.componentBufferPtrsPtr = componentBufferPtrs.byteOffset
+
+        this.componentCount = components.length
 
         this.componentIds = componentIds
         this.componentIdsPtr = componentIds.byteOffset
@@ -116,6 +131,29 @@ export class Table {
 
     set componentIdsPtr(newPtr: number) {
         this.meta[table_encoding.component_ids_ptr] = newPtr
+    }
+
+    get componentCount(): number{
+        return this.meta[table_encoding.component_count]
+    }
+
+    set componentCount(newPtr: number) {
+        this.meta[table_encoding.component_count] = newPtr
+    }
+
+    get<Definition extends ComponentDefinition>(
+        component: number | Definition
+    ): Component<Definition> | undefined {
+        const arrIndex = this.componentIndexes.get(component as number)
+        const components = this.components
+        if (!arrIndex || arrIndex > (components.length - 1)) {
+            return
+        }
+        return components[arrIndex] as Component<Definition>
+    }
+
+    has(componentId: number): boolean {
+        return this.componentIndexes.has(componentId) !== undefined
     }
 
     ensureSize(
@@ -175,11 +213,55 @@ export class Table {
         this.resizeComponents(targetCapacity, allocator)
         return len
     }
+
+    removeEntity(row: number): boolean {
+        const length = this.length
+        const lastEntity = length - 1
+        if (length === 1 || row === lastEntity) {
+            this.length--
+            // garbage collection ??
+            return true
+        }
+        /* swap entity spots, to avoid expensive shifting */
+        this.entities[row] = this.entities[lastEntity]
+        const components = this.components
+        const len = components.length
+        for (let c = 0; c < len; c++) {
+            const {componentSegements, databuffer} = components[c]
+            const rowOffset = row * componentSegements
+            const lastEntityOffset = lastEntity * componentSegements
+            for (let i = 0; i < componentSegements; i++) {
+                /* swap bytes of last entity, with target row */
+                databuffer[rowOffset + i] = databuffer[lastEntityOffset + i]
+            }
+        }
+        this.length--
+        // garbage collection ??
+        return true
+    }
 }
 
+export type QueryTable = Pick<Table, "entities" | "get">
+
 export const enum table_hashes {
-    tag_component_divider = "-",
+    tag_component_divider = "=>",
+    non_standard_hash_prefix = "*",
     last_index = -1
+}
+
+export function generateTableHash(
+    componentIds: Int32Array,
+    numberOfComponents: number
+): string {
+    let hash = ""
+    for (let i = 0; i < numberOfComponents; i++) {
+        hash += componentIds[i].toString()
+    }
+    hash += table_hashes.tag_component_divider
+    for (let i = numberOfComponents; i < componentIds.length; i++) {
+        hash += componentIds[i].toString()
+    }
+    return hash
 }
 
 let hashCarrier = {hash: "", insertIndex: 0}

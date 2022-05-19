@@ -63,7 +63,7 @@ function structProxyMacro(id, name, definition) {
 }
 exports.structProxyMacro = structProxyMacro;
 function computeComponentId(offset) {
-    return offset + 50 /* reserved_end */;
+    return offset + 50 /* components_start */;
 }
 exports.computeComponentId = computeComponentId;
 function deserializeComponentId(id) {

@@ -3,6 +3,7 @@ import {
     computeComponentId
 } from "../../components/index"
 import {err} from "../../debugging/errors"
+import {component_entity_encoding} from "../../entities/index"
 
 export type ComponentRegistry<
     Declaration extends ComponentsDeclaration
@@ -11,7 +12,7 @@ export type ComponentRegistry<
 }
 
 export const enum registry_encoding {
-    max_components = 256
+    max_components = component_entity_encoding.max_count
 }
 
 export function componentRegistryMacro<

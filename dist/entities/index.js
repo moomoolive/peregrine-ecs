@@ -1,7 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EntityRecords = void 0;
+exports.EntityRecords = exports.STANDARD_ENTITIES = void 0;
 const sharedArrays_1 = require("../dataStructures/sharedArrays");
+exports.STANDARD_ENTITIES = [
+    0 /* ecs_id */,
+    1 /* ecs_component */,
+];
 class EntityRecords {
     constructor(initialCapacity) {
         this.records = (0, sharedArrays_1.createSharedInt32Array)(initialCapacity * 2 /* size_per_element */);
@@ -14,10 +18,20 @@ class EntityRecords {
         this._index = (entityId * 2 /* size_per_element */);
         return this;
     }
-    allocateEntity(index, row, table) {
-        this.index(index);
-        this.table = table;
-        this.row = row;
+    recordEntity(index, row, table) {
+        const targetIndex = index * 2 /* size_per_element */;
+        const tableIndex = targetIndex + 1 /* table_id_offset */;
+        this.records[tableIndex] = table;
+        const rowIndex = targetIndex + 0 /* row_offset */;
+        this.records[rowIndex] = row;
+        return index;
+    }
+    unsetEntity(index) {
+        const targetIndex = index * 2 /* size_per_element */;
+        const tableIndex = targetIndex + 1 /* table_id_offset */;
+        this.records[tableIndex] = -1 /* unintialized */;
+        const rowIndex = targetIndex + 0 /* row_offset */;
+        this.records[rowIndex] = -1 /* unintialized */;
         return index;
     }
     get row() {
@@ -26,13 +40,13 @@ class EntityRecords {
     set row(row) {
         this.records[(this._index)] = row;
     }
-    get table() {
+    get tableId() {
         return this.records[(this._index)
-            + 1 /* table_offset */];
+            + 1 /* table_id_offset */];
     }
-    set table(table) {
+    set tableId(table) {
         this.records[(this._index)
-            + 1 /* table_offset */] = table;
+            + 1 /* table_id_offset */] = table;
     }
 }
 exports.EntityRecords = EntityRecords;

@@ -187,7 +187,7 @@ export type StructProxyClasses = ReadonlyArray<
 >
 
 export function computeComponentId(offset: number): number {
-    return offset + standard_entity.reserved_end
+    return offset + standard_entity.components_start
 }
 
 export function deserializeComponentId(id: number): number {

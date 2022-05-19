@@ -1,15 +1,16 @@
 import {
-    Table
+    Table,
 } from "../table/index"
 import {
     createDefaultTables,
-    std_tables
+    standard_tables,
 } from "../table/standardTables"
 import {
     EntityRecords,
     record_encoding,
     entities_encoding,
-    standard_entity
+    standard_entity,
+    relation_entity_encoding
 } from "../entities/index"
 import {
     componentRegistryMacro,
@@ -56,8 +57,9 @@ export class Ecs<
 > {
     static readonly MAX_FIELDS_PER_COMPONENT = struct_proxy_encoding.max_fields
     static readonly MAX_COMPONENTS = registry_encoding.max_components
+    static readonly MAX_RELATIONS = relation_entity_encoding.approx_max_count
 
-    /* entity ids / records */
+    /* entity ids & records */
     private unusedEntities: Int32Array
     private unusedEntityCount: number
     private largestEntityId: number
@@ -110,13 +112,15 @@ export class Ecs<
         this.largestEntityId = standard_entity.start_of_user_defined_entities
 
         this.entityRecords.init()
-        this.tables = [
-            ...createDefaultTables(
-                this.tableAllocator,
-                this.entityRecords,
-                this.componentStructProxies.length
-            )
-        ]
+        const {defaultTables} = createDefaultTables(
+            this.tableAllocator,
+            this.entityRecords,
+            this.componentStructProxies.length
+        )
+        this.tables = [...defaultTables]
+        for (const {id, hash} of defaultTables) {
+            this.hashToTableIndex.set(hash, id)
+        }
         this.componentDebugInfo = generateComponentDebugInfo(
             this.componentStructProxies
         )
@@ -127,7 +131,11 @@ export class Ecs<
     }
 
     get preciseEntityCount(): number {
-        return this.largestEntityId
+        return (
+            this.entityCount 
+            + standard_entity.reserved_count
+            + this.componentCount
+        )
     }
 
     get componentCount(): number {
@@ -144,16 +152,16 @@ export class Ecs<
     }
 
     private addToBlankTable(id: number) {
-        const blankTable = this.tables[std_tables.ecs_id]
-        const length = blankTable.ensureSize(1, this.tableAllocator)
-        const row = length - 1
+        const blankTable = this.tables[standard_tables.ecs_root_table]
+        blankTable.ensureSize(1, this.tableAllocator)
+        const row = blankTable.length++ 
         blankTable.entities[row] = id
-        this.entityRecords.allocateEntity(
-            id, row, standard_entity.ecs_id
+        this.entityRecords.recordEntity(
+            id, row, standard_entity.ecs_root
         )
     }
 
-    newEntity(): number {
+    newId(): number {
         if (this.unusedEntityCount < 1) {
             const id = this.largestEntityId++
             this.addToBlankTable(id)
@@ -165,10 +173,36 @@ export class Ecs<
         return id
     }
 
+    hasId(entityId: number, id: number): boolean {
+        const {tableId} = this.entityRecords.index(entityId)
+        if (tableId === record_encoding.unintialized) {
+            return false
+        }
+        return this.tables[tableId].has(id)
+    }
+
+    isAlive(entityId: number): boolean {
+        const {tableId} = this.entityRecords.index(entityId)
+        return tableId !== record_encoding.unintialized
+    }
+
+    delete(entityId: number): boolean {
+        const {tableId, row} = this.entityRecords.index(entityId)
+        if (tableId === record_encoding.unintialized) {
+            return false
+        }
+        this.entityRecords.unsetEntity(entityId)
+        this.tables[tableId].removeEntity(row)
+        /* recycle entity id, stash for later use */
+        const unusedSlot = this.unusedEntityCount++
+        this.unusedEntities[unusedSlot] = entityId
+        return true
+    }
+
     addTag(entityId: number, tagId: number): MutatorStatusCode {
         const entity = this.entityRecords.index(entityId)
-        const {table: tableId, row} = entity
-        if (row === record_encoding.unintialized) {
+        const {tableId, row} = entity
+        if (tableId === record_encoding.unintialized) {
             return mutation_status.entity_uninitialized
         }
         const tables = this.tables
@@ -189,7 +223,7 @@ export class Ecs<
         const newRow = shiftComponentDataAligned(
             table, targetTable, row, allocator
         )
-        entity.table = newTable
+        entity.tableId = newTable
         entity.row = newRow
         return mutation_status.successful_update
     }

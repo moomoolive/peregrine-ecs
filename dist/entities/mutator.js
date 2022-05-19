@@ -35,7 +35,7 @@ function findTableOrCreate(tableHashes, previousTable, tagId, tables, allocator,
         componentData.push(component);
     }
     const newTableId = tables.length;
-    const createdTable = new index_2.Table(newTableId, hash, newTableComponentIds, componentData, (0, index_3.i32Malloc)(allocator, 5 /* meta_size */), newTableComponentPtrs, (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */));
+    const createdTable = new index_2.Table(newTableId, hash, newTableComponentIds, componentData, (0, index_3.i32Malloc)(allocator, 6 /* meta_size */), newTableComponentPtrs, (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */), 1 /* initial_capacity */);
     previousTable.addEdges.set(tagId, newTableId);
     tableHashes.set(hash, newTableId);
     tables.push(createdTable);

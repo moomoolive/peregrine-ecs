@@ -15,10 +15,10 @@ describe("component registry", () => {
         const names = orderComponentsByName(defs)
         const components = componentRegistryMacro<typeof defs>(names)
         expect(components.likeability).toBe(
-            standard_entity.reserved_end + 0
+            standard_entity.components_start + 0
         )
         expect(components.pets).toBe(
-            standard_entity.reserved_end + 1
+            standard_entity.components_start + 1
         )
 
         const defs2 = {
@@ -30,10 +30,10 @@ describe("component registry", () => {
             names2
         )
         expect(components2.position).toBe(
-            standard_entity.reserved_end + 0
+            standard_entity.components_start + 0
         )
         expect(components2.velocity).toBe(
-            standard_entity.reserved_end + 1)
+            standard_entity.components_start + 1)
     })
 
     it("should throw error if attempting to set key", () => {

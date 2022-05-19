@@ -1,6 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.computeNewTableHashAdditionalTag = exports.Table = void 0;
+exports.computeNewTableHashAdditionalTag = exports.generateTableHash = exports.Table = exports.createTableMeta = void 0;
+const index_1 = require("../allocator/index");
+function createTableMeta(allocator) {
+    return (0, index_1.i32Malloc)(allocator, 6 /* meta_size */);
+}
+exports.createTableMeta = createTableMeta;
 // the current implementation of the archetype
 // graph could be significantly sped up
 // by using an array for pre-built components id ranges
@@ -8,15 +13,16 @@ exports.computeNewTableHashAdditionalTag = exports.Table = void 0;
 // archetype implementation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/private_types.h#L170
 // archetype graph implemenation here: https://github.com/SanderMertens/flecs/blob/v2.4.8/src/table_graph.c#L192
 class Table {
-    constructor(id, hash, componentIds, components, meta, componentBufferPtrs, entities) {
+    constructor(id, hash, componentIds, components, meta, componentBufferPtrs, entities, initialCapacity) {
         this.id = id;
         this.hash = hash;
         this.meta = meta;
-        this.capacity = 1 /* initial_capacity */;
+        this.capacity = initialCapacity;
         this.entitiesPtr = entities.byteOffset;
         this.entities = entities;
         this.componentBufferPtrs = componentBufferPtrs;
         this.componentBufferPtrsPtr = componentBufferPtrs.byteOffset;
+        this.componentCount = components.length;
         this.componentIds = componentIds;
         this.componentIdsPtr = componentIds.byteOffset;
         const indexes = new Map();
@@ -59,6 +65,23 @@ class Table {
     set componentIdsPtr(newPtr) {
         this.meta[4 /* component_ids_ptr */] = newPtr;
     }
+    get componentCount() {
+        return this.meta[5 /* component_count */];
+    }
+    set componentCount(newPtr) {
+        this.meta[5 /* component_count */] = newPtr;
+    }
+    get(component) {
+        const arrIndex = this.componentIndexes.get(component);
+        const components = this.components;
+        if (!arrIndex || arrIndex > (components.length - 1)) {
+            return;
+        }
+        return components[arrIndex];
+    }
+    has(componentId) {
+        return this.componentIndexes.has(componentId) !== undefined;
+    }
     ensureSize(additional, allocator) {
         const len = this.length;
         const capacity = this.capacity;
@@ -96,8 +119,45 @@ class Table {
         this.resizeComponents(targetCapacity, allocator);
         return len;
     }
+    removeEntity(row) {
+        const length = this.length;
+        const lastEntity = length - 1;
+        if (length === 1 || row === lastEntity) {
+            this.length--;
+            // garbage collection ??
+            return true;
+        }
+        /* swap entity spots, to avoid expensive shifting */
+        this.entities[row] = this.entities[lastEntity];
+        const components = this.components;
+        const len = components.length;
+        for (let c = 0; c < len; c++) {
+            const { componentSegements, databuffer } = components[c];
+            const rowOffset = row * componentSegements;
+            const lastEntityOffset = lastEntity * componentSegements;
+            for (let i = 0; i < componentSegements; i++) {
+                /* swap bytes of last entity, with target row */
+                databuffer[rowOffset + i] = databuffer[lastEntityOffset + i];
+            }
+        }
+        this.length--;
+        // garbage collection ??
+        return true;
+    }
 }
 exports.Table = Table;
+function generateTableHash(componentIds, numberOfComponents) {
+    let hash = "";
+    for (let i = 0; i < numberOfComponents; i++) {
+        hash += componentIds[i].toString();
+    }
+    hash += "=>" /* tag_component_divider */;
+    for (let i = numberOfComponents; i < componentIds.length; i++) {
+        hash += componentIds[i].toString();
+    }
+    return hash;
+}
+exports.generateTableHash = generateTableHash;
 let hashCarrier = { hash: "", insertIndex: 0 };
 function computeNewTableHashAdditionalTag(referingTableComponentIds, tag, componentsLength) {
     let hash = "";
@@ -105,7 +165,7 @@ function computeNewTableHashAdditionalTag(referingTableComponentIds, tag, compon
     for (let i = 0; i < componentsLength; i++) {
         hash += referingTableComponentIds[i].toString();
     }
-    hash += "-" /* tag_component_divider */;
+    hash += "=>" /* tag_component_divider */;
     /* compute section for tags */
     let insertIndex = -1 /* last_index */;
     const len = referingTableComponentIds.length - 1;

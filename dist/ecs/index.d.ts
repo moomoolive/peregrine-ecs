@@ -1,3 +1,4 @@
+import { relation_entity_encoding } from "../entities/index";
 import { ComponentRegistry, registry_encoding } from "../dataStructures/registries/index";
 import { ComponentsDeclaration, struct_proxy_encoding } from "../components/index";
 import { ComponentDebug, ComponentId } from "./debugging";
@@ -10,7 +11,8 @@ export declare type EcsOptions = {
 };
 export declare class Ecs<Components extends ComponentsDeclaration> {
     static readonly MAX_FIELDS_PER_COMPONENT = struct_proxy_encoding.max_fields;
-    static readonly MAX_COMPONENTS = registry_encoding.max_components;
+    static readonly MAX_COMPONENTS: registry_encoding;
+    static readonly MAX_RELATIONS: relation_entity_encoding;
     private unusedEntities;
     private unusedEntityCount;
     private largestEntityId;
@@ -31,7 +33,10 @@ export declare class Ecs<Components extends ComponentsDeclaration> {
     allComponentDebugInfo(): ComponentDebug[];
     debugComponent(componentId: ComponentId): ComponentDebug;
     private addToBlankTable;
-    newEntity(): number;
+    newId(): number;
+    hasId(entityId: number, id: number): boolean;
+    isAlive(entityId: number): boolean;
+    delete(entityId: number): boolean;
     addTag(entityId: number, tagId: number): MutatorStatusCode;
 }
 //# sourceMappingURL=index.d.ts.map
