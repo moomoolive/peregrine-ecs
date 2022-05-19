@@ -43,6 +43,12 @@ import {
     Allocator, 
     createComponentAllocator
 } from "../allocator/index"
+import {
+    createId,
+    extractBaseId,
+    extractGenerationCount
+} from "../entities/ids"
+import {assertion} from "../debugging/errors"
 
 export type EcsMode = "development" | "production"
 
@@ -60,10 +66,10 @@ export class Ecs<
     static readonly MAX_RELATIONS = relation_entity_encoding.approx_max_count
 
     /* entity ids & records */
-    private unusedEntities: Int32Array
-    private unusedEntityCount: number
-    private largestEntityId: number
-    private entityRecords: EntityRecords
+    private unusedIds: Int32Array
+    private unusedIdsCount: number
+    private largestId: number
+    private records: EntityRecords
 
     /* tables (sometimes called archetypes) */
     private tables: Table[]
@@ -93,10 +99,10 @@ export class Ecs<
         this.componentStructProxies = proxyClasses
         this.components = componentRegistryMacro(orderedComponentNames)
         
-        this.unusedEntities = createSharedInt32Array(maxEntities)
-        this.unusedEntityCount = 0
+        this.unusedIds = createSharedInt32Array(maxEntities)
+        this.unusedIdsCount = 0
         
-        this.entityRecords = new EntityRecords(
+        this.records = new EntityRecords(
             maxEntities > entities_encoding.minimum ?
                 maxEntities
                 : entities_encoding.minimum
@@ -109,12 +115,12 @@ export class Ecs<
 
         this.hashToTableIndex = new Map()
 
-        this.largestEntityId = standard_entity.start_of_user_defined_entities
+        this.largestId = standard_entity.start_of_user_defined_entities
 
-        this.entityRecords.init()
+        this.records.init()
         const {defaultTables} = createDefaultTables(
             this.tableAllocator,
-            this.entityRecords,
+            this.records,
             this.componentStructProxies.length
         )
         this.tables = [...defaultTables]
@@ -127,7 +133,7 @@ export class Ecs<
     }
 
     get entityCount(): number {
-        return this.largestEntityId - standard_entity.start_of_user_defined_entities
+        return this.largestId - standard_entity.start_of_user_defined_entities
     }
 
     get preciseEntityCount(): number {
@@ -147,6 +153,12 @@ export class Ecs<
     }
 
     debugComponent(componentId: ComponentId): ComponentDebug {
+        if (
+            componentId < standard_entity.components_start 
+            || componentId > standard_entity.components_start + this.componentCount
+        ) {
+            throw TypeError(assertion(`inputted id (got ${componentId.toString()}) is not a component`))
+        }
         const id = deserializeComponentId(componentId as number)
         return this.componentDebugInfo[id]
     }
@@ -156,25 +168,27 @@ export class Ecs<
         blankTable.ensureSize(1, this.tableAllocator)
         const row = blankTable.length++ 
         blankTable.entities[row] = id
-        this.entityRecords.recordEntity(
+        const generationCount = this.records.recordEntity(
             id, row, standard_entity.ecs_root
         )
+        return generationCount
     }
 
     newId(): number {
-        if (this.unusedEntityCount < 1) {
-            const id = this.largestEntityId++
-            this.addToBlankTable(id)
-            return id
+        if (this.unusedIdsCount < 1) {
+            const id = this.largestId++
+            const generation = this.addToBlankTable(id)
+            return createId(id, generation)
         }
-        const index = --this.unusedEntityCount
-        const id = this.unusedEntities[index]
-        this.addToBlankTable(this.unusedEntities[index])
-        return id
+        const index = --this.unusedIdsCount
+        const id = this.unusedIds[index]
+        const generation = this.addToBlankTable(this.unusedIds[index])
+        return createId(id, generation)
     }
 
     hasId(entityId: number, id: number): boolean {
-        const {tableId} = this.entityRecords.index(entityId)
+        const originalId = extractBaseId(entityId)
+        const {tableId} = this.records.index(originalId)
         if (tableId === record_encoding.unintialized) {
             return false
         }
@@ -182,25 +196,30 @@ export class Ecs<
     }
 
     isAlive(entityId: number): boolean {
-        const {tableId} = this.entityRecords.index(entityId)
-        return tableId !== record_encoding.unintialized
+        const originalId = extractBaseId(entityId)
+        const entity = this.records.index(originalId)
+        return (
+            entity.tableId !== record_encoding.unintialized
+            && entity.generationCount === extractGenerationCount(entityId)
+        )
     }
 
     delete(entityId: number): boolean {
-        const {tableId, row} = this.entityRecords.index(entityId)
+        const originalId = extractBaseId(entityId)
+        const {tableId, row} = this.records.index(originalId)
         if (tableId === record_encoding.unintialized) {
             return false
         }
-        this.entityRecords.unsetEntity(entityId)
+        this.records.unsetEntity(originalId)
         this.tables[tableId].removeEntity(row)
         /* recycle entity id, stash for later use */
-        const unusedSlot = this.unusedEntityCount++
-        this.unusedEntities[unusedSlot] = entityId
+        const unusedSlot = this.unusedIdsCount++
+        this.unusedIds[unusedSlot] = originalId
         return true
     }
 
     addTag(entityId: number, tagId: number): MutatorStatusCode {
-        const entity = this.entityRecords.index(entityId)
+        const entity = this.records.index(entityId)
         const {tableId, row} = entity
         if (tableId === record_encoding.unintialized) {
             return mutation_status.entity_uninitialized

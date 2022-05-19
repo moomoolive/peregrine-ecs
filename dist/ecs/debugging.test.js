@@ -42,4 +42,8 @@ const index_1 = require("./index");
             (0, globals_1.expect)(JSON.parse(stringifiedDef)).toEqual(schemas.inventory);
         }
     });
+    (0, globals_1.it)("attempting to debug a non component with component debug should throw", () => {
+        const nonComponent = ecs.newId();
+        (0, globals_1.expect)(() => ecs.debugComponent(nonComponent)).toThrow();
+    });
 });

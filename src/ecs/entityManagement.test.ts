@@ -1,6 +1,7 @@
 import {expect, it, describe} from "@jest/globals"
 import {Ecs} from "./index"
 import {standard_entity} from "../entities/index"
+import {extractBaseId} from "../entities/ids"
 
 describe("adding entity updates ecs stats", () => {
     it("entity count is updated when ecs adds entity", () => {
@@ -88,7 +89,7 @@ describe("entity creation", () => {
 })
 
 describe("ecs id management", () => {
-    it("ids should be recycled", () => {
+    it("although ids are recycled, they should not be valid (for 63 generations) once deleted", () => {
         const ecs = new Ecs({
             components: {
                 position: {x: "f64", y: "f64", z: "f64"},
@@ -101,6 +102,12 @@ describe("ecs id management", () => {
         const oldId = ecs.newId()
         ecs.delete(oldId)
         const newId = ecs.newId()
-        expect(newId).toBe(oldId)
+        /* same base id */
+        expect(extractBaseId(oldId)).toBe(extractBaseId(newId))
+        /* but they are not equal */
+        expect(newId).not.toBe(oldId)
+        /* deleted id fails check */
+        expect(ecs.isAlive(oldId)).toBe(false)
+        expect(ecs.isAlive(newId)).toBe(true)
     })
 })

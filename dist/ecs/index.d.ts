@@ -13,10 +13,10 @@ export declare class Ecs<Components extends ComponentsDeclaration> {
     static readonly MAX_FIELDS_PER_COMPONENT = struct_proxy_encoding.max_fields;
     static readonly MAX_COMPONENTS: registry_encoding;
     static readonly MAX_RELATIONS: relation_entity_encoding;
-    private unusedEntities;
-    private unusedEntityCount;
-    private largestEntityId;
-    private entityRecords;
+    private unusedIds;
+    private unusedIdsCount;
+    private largestId;
+    private records;
     private tables;
     private tableAllocator;
     private hashToTableIndex;

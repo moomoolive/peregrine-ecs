@@ -1,5 +1,12 @@
-export const ERROR_SIGNATURE = "[🦅 peregrine]"
+export const enum error_msgs {
+    ecs_signature = "[🦅 peregrine]",
+    assertion = " ASSERTION_FAILED " 
+}
 
 export function err(msg: string): string {
-    return ERROR_SIGNATURE + msg
+    return error_msgs.ecs_signature + msg
+}
+
+export function assertion(msg: string): string {
+    return err(error_msgs.assertion + msg)
 }

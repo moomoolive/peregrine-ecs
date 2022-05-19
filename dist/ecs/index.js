@@ -9,6 +9,8 @@ const debugging_1 = require("./debugging");
 const mutator_1 = require("../entities/mutator");
 const sharedArrays_1 = require("../dataStructures/sharedArrays");
 const index_4 = require("../allocator/index");
+const ids_1 = require("../entities/ids");
+const errors_1 = require("../debugging/errors");
 class Ecs {
     constructor(params, { maxEntities = 500000 /* limit */, allocatorInitialMemoryMB = 50, mode = "development" } = {}) {
         const { components } = params;
@@ -16,16 +18,16 @@ class Ecs {
         const { proxyClasses, orderedComponentNames } = (0, index_3.generateComponentStructProxies)(components);
         this.componentStructProxies = proxyClasses;
         this.components = (0, index_2.componentRegistryMacro)(orderedComponentNames);
-        this.unusedEntities = (0, sharedArrays_1.createSharedInt32Array)(maxEntities);
-        this.unusedEntityCount = 0;
-        this.entityRecords = new index_1.EntityRecords(maxEntities > 5000 /* minimum */ ?
+        this.unusedIds = (0, sharedArrays_1.createSharedInt32Array)(maxEntities);
+        this.unusedIdsCount = 0;
+        this.records = new index_1.EntityRecords(maxEntities > 5000 /* minimum */ ?
             maxEntities
             : 5000 /* minimum */);
         this.tableAllocator = (0, index_4.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
         this.hashToTableIndex = new Map();
-        this.largestEntityId = 14095 /* start_of_user_defined_entities */;
-        this.entityRecords.init();
-        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.entityRecords, this.componentStructProxies.length);
+        this.largestId = 4095 /* start_of_user_defined_entities */;
+        this.records.init();
+        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this.componentStructProxies.length);
         this.tables = [...defaultTables];
         for (const { id, hash } of defaultTables) {
             this.hashToTableIndex.set(hash, id);
@@ -33,7 +35,7 @@ class Ecs {
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
     }
     get entityCount() {
-        return this.largestEntityId - 14095 /* start_of_user_defined_entities */;
+        return this.largestId - 4095 /* start_of_user_defined_entities */;
     }
     get preciseEntityCount() {
         return (this.entityCount
@@ -47,6 +49,10 @@ class Ecs {
         return this.componentDebugInfo;
     }
     debugComponent(componentId) {
+        if (componentId < 50 /* components_start */
+            || componentId > 50 /* components_start */ + this.componentCount) {
+            throw TypeError((0, errors_1.assertion)(`inputted id (got ${componentId.toString()}) is not a component`));
+        }
         const id = (0, index_3.deserializeComponentId)(componentId);
         return this.componentDebugInfo[id];
     }
@@ -55,44 +61,49 @@ class Ecs {
         blankTable.ensureSize(1, this.tableAllocator);
         const row = blankTable.length++;
         blankTable.entities[row] = id;
-        this.entityRecords.recordEntity(id, row, 2 /* ecs_root */);
+        const generationCount = this.records.recordEntity(id, row, 2 /* ecs_root */);
+        return generationCount;
     }
     newId() {
-        if (this.unusedEntityCount < 1) {
-            const id = this.largestEntityId++;
-            this.addToBlankTable(id);
-            return id;
+        if (this.unusedIdsCount < 1) {
+            const id = this.largestId++;
+            const generation = this.addToBlankTable(id);
+            return (0, ids_1.createId)(id, generation);
         }
-        const index = --this.unusedEntityCount;
-        const id = this.unusedEntities[index];
-        this.addToBlankTable(this.unusedEntities[index]);
-        return id;
+        const index = --this.unusedIdsCount;
+        const id = this.unusedIds[index];
+        const generation = this.addToBlankTable(this.unusedIds[index]);
+        return (0, ids_1.createId)(id, generation);
     }
     hasId(entityId, id) {
-        const { tableId } = this.entityRecords.index(entityId);
+        const originalId = (0, ids_1.extractBaseId)(entityId);
+        const { tableId } = this.records.index(originalId);
         if (tableId === -1 /* unintialized */) {
             return false;
         }
         return this.tables[tableId].has(id);
     }
     isAlive(entityId) {
-        const { tableId } = this.entityRecords.index(entityId);
-        return tableId !== -1 /* unintialized */;
+        const originalId = (0, ids_1.extractBaseId)(entityId);
+        const entity = this.records.index(originalId);
+        return (entity.tableId !== -1 /* unintialized */
+            && entity.generationCount === (0, ids_1.extractGenerationCount)(entityId));
     }
     delete(entityId) {
-        const { tableId, row } = this.entityRecords.index(entityId);
+        const originalId = (0, ids_1.extractBaseId)(entityId);
+        const { tableId, row } = this.records.index(originalId);
         if (tableId === -1 /* unintialized */) {
             return false;
         }
-        this.entityRecords.unsetEntity(entityId);
+        this.records.unsetEntity(originalId);
         this.tables[tableId].removeEntity(row);
         /* recycle entity id, stash for later use */
-        const unusedSlot = this.unusedEntityCount++;
-        this.unusedEntities[unusedSlot] = entityId;
+        const unusedSlot = this.unusedIdsCount++;
+        this.unusedIds[unusedSlot] = originalId;
         return true;
     }
     addTag(entityId, tagId) {
-        const entity = this.entityRecords.index(entityId);
+        const entity = this.records.index(entityId);
         const { tableId, row } = entity;
         if (tableId === -1 /* unintialized */) {
             return 1 /* entity_uninitialized */;

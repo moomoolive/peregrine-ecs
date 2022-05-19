@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const globals_1 = require("@jest/globals");
 const index_1 = require("./index");
+const ids_1 = require("../entities/ids");
 (0, globals_1.describe)("adding entity updates ecs stats", () => {
     (0, globals_1.it)("entity count is updated when ecs adds entity", () => {
         const ecs = new index_1.Ecs({
@@ -78,7 +79,7 @@ const index_1 = require("./index");
     });
 });
 (0, globals_1.describe)("ecs id management", () => {
-    (0, globals_1.it)("ids should be recycled", () => {
+    (0, globals_1.it)("although ids are recycled, they should not be valid (for 63 generations) once deleted", () => {
         const ecs = new index_1.Ecs({
             components: {
                 position: { x: "f64", y: "f64", z: "f64" },
@@ -91,6 +92,12 @@ const index_1 = require("./index");
         const oldId = ecs.newId();
         ecs.delete(oldId);
         const newId = ecs.newId();
-        (0, globals_1.expect)(newId).toBe(oldId);
+        /* same base id */
+        (0, globals_1.expect)((0, ids_1.extractBaseId)(oldId)).toBe((0, ids_1.extractBaseId)(newId));
+        /* but they are not equal */
+        (0, globals_1.expect)(newId).not.toBe(oldId);
+        /* deleted id fails check */
+        (0, globals_1.expect)(ecs.isAlive(oldId)).toBe(false);
+        (0, globals_1.expect)(ecs.isAlive(newId)).toBe(true);
     });
 });

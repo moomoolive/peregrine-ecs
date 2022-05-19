@@ -1,8 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.err = exports.ERROR_SIGNATURE = void 0;
-exports.ERROR_SIGNATURE = "[🦅 peregrine]";
+exports.assertion = exports.err = void 0;
 function err(msg) {
-    return exports.ERROR_SIGNATURE + msg;
+    return "[\uD83E\uDD85 peregrine]" /* ecs_signature */ + msg;
 }
 exports.err = err;
+function assertion(msg) {
+    return err(" ASSERTION_FAILED " /* assertion */ + msg);
+}
+exports.assertion = assertion;

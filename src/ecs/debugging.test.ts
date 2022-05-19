@@ -61,4 +61,9 @@ describe("component debugging", () => {
             )
         }
     })
+
+    it("attempting to debug a non component with component debug should throw", () => {
+        const nonComponent = ecs.newId()
+        expect(() => ecs.debugComponent(nonComponent)).toThrow()
+    })
 })
