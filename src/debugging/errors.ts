@@ -10,3 +10,9 @@ export function err(msg: string): string {
 export function assertion(msg: string): string {
     return err(error_msgs.assertion + msg)
 }
+
+export function assert(failed: boolean, onFailMsg: string) {
+    if (failed) {
+        throw TypeError(assertion(onFailMsg))
+    }
+}

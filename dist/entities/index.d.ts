@@ -8,6 +8,7 @@ export declare const enum reserved_by_ecs_encoding {
 }
 export declare const enum relation_entity_encoding {
     future_reserved_max_id = 4095,
+    relation_bits = 11,
     max_id = 2047,
     max_count = 1485,
     approx_max_count = 1400,

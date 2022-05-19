@@ -49,10 +49,9 @@ class Ecs {
         return this.componentDebugInfo;
     }
     debugComponent(componentId) {
-        if (componentId < 50 /* components_start */
-            || componentId > 50 /* components_start */ + this.componentCount) {
-            throw TypeError((0, errors_1.assertion)(`inputted id (got ${componentId.toString()}) is not a component`));
-        }
+        const tooSmall = componentId < 50 /* components_start */;
+        const tooLarge = componentId > 50 /* components_start */ + this.componentCount;
+        (0, errors_1.assert)(tooSmall || tooLarge, `inputted id is not a component (got ${componentId.toString()})`);
         const id = (0, index_3.deserializeComponentId)(componentId);
         return this.componentDebugInfo[id];
     }

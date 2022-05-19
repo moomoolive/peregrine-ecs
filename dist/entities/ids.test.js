@@ -26,3 +26,30 @@ const ids_1 = require("./ids");
         (0, globals_1.expect)((0, ids_1.extractGenerationCount)((0, ids_1.createId)(2, 64))).toBeLessThan(63);
     });
 });
+(0, globals_1.describe)("relationship id generation", () => {
+    (0, globals_1.it)("relationship id should not be equal to either inputted id", () => {
+        const marriedTo = 1;
+        const fatima = 30333;
+        const horribleMarriage = (0, ids_1.relationship)(marriedTo, fatima);
+        (0, globals_1.expect)(horribleMarriage).not.toBe(marriedTo);
+        (0, globals_1.expect)(horribleMarriage).not.toBe(fatima);
+    });
+    (0, globals_1.it)("relationships should return true for is relationship function, while non relations should not", () => {
+        const marriedTo = 1;
+        const yumna = 30333;
+        const happyMarriage = (0, ids_1.relationship)(marriedTo, yumna);
+        (0, globals_1.expect)((0, ids_1.isRelationship)(happyMarriage)).toBe(true);
+        (0, globals_1.expect)((0, ids_1.isRelationship)(marriedTo)).toBe(false);
+        (0, globals_1.expect)((0, ids_1.isRelationship)(yumna)).toBe(false);
+        (0, globals_1.expect)((0, ids_1.isRelationship)(0)).toBe(false);
+        (0, globals_1.expect)((0, ids_1.isRelationship)(1000000)).toBe(false);
+        (0, globals_1.expect)((0, ids_1.isRelationship)(6666)).toBe(false);
+    });
+    (0, globals_1.it)("relation and entity should be able to be extracted from relation", () => {
+        const eats = 2;
+        const mangos = 45000;
+        const eatsMangos = (0, ids_1.relationship)(eats, mangos);
+        (0, globals_1.expect)((0, ids_1.extractRelation)(eatsMangos)).toBe(eats);
+        (0, globals_1.expect)((0, ids_1.extractRelatedEntity)(eatsMangos)).toBe(mangos);
+    });
+});

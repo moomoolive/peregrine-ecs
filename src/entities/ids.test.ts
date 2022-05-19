@@ -2,7 +2,11 @@ import {describe, it, expect} from "@jest/globals"
 import {
     createId, 
     extractBaseId, 
-    extractGenerationCount
+    extractGenerationCount,
+    relationship,
+    isRelationship,
+    extractRelation,
+    extractRelatedEntity
 } from "./ids"
 
 describe("should be able to deserialize createId sections", () => {
@@ -29,5 +33,35 @@ describe("should be able to deserialize createId sections", () => {
         expect(extractGenerationCount(createId(2, 555))).toBeLessThan(63)
         expect(extractGenerationCount(createId(2, 1_000_000))).toBeLessThan(63)
         expect(extractGenerationCount(createId(2, 64))).toBeLessThan(63)
+    })
+})
+
+describe("relationship id generation", () => {
+    it("relationship id should not be equal to either inputted id", () => {
+        const marriedTo = 1
+        const fatima = 30_333
+        const horribleMarriage = relationship(marriedTo, fatima)
+        expect(horribleMarriage).not.toBe(marriedTo)
+        expect(horribleMarriage).not.toBe(fatima)
+    })
+
+    it("relationships should return true for is relationship function, while non relations should not", () => {
+        const marriedTo = 1
+        const yumna = 30_333
+        const happyMarriage = relationship(marriedTo, yumna)
+        expect(isRelationship(happyMarriage)).toBe(true)
+        expect(isRelationship(marriedTo)).toBe(false)
+        expect(isRelationship(yumna)).toBe(false)
+        expect(isRelationship(0)).toBe(false)
+        expect(isRelationship(1_000_000)).toBe(false)
+        expect(isRelationship(6666)).toBe(false)
+    })
+
+    it("relation and entity should be able to be extracted from relation", () => {
+        const eats = 2
+        const mangos = 45_000
+        const eatsMangos = relationship(eats, mangos)
+        expect(extractRelation(eatsMangos)).toBe(eats)
+        expect(extractRelatedEntity(eatsMangos)).toBe(mangos)
     })
 })

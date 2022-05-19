@@ -14,7 +14,8 @@ export const enum reserved_by_ecs_encoding {
 
 export const enum relation_entity_encoding {
     future_reserved_max_id = 4096 - 1, /* 12 bits */
-    max_id = 2048 - 1, /* 11 bits */
+    relation_bits = 11,
+    max_id = (1 << relation_bits) - 1, /* 2047 */
     max_count = (
         max_id
         - reserved_by_ecs_encoding.max_count

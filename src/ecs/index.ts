@@ -48,7 +48,7 @@ import {
     extractBaseId,
     extractGenerationCount
 } from "../entities/ids"
-import {assertion} from "../debugging/errors"
+import {assert} from "../debugging/errors"
 
 export type EcsMode = "development" | "production"
 
@@ -153,12 +153,9 @@ export class Ecs<
     }
 
     debugComponent(componentId: ComponentId): ComponentDebug {
-        if (
-            componentId < standard_entity.components_start 
-            || componentId > standard_entity.components_start + this.componentCount
-        ) {
-            throw TypeError(assertion(`inputted id (got ${componentId.toString()}) is not a component`))
-        }
+        const tooSmall = componentId < standard_entity.components_start
+        const tooLarge = componentId > standard_entity.components_start + this.componentCount
+        assert(tooSmall || tooLarge, `inputted id is not a component (got ${componentId.toString()})`)
         const id = deserializeComponentId(componentId as number)
         return this.componentDebugInfo[id]
     }

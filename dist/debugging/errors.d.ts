@@ -4,4 +4,5 @@ export declare const enum error_msgs {
 }
 export declare function err(msg: string): string;
 export declare function assertion(msg: string): string;
+export declare function assert(failed: boolean, onFailMsg: string): void;
 //# sourceMappingURL=errors.d.ts.map
