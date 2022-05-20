@@ -4,7 +4,7 @@ import {
 } from "../components/index"
 import {
     Table,
-    computeNewTableHashAdditionalTag,
+    computeAdditonalTagHash,
     table_hashes,
     table_encoding,
     table_defaults,
@@ -37,7 +37,7 @@ export function findTableOrCreate(
     const {
         hash, 
         insertIndex
-    } = computeNewTableHashAdditionalTag(
+    } = computeAdditonalTagHash(
         previousTable.componentIds,
         tagId,
         previousTable.components.length
@@ -48,23 +48,23 @@ export function findTableOrCreate(
         previousTable.addEdges.set(tagId, nextTableId)        
         return tables[nextTableId]
     }
-    const numberOfComponents = previousTable.componentIds.length + 1
+    const numberOfComponentIds = previousTable.componentIds.length + 1
     const newTableComponentIds = i32Malloc(
-        allocator, numberOfComponents
+        allocator, numberOfComponentIds
     )
     newTableComponentIds.set(previousTable.componentIds)
     if (insertIndex === table_hashes.last_index) {
-        newTableComponentIds[numberOfComponents - 1] = tagId
+        newTableComponentIds[numberOfComponentIds - 1] = tagId
     } else {
         newTableComponentIds.copyWithin(
             insertIndex + 1,
             insertIndex,
-            numberOfComponents
+            numberOfComponentIds
         )
         newTableComponentIds[insertIndex] = tagId
     }
     const newTableComponentPtrs = i32Malloc(
-        allocator, numberOfComponents
+        allocator, previousTable.components.length
     )
     const componentData = []
     for (let i = 0; i < previousTable.components.length; i++) {
@@ -83,6 +83,9 @@ export function findTableOrCreate(
         componentData.push(component)
     }
     const newTableId = tables.length
+    const newTableEntities = i32Malloc(
+        allocator, table_defaults.initial_capacity
+    )
     const createdTable = new Table(
         newTableId,
         hash,
@@ -90,10 +93,11 @@ export function findTableOrCreate(
         componentData,
         i32Malloc(allocator, table_encoding.meta_size),
         newTableComponentPtrs,
-        i32Malloc(allocator, table_defaults.initial_capacity),
+        newTableEntities,
         table_defaults.initial_capacity
     )
     previousTable.addEdges.set(tagId, newTableId)
+    createdTable.removeEdges.set(tagId, previousTable.id)
     tableHashes.set(hash, newTableId)
     tables.push(createdTable)
     return createdTable
@@ -109,6 +113,8 @@ export function shiftComponentDataAligned(
     destination.ensureSize(1, allocator)
     const targetComponentIndex = targetLength - 1
     const currentLength = source.length--
+    /* move entity id to new table */
+    destination.entities[targetLength] = source.entities[sourceRow]
     const currentComponentLastIndex = currentLength - 1
     for (let c = 0; c < destination.components.length; c++) {
         const targetComponent = destination.components[c]

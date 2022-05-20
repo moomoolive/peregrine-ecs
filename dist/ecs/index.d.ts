@@ -2,7 +2,7 @@ import { relation_entity_encoding } from "../entities/index";
 import { ComponentRegistry, registry_encoding, RelationRegisty, IdDeclaration } from "../dataStructures/registries/index";
 import { ComponentsDeclaration, struct_proxy_encoding } from "../components/index";
 import { ComponentDebug, ComponentId } from "./debugging";
-import { MutatorStatusCode } from "../entities/mutator";
+import { MutatorStatusCode } from "../entities/mutations";
 export declare type EcsMode = "development" | "production";
 export declare type EcsOptions<Relations extends IdDeclaration> = {
     maxEntities: number;
@@ -18,6 +18,7 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     private unusedIdsCount;
     private largestId;
     private records;
+    private mutableEntitiesStart;
     readonly relations: RelationRegisty<Relations>;
     readonly declaredRelations: Relations;
     private tables;

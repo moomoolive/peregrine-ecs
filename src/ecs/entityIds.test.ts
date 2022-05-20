@@ -99,9 +99,6 @@ describe("ecs id management", () => {
                 time: {value: "f32"}
             }
         })
-        console.log(ecs["tables"][2])
-        console.log(ecs["tables"][1])
-        console.log(ecs["tables"][0])
         const oldId = ecs.newId()
         ecs.delete(oldId)
         const newId = ecs.newId()
@@ -112,5 +109,34 @@ describe("ecs id management", () => {
         /* deleted id fails check */
         expect(ecs.isAlive(oldId)).toBe(false)
         expect(ecs.isAlive(newId)).toBe(true)
+    })
+})
+
+describe("immutable entities", () => {
+    it("component entities cannot be deleted", () => {
+        const ecs = new Ecs({
+            components: {
+                position: {x: "f64", y: "f64", z: "f64"},
+                controller: {up: "i32", down: "i32"},
+                inventory: {weight: "i32", items: "i32"},
+                playerType: {type: "i32"},
+                time: {value: "f32"}
+            }
+        })
+        expect(() => ecs.delete(ecs.components.position as number)).toThrow()
+        expect(() => ecs.delete(ecs.components.inventory as number)).toThrow()
+    })
+
+    it("declared relation entities cannot be deleted", () => {
+        const ecs = new Ecs({
+            components: {
+                position: {x: "f64", y: "f64", z: "f64"},
+                controller: {up: "i32", down: "i32"},
+                inventory: {weight: "i32", items: "i32"},
+                playerType: {type: "i32"},
+                time: {value: "f32"}
+            }
+        })
+        expect(() => ecs.delete(ecs.relations.instanceof)).toThrow()
     })
 })

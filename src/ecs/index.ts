@@ -38,7 +38,7 @@ import {
     MutatorStatusCode,
     findTableOrCreate,
     shiftComponentDataAligned
-} from "../entities/mutator"
+} from "../entities/mutations"
 import {
     createSharedInt32Array,
 } from "../dataStructures/sharedArrays"
@@ -78,6 +78,7 @@ export class Ecs<
     private unusedIdsCount: number
     private largestId: number
     private records: EntityRecords
+    private mutableEntitiesStart: number
 
     /* relations */
     readonly relations: RelationRegisty<Relations>
@@ -145,6 +146,10 @@ export class Ecs<
         }
         this.componentDebugInfo = generateComponentDebugInfo(
             this.componentStructProxies
+        )
+        this.mutableEntitiesStart = (
+            standard_entity.relations_start 
+            + this.relationsCount
         )
     }
 
@@ -230,6 +235,7 @@ export class Ecs<
 
     delete(entityId: number): boolean {
         const originalId = extractBaseId(entityId)
+        assert(originalId < this.mutableEntitiesStart, `entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`)
         const {tableId, row} = this.records.index(originalId)
         if (tableId === record_encoding.unintialized) {
             return false
@@ -243,7 +249,8 @@ export class Ecs<
     }
 
     addTag(entityId: number, tagId: number): MutatorStatusCode {
-        const entity = this.records.index(entityId)
+        const originalId = extractBaseId(entityId)
+        const entity = this.records.index(originalId)
         const {tableId, row} = entity
         if (tableId === record_encoding.unintialized) {
             return mutation_status.entity_uninitialized

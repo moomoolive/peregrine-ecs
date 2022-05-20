@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.computeNewTableHashAdditionalTag = exports.generateTableHash = exports.Table = exports.createTableMeta = void 0;
+exports.computeAdditonalTagHash = exports.generateTableHash = exports.Table = exports.createTableMeta = void 0;
 const index_1 = require("../allocator/index");
 function createTableMeta(allocator) {
     return (0, index_1.i32Malloc)(allocator, 6 /* meta_size */);
@@ -146,24 +146,27 @@ class Table {
     }
 }
 exports.Table = Table;
+function hashComponent(componentId) {
+    return "." /* component_separator */ + componentId.toString();
+}
 function generateTableHash(componentIds, numberOfComponents) {
     let hash = "";
     for (let i = 0; i < numberOfComponents; i++) {
-        hash += componentIds[i].toString();
+        hash += hashComponent(componentIds[i]);
     }
     hash += "&" /* tag_component_divider */;
     for (let i = numberOfComponents; i < componentIds.length; i++) {
-        hash += componentIds[i].toString();
+        hash += hashComponent(componentIds[i]);
     }
     return hash;
 }
 exports.generateTableHash = generateTableHash;
 let hashCarrier = { hash: "", insertIndex: 0 };
-function computeNewTableHashAdditionalTag(referingTableComponentIds, tag, componentsLength) {
+function computeAdditonalTagHash(referingTableComponentIds, tag, componentsLength) {
     let hash = "";
     /* compute section for components */
     for (let i = 0; i < componentsLength; i++) {
-        hash += referingTableComponentIds[i].toString();
+        hash += hashComponent(referingTableComponentIds[i]);
     }
     hash += "&" /* tag_component_divider */;
     /* compute section for tags */
@@ -173,10 +176,13 @@ function computeNewTableHashAdditionalTag(referingTableComponentIds, tag, compon
     for (let i = start; i < len; i++) {
         const nextTag = referingTableComponentIds[i + 1];
         if (nextTag > tag) {
-            hash += tag.toString();
+            hash += hashComponent(tag);
             insertIndex = i + 1;
         }
-        hash += nextTag.toString();
+        hash += hashComponent(nextTag);
+    }
+    if (insertIndex === -1 /* last_index */) {
+        hash += hashComponent(tag);
     }
     /*
     if none of the tags where bigger than input tag, it means
@@ -186,4 +192,4 @@ function computeNewTableHashAdditionalTag(referingTableComponentIds, tag, compon
     hashCarrier.insertIndex = insertIndex;
     return hashCarrier;
 }
-exports.computeNewTableHashAdditionalTag = computeNewTableHashAdditionalTag;
+exports.computeAdditonalTagHash = computeAdditonalTagHash;

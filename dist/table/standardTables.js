@@ -12,7 +12,8 @@ function addStandardEntitesToi32(arr) {
         arr[i] = index_3.STANDARD_ENTITIES[i];
     }
 }
-const STANDARD_COMPONENTS_HASH = index_3.STANDARD_ENTITIES.join("");
+const STANDARD_COMPONENTS_HASH = ("." /* component_separator */
+    + index_3.STANDARD_ENTITIES.join("."));
 exports.ECS_ID_TABLE_HASH = `${"*" /* non_standard_hash_prefix */}id${"&" /* tag_component_divider */}${STANDARD_COMPONENTS_HASH}`;
 function ecsIdTable(allocator, records) {
     const componentIds = (0, index_2.i32Malloc)(allocator, 2);

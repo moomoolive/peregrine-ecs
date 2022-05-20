@@ -246,7 +246,12 @@ export type QueryTable = Pick<Table, "entities" | "get">
 export const enum table_hashes {
     tag_component_divider = "&",
     non_standard_hash_prefix = "*",
+    component_separator = ".",
     last_index = -1
+}
+
+function hashComponent(componentId: number): string {
+    return table_hashes.component_separator + componentId.toString()
 }
 
 export function generateTableHash(
@@ -255,17 +260,17 @@ export function generateTableHash(
 ): string {
     let hash = ""
     for (let i = 0; i < numberOfComponents; i++) {
-        hash += componentIds[i].toString()
+        hash += hashComponent(componentIds[i])
     }
     hash += table_hashes.tag_component_divider
     for (let i = numberOfComponents; i < componentIds.length; i++) {
-        hash += componentIds[i].toString()
+        hash += hashComponent(componentIds[i])
     }
     return hash
 }
 
 let hashCarrier = {hash: "", insertIndex: 0}
-export function computeNewTableHashAdditionalTag(
+export function computeAdditonalTagHash(
     referingTableComponentIds: Int32Array,
     tag: number,
     componentsLength: number
@@ -273,7 +278,7 @@ export function computeNewTableHashAdditionalTag(
     let hash = ""
     /* compute section for components */
     for (let i = 0; i < componentsLength; i++) {
-        hash += referingTableComponentIds[i].toString()
+        hash += hashComponent(referingTableComponentIds[i])
     }
     hash += table_hashes.tag_component_divider
     
@@ -284,10 +289,13 @@ export function computeNewTableHashAdditionalTag(
     for (let i = start; i < len; i++) {
         const nextTag = referingTableComponentIds[i + 1]
         if (nextTag > tag) {
-            hash += tag.toString()
+            hash += hashComponent(tag)
             insertIndex = i + 1
         }
-        hash += nextTag.toString()
+        hash += hashComponent(nextTag)
+    }
+    if (insertIndex === table_hashes.last_index) {
+        hash += hashComponent(tag)
     }
     /* 
     if none of the tags where bigger than input tag, it means

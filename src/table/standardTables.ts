@@ -35,7 +35,10 @@ function addStandardEntitesToi32(arr: Int32Array) {
     }
 }
 
-const STANDARD_COMPONENTS_HASH = STANDARD_ENTITIES.join("")
+const STANDARD_COMPONENTS_HASH = (
+    table_hashes.component_separator  
+    + STANDARD_ENTITIES.join(".")
+)
 
 export const ECS_ID_TABLE_HASH = `${table_hashes.non_standard_hash_prefix}id${table_hashes.tag_component_divider}${STANDARD_COMPONENTS_HASH}`
 function ecsIdTable(

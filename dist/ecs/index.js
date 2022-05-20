@@ -6,7 +6,7 @@ const index_1 = require("../entities/index");
 const index_2 = require("../dataStructures/registries/index");
 const index_3 = require("../components/index");
 const debugging_1 = require("./debugging");
-const mutator_1 = require("../entities/mutator");
+const mutations_1 = require("../entities/mutations");
 const sharedArrays_1 = require("../dataStructures/sharedArrays");
 const index_4 = require("../allocator/index");
 const ids_1 = require("../entities/ids");
@@ -35,6 +35,8 @@ class Ecs {
             this.hashToTableIndex.set(hash, id);
         }
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
+        this.mutableEntitiesStart = (562 /* relations_start */
+            + this.relationsCount);
     }
     get entityCount() {
         return (this.largestId
@@ -98,6 +100,7 @@ class Ecs {
     }
     delete(entityId) {
         const originalId = (0, ids_1.extractBaseId)(entityId);
+        (0, errors_1.assert)(originalId < this.mutableEntitiesStart, `entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`);
         const { tableId, row } = this.records.index(originalId);
         if (tableId === -1 /* unintialized */) {
             return false;
@@ -110,7 +113,8 @@ class Ecs {
         return true;
     }
     addTag(entityId, tagId) {
-        const entity = this.records.index(entityId);
+        const originalId = (0, ids_1.extractBaseId)(entityId);
+        const entity = this.records.index(originalId);
         const { tableId, row } = entity;
         if (tableId === -1 /* unintialized */) {
             return 1 /* entity_uninitialized */;
@@ -123,11 +127,11 @@ class Ecs {
         const targetTableId = table.addEdges.get(tagId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutator_1.findTableOrCreate)(this.hashToTableIndex, table, tagId, tables, allocator, this.componentStructProxies);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreate)(this.hashToTableIndex, table, tagId, tables, allocator, this.componentStructProxies);
         const newTable = targetTable.id;
         // proceed to move entity data from current table to 
         // target table, (identical components, tags + new)
-        const newRow = (0, mutator_1.shiftComponentDataAligned)(table, targetTable, row, allocator);
+        const newRow = (0, mutations_1.shiftComponentDataAligned)(table, targetTable, row, allocator);
         entity.tableId = newTable;
         entity.row = newRow;
         return 0 /* successful_update */;
