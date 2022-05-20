@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateComponentStructProxies = exports.orderComponentsByName = exports.deserializeComponentId = exports.computeComponentId = exports.structProxyMacro = exports.StructProxyClass = exports.RawComponent = void 0;
+exports.generateComponentStructProxies = exports.orderComponentsByName = exports.orderKeysByName = exports.deserializeComponentId = exports.computeComponentId = exports.structProxyMacro = exports.StructProxyClass = exports.RawComponent = void 0;
 const tokenizeDef_1 = require("./tokenizeDef");
 const errors_1 = require("../debugging/errors");
 function createComponentViewClass({ fields }) {
@@ -70,9 +70,13 @@ function deserializeComponentId(id) {
     return id - 50 /* reserved_count */;
 }
 exports.deserializeComponentId = deserializeComponentId;
-function orderComponentsByName(declaration) {
+function orderKeysByName(keys) {
     /* components are order alphabetically */
-    return Object.keys(declaration).sort();
+    return keys.sort();
+}
+exports.orderKeysByName = orderKeysByName;
+function orderComponentsByName(declaration) {
+    return orderKeysByName(Object.keys(declaration));
 }
 exports.orderComponentsByName = orderComponentsByName;
 function generateComponentStructProxies(declaration) {

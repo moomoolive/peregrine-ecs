@@ -194,11 +194,15 @@ export function deserializeComponentId(id: number): number {
     return id - standard_entity.reserved_count
 }
 
+export function orderKeysByName(keys: string[]): string[] {
+    /* components are order alphabetically */
+    return keys.sort()
+}
+
 export function orderComponentsByName(
     declaration: ComponentsDeclaration
 ): string[] {
-    /* components are order alphabetically */
-    return Object.keys(declaration).sort()
+    return orderKeysByName(Object.keys(declaration))
 }
 
 export function generateComponentStructProxies(

@@ -43,3 +43,29 @@ const index_2 = require("../../components/index");
         (0, globals_1.expect)(() => (0, index_1.componentRegistryMacro)(max)).toThrow();
     });
 });
+(0, globals_1.describe)("relation registry", () => {
+    (0, globals_1.it)("should generate object with inputted keys", () => {
+        const rels = [
+            "marriedTo",
+            "eats",
+            "livesIn",
+            "hates"
+        ];
+        const { relations } = (0, index_1.relationRegistryMacro)(rels);
+        (0, globals_1.expect)(typeof relations.eats).toBe("number");
+        (0, globals_1.expect)(typeof relations.livesIn).toBe("number");
+        (0, globals_1.expect)(typeof relations.hates).toBe("number");
+        (0, globals_1.expect)(typeof relations.marriedTo).toBe("number");
+    });
+    (0, globals_1.it)("relations registry should be immutable", () => {
+        const rels = [
+            "marriedTo",
+            "eats",
+            "livesIn",
+            "hates"
+        ];
+        const { relations } = (0, index_1.relationRegistryMacro)(rels);
+        // @ts-ignore
+        (0, globals_1.expect)(() => relations.eats = 4).toThrow();
+    });
+});

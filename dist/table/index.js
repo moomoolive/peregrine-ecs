@@ -151,7 +151,7 @@ function generateTableHash(componentIds, numberOfComponents) {
     for (let i = 0; i < numberOfComponents; i++) {
         hash += componentIds[i].toString();
     }
-    hash += "=>" /* tag_component_divider */;
+    hash += "&" /* tag_component_divider */;
     for (let i = numberOfComponents; i < componentIds.length; i++) {
         hash += componentIds[i].toString();
     }
@@ -165,7 +165,7 @@ function computeNewTableHashAdditionalTag(referingTableComponentIds, tag, compon
     for (let i = 0; i < componentsLength; i++) {
         hash += referingTableComponentIds[i].toString();
     }
-    hash += "=>" /* tag_component_divider */;
+    hash += "&" /* tag_component_divider */;
     /* compute section for tags */
     let insertIndex = -1 /* last_index */;
     const len = referingTableComponentIds.length - 1;

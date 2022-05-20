@@ -49,7 +49,7 @@ export declare class Table {
 }
 export declare type QueryTable = Pick<Table, "entities" | "get">;
 export declare const enum table_hashes {
-    tag_component_divider = "=>",
+    tag_component_divider = "&",
     non_standard_hash_prefix = "*",
     last_index = -1
 }

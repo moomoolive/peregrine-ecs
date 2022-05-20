@@ -9,7 +9,7 @@
     "prepare": "husky install",
     "pre-commit": "npm run test && npm run build && git add -A",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
-    "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js ./src/entities --runInBand --watchAll",
+    "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --watchAll",
     "ci": "npm i && npm run test"
   },
   "repository": {

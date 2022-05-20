@@ -52,6 +52,7 @@ export declare type ComponentsDeclaration = {
 export declare type StructProxyClasses = ReadonlyArray<StructProxyClass<ComponentDefinition>>;
 export declare function computeComponentId(offset: number): number;
 export declare function deserializeComponentId(id: number): number;
+export declare function orderKeysByName(keys: string[]): string[];
 export declare function orderComponentsByName(declaration: ComponentsDeclaration): string[];
 export declare function generateComponentStructProxies(declaration: ComponentsDeclaration): {
     proxyClasses: StructProxyClasses;

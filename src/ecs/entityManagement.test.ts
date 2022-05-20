@@ -99,6 +99,9 @@ describe("ecs id management", () => {
                 time: {value: "f32"}
             }
         })
+        console.log(ecs["tables"][2])
+        console.log(ecs["tables"][1])
+        console.log(ecs["tables"][0])
         const oldId = ecs.newId()
         ecs.delete(oldId)
         const newId = ecs.newId()

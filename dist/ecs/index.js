@@ -12,22 +12,24 @@ const index_4 = require("../allocator/index");
 const ids_1 = require("../entities/ids");
 const errors_1 = require("../debugging/errors");
 class Ecs {
-    constructor(params, { maxEntities = 500000 /* limit */, allocatorInitialMemoryMB = 50, mode = "development" } = {}) {
+    constructor(params, { maxEntities = 500000 /* limit */, allocatorInitialMemoryMB = 50, mode = "development", relations = [] } = {}) {
         const { components } = params;
         this.schemas = components;
         const { proxyClasses, orderedComponentNames } = (0, index_3.generateComponentStructProxies)(components);
         this.componentStructProxies = proxyClasses;
         this.components = (0, index_2.componentRegistryMacro)(orderedComponentNames);
+        const { relations: generatedRelations } = (0, index_2.relationRegistryMacro)(relations);
+        this.relations = generatedRelations;
+        this.declaredRelations = relations;
         this.unusedIds = (0, sharedArrays_1.createSharedInt32Array)(maxEntities);
         this.unusedIdsCount = 0;
-        this.records = new index_1.EntityRecords(maxEntities > 5000 /* minimum */ ?
-            maxEntities
-            : 5000 /* minimum */);
+        (0, errors_1.assert)(maxEntities < 5000 /* minimum */, `max entities must be ${5000 /* minimum */.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`);
+        this.records = new index_1.EntityRecords(maxEntities);
         this.tableAllocator = (0, index_4.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
         this.hashToTableIndex = new Map();
         this.largestId = 4095 /* start_of_user_defined_entities */;
         this.records.init();
-        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this.componentStructProxies.length);
+        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this.componentCount, this.relationsCount);
         this.tables = [...defaultTables];
         for (const { id, hash } of defaultTables) {
             this.hashToTableIndex.set(hash, id);
@@ -35,15 +37,21 @@ class Ecs {
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
     }
     get entityCount() {
-        return this.largestId - 4095 /* start_of_user_defined_entities */;
+        return (this.largestId
+            - 4095 /* start_of_user_defined_entities */);
     }
     get preciseEntityCount() {
         return (this.entityCount
             + 50 /* reserved_count */
-            + this.componentCount);
+            + this.componentCount
+            + this.relationsCount);
     }
     get componentCount() {
         return this.componentStructProxies.length;
+    }
+    get relationsCount() {
+        return (this.declaredRelations.length
+            + 1 /* standard_relations_count */);
     }
     allComponentDebugInfo() {
         return this.componentDebugInfo;
@@ -51,7 +59,7 @@ class Ecs {
     debugComponent(componentId) {
         const tooSmall = componentId < 50 /* components_start */;
         const tooLarge = componentId > 50 /* components_start */ + this.componentCount;
-        (0, errors_1.assert)(tooSmall || tooLarge, `inputted id is not a component (got ${componentId.toString()})`);
+        (0, errors_1.assert)(tooSmall || tooLarge, `inputted id is not a component (got ${componentId.toLocaleString("en-us")})`);
         const id = (0, index_3.deserializeComponentId)(componentId);
         return this.componentDebugInfo[id];
     }

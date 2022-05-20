@@ -2,6 +2,7 @@ import {expect, describe, it} from "@jest/globals"
 import {
     componentRegistryMacro, 
     registry_encoding,
+    relationRegistryMacro
 } from "./index"
 import {standard_entity} from "../../entities/index"
 import {orderComponentsByName} from "../../components/index"
@@ -59,5 +60,33 @@ describe("component registry", () => {
             max.push("field" + i.toString())
         }
         expect(() => componentRegistryMacro(max)).toThrow()
+    })
+})
+
+describe("relation registry", () => {
+    it("should generate object with inputted keys", () => {
+        const rels = [
+            "marriedTo",
+            "eats",
+            "livesIn",
+            "hates"
+        ] as const
+        const {relations} = relationRegistryMacro(rels)
+        expect(typeof relations.eats).toBe("number")
+        expect(typeof relations.livesIn).toBe("number")
+        expect(typeof relations.hates).toBe("number")
+        expect(typeof relations.marriedTo).toBe("number")
+    })
+
+    it("relations registry should be immutable", () => {
+        const rels = [
+            "marriedTo",
+            "eats",
+            "livesIn",
+            "hates"
+        ] as const
+        const {relations} = relationRegistryMacro(rels)
+        // @ts-ignore
+        expect(() => relations.eats = 4).toThrow()
     })
 })

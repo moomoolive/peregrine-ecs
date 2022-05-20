@@ -15,7 +15,11 @@ import {
 import {
     componentRegistryMacro,
     ComponentRegistry,
-    registry_encoding
+    registry_encoding,
+    relationRegistryMacro,
+    RelationRegisty,
+    IdDeclaration,
+    relation_registy_encoding
 } from "../dataStructures/registries/index"
 import {
     ComponentsDeclaration,
@@ -52,14 +56,18 @@ import {assert} from "../debugging/errors"
 
 export type EcsMode = "development" | "production"
 
-export type EcsOptions = {
+export type EcsOptions<
+    Relations extends IdDeclaration
+> = {
     maxEntities: number,
     allocatorInitialMemoryMB: number
     mode: "development" | "production"
+    relations: Relations
 }
 
 export class Ecs<
-    Components extends ComponentsDeclaration
+    Components extends ComponentsDeclaration,
+    Relations extends IdDeclaration
 > {
     static readonly MAX_FIELDS_PER_COMPONENT = struct_proxy_encoding.max_fields
     static readonly MAX_COMPONENTS = registry_encoding.max_components
@@ -70,6 +78,10 @@ export class Ecs<
     private unusedIdsCount: number
     private largestId: number
     private records: EntityRecords
+
+    /* relations */
+    readonly relations: RelationRegisty<Relations>
+    readonly declaredRelations: Relations
 
     /* tables (sometimes called archetypes) */
     private tables: Table[]
@@ -88,8 +100,9 @@ export class Ecs<
     {
         maxEntities = entities_encoding.limit,
         allocatorInitialMemoryMB = 50,
-        mode = "development"
-    }: Partial<EcsOptions> = {}) {
+        mode = "development",
+        relations = [] as ReadonlyArray<string> as Relations
+    }: Partial<EcsOptions<Relations>> = {}) {
         const {components} = params
         this.schemas = components
         const {
@@ -98,15 +111,17 @@ export class Ecs<
         } = generateComponentStructProxies(components)
         this.componentStructProxies = proxyClasses
         this.components = componentRegistryMacro(orderedComponentNames)
-        
+        const {
+            relations: generatedRelations
+        } = relationRegistryMacro(relations)
+        this.relations = generatedRelations
+        this.declaredRelations = relations
+
         this.unusedIds = createSharedInt32Array(maxEntities)
         this.unusedIdsCount = 0
         
-        this.records = new EntityRecords(
-            maxEntities > entities_encoding.minimum ?
-                maxEntities
-                : entities_encoding.minimum
-        )
+        assert(maxEntities < entities_encoding.minimum, `max entities must be ${entities_encoding.minimum.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`)
+        this.records = new EntityRecords(maxEntities)
         
         this.tableAllocator = createComponentAllocator(
             bytes.per_megabyte * allocatorInitialMemoryMB, 
@@ -121,7 +136,8 @@ export class Ecs<
         const {defaultTables} = createDefaultTables(
             this.tableAllocator,
             this.records,
-            this.componentStructProxies.length
+            this.componentCount,
+            this.relationsCount
         )
         this.tables = [...defaultTables]
         for (const {id, hash} of defaultTables) {
@@ -133,7 +149,10 @@ export class Ecs<
     }
 
     get entityCount(): number {
-        return this.largestId - standard_entity.start_of_user_defined_entities
+        return (
+            this.largestId 
+            - standard_entity.start_of_user_defined_entities
+        )
     }
 
     get preciseEntityCount(): number {
@@ -141,11 +160,19 @@ export class Ecs<
             this.entityCount 
             + standard_entity.reserved_count
             + this.componentCount
+            + this.relationsCount
         )
     }
 
     get componentCount(): number {
         return this.componentStructProxies.length
+    }
+
+    get relationsCount(): number {
+        return (
+            this.declaredRelations.length
+            + relation_registy_encoding.standard_relations_count
+        )
     }
 
     allComponentDebugInfo(): ComponentDebug[] {
@@ -155,7 +182,7 @@ export class Ecs<
     debugComponent(componentId: ComponentId): ComponentDebug {
         const tooSmall = componentId < standard_entity.components_start
         const tooLarge = componentId > standard_entity.components_start + this.componentCount
-        assert(tooSmall || tooLarge, `inputted id is not a component (got ${componentId.toString()})`)
+        assert(tooSmall || tooLarge, `inputted id is not a component (got ${componentId.toLocaleString("en-us")})`)
         const id = deserializeComponentId(componentId as number)
         return this.componentDebugInfo[id]
     }
