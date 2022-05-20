@@ -1,6 +1,6 @@
 import { Table } from "./index";
 import { Allocator } from "../allocator/index";
-import { EntityRecords } from "../entities/index";
+import { EntityRecords } from "../entities/records";
 export declare const enum standard_tables {
     count = 3,
     ecs_id = 0,

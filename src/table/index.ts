@@ -33,6 +33,15 @@ export const enum table_defaults {
     memory_reclaimation_limit = 50
 }
 
+export type TableMutationStatus = (
+    0 | 1
+)
+
+export const enum table_mutation_status {
+    swap_ok = 0,
+    swap_averted = 1,
+}
+
 export type Component<Definition extends ComponentDefinition> = (
     Pick<RawComponent<Definition>, "databuffer" | "index">
 )
@@ -153,7 +162,7 @@ export class Table {
     }
 
     has(componentId: number): boolean {
-        return this.componentIndexes.has(componentId) !== undefined
+        return this.componentIndexes.has(componentId)
     }
 
     ensureSize(
@@ -214,13 +223,13 @@ export class Table {
         return len
     }
 
-    removeEntity(row: number): boolean {
+    removeEntity(row: number): TableMutationStatus {
         const length = this.length
         const lastEntity = length - 1
         if (length === 1 || row === lastEntity) {
             this.length--
             // garbage collection ??
-            return true
+            return table_mutation_status.swap_averted
         }
         /* swap entity spots, to avoid expensive shifting */
         this.entities[row] = this.entities[lastEntity]
@@ -237,7 +246,7 @@ export class Table {
         }
         this.length--
         // garbage collection ??
-        return true
+        return table_mutation_status.swap_ok
     }
 }
 
@@ -269,39 +278,77 @@ export function generateTableHash(
     return hash
 }
 
-let hashCarrier = {hash: "", insertIndex: 0}
-export function computeAdditonalTagHash(
+function computeComponentHashSection(
     referingTableComponentIds: Int32Array,
-    tag: number,
     componentsLength: number
-): {hash: string, insertIndex: number} {
+): string {
     let hash = ""
     /* compute section for components */
     for (let i = 0; i < componentsLength; i++) {
         hash += hashComponent(referingTableComponentIds[i])
     }
-    hash += table_hashes.tag_component_divider
-    
+    return hash + table_hashes.tag_component_divider
+}
+
+const additionHash = {hash: "", insertIndex: 0} 
+export function computeAdditonalTagHash(
+    referingTableComponentIds: Int32Array,
+    additionalTag: number,
+    componentsLength: number
+): {hash: string, insertIndex: number} {
+    /* compute section for components */
+    let hash = computeComponentHashSection(
+        referingTableComponentIds,
+        componentsLength
+    )
     /* compute section for tags */
     let insertIndex = table_hashes.last_index
     const len = referingTableComponentIds.length - 1
     const start = componentsLength - 1
     for (let i = start; i < len; i++) {
         const nextTag = referingTableComponentIds[i + 1]
-        if (nextTag > tag) {
-            hash += hashComponent(tag)
+        if (nextTag > additionalTag) {
+            hash += hashComponent(additionalTag)
             insertIndex = i + 1
         }
         hash += hashComponent(nextTag)
-    }
-    if (insertIndex === table_hashes.last_index) {
-        hash += hashComponent(tag)
     }
     /* 
     if none of the tags where bigger than input tag, it means
     that input tag is the biggest tag now 
     */
-    hashCarrier.hash = hash
-    hashCarrier.insertIndex = insertIndex
-    return hashCarrier
+    if (insertIndex === table_hashes.last_index) {
+        hash += hashComponent(additionalTag)
+    }
+    additionHash.hash = hash
+    additionHash.insertIndex = insertIndex
+    return additionHash
+}
+
+const removeHash = {hash: "", removeIndex: 0}
+export function computeRemoveTagHash(
+    referingTableComponentIds: Int32Array,
+    removeTag: number,
+    componentsLength: number
+): {hash: string, removeIndex: number} {
+    /* compute section for components */
+    let hash = computeComponentHashSection(
+        referingTableComponentIds,
+        componentsLength
+    )
+    /* compute section for tags */
+    let removeIndex = 0
+    const start = componentsLength
+    const len = referingTableComponentIds.length
+    for (let i = start; i < len; i++) {
+        const tag = referingTableComponentIds[i]
+        if (tag === removeTag) {
+            removeIndex = i
+            continue
+        }
+        hash += hashComponent(tag)
+    }
+    removeHash.hash = hash
+    removeHash.removeIndex = removeIndex
+    return removeHash
 }

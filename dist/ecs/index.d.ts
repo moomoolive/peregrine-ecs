@@ -2,7 +2,7 @@ import { relation_entity_encoding } from "../entities/index";
 import { ComponentRegistry, registry_encoding, RelationRegisty, IdDeclaration } from "../dataStructures/registries/index";
 import { ComponentsDeclaration, struct_proxy_encoding } from "../components/index";
 import { ComponentDebug, ComponentId } from "./debugging";
-import { MutatorStatusCode } from "../entities/mutations";
+import { EntityMutationStatus } from "../entities/mutations";
 export declare type EcsMode = "development" | "production";
 export declare type EcsOptions<Relations extends IdDeclaration> = {
     maxEntities: number;
@@ -41,7 +41,8 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     newId(): number;
     hasId(entityId: number, id: number): boolean;
     isAlive(entityId: number): boolean;
-    delete(entityId: number): boolean;
-    addTag(entityId: number, tagId: number): MutatorStatusCode;
+    delete(entityId: number): EntityMutationStatus;
+    addId(entityId: number, tagId: number): EntityMutationStatus;
+    removeId(entityId: number, tagId: number): EntityMutationStatus;
 }
 //# sourceMappingURL=index.d.ts.map

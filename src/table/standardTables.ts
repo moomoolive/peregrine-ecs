@@ -11,9 +11,9 @@ import {
 } from "../allocator/index"
 import {
     standard_entity,
-    EntityRecords,
     STANDARD_ENTITIES
 } from "../entities/index"
+import {EntityRecords} from "../entities/records"
 import {
     computeRelationId
 } from "../dataStructures/registries/index"

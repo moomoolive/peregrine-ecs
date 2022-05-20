@@ -5,6 +5,7 @@ export declare const enum record_encoding {
     generation_count_offset = 2,
     unintialized = -1
 }
+export declare function entityIsInitialized(tableId: number, generationCount: number, entityId: number): boolean;
 export declare class EntityRecords {
     buffer: Int32Array;
     protected _index: number;

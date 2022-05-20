@@ -1,4 +1,3 @@
-export { EntityRecords, record_encoding } from "./records";
 export declare const enum component_entity_encoding {
     future_reserved_max_count = 512,
     max_count = 256

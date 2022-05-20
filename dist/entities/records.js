@@ -1,8 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EntityRecords = void 0;
+exports.EntityRecords = exports.entityIsInitialized = void 0;
 const sharedArrays_1 = require("../dataStructures/sharedArrays");
 const ids_1 = require("./ids");
+function entityIsInitialized(tableId, generationCount, entityId) {
+    return (tableId !== -1 /* unintialized */
+        && generationCount === (0, ids_1.extractGenerationCount)(entityId));
+}
+exports.entityIsInitialized = entityIsInitialized;
 class EntityRecords {
     constructor(initialCapacity) {
         this.buffer = (0, sharedArrays_1.createSharedInt32Array)(initialCapacity * 3 /* size_per_element */);

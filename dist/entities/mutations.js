@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.shiftComponentDataAligned = exports.findTableOrCreate = void 0;
+exports.shiftComponentDataAligned = exports.findTableOrCreateRemoveHash = exports.findTableOrCreate = void 0;
 const index_1 = require("../components/index");
 const index_2 = require("../table/index");
 const index_3 = require("../allocator/index");
@@ -44,6 +44,44 @@ function findTableOrCreate(tableHashes, previousTable, tagId, tables, allocator,
     return createdTable;
 }
 exports.findTableOrCreate = findTableOrCreate;
+function findTableOrCreateRemoveHash(tableHashes, previousTable, tagId, tables, allocator, componentViews) {
+    const { hash, removeIndex } = (0, index_2.computeRemoveTagHash)(previousTable.componentIds, tagId, previousTable.components.length);
+    const nextTableId = tableHashes.get(hash);
+    // check if table has already been created
+    if (nextTableId !== undefined) {
+        previousTable.removeEdges.set(tagId, nextTableId);
+        return tables[nextTableId];
+    }
+    const numberOfComponentIds = previousTable.componentIds.length - 1;
+    const newTableComponentIds = (0, index_3.i32Malloc)(allocator, numberOfComponentIds);
+    for (let i = 0; i < removeIndex; i++) {
+        newTableComponentIds[i] = previousTable.componentIds[i];
+    }
+    for (let i = removeIndex; i < numberOfComponentIds; i++) {
+        newTableComponentIds[i] = previousTable.componentIds[i + 1];
+    }
+    const newTableComponentPtrs = (0, index_3.i32Malloc)(allocator, previousTable.components.length);
+    const componentData = [];
+    for (let i = 0; i < previousTable.components.length; i++) {
+        const componentId = previousTable.componentIds[i];
+        const view = componentViews[componentId];
+        const ptr = allocator.malloc(1 /* initial_capacity */
+            * view.bytesPerElement);
+        newTableComponentPtrs[i] = ptr;
+        const databuffer = new view.memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
+        const component = new index_1.RawComponent(view, databuffer);
+        componentData.push(component);
+    }
+    const newTableId = tables.length;
+    const newTableEntities = (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */);
+    const createdTable = new index_2.Table(newTableId, hash, newTableComponentIds, componentData, (0, index_3.i32Malloc)(allocator, 6 /* meta_size */), newTableComponentPtrs, newTableEntities, 1 /* initial_capacity */);
+    previousTable.removeEdges.set(tagId, newTableId);
+    createdTable.addEdges.set(tagId, previousTable.id);
+    tableHashes.set(hash, newTableId);
+    tables.push(createdTable);
+    return createdTable;
+}
+exports.findTableOrCreateRemoveHash = findTableOrCreateRemoveHash;
 function shiftComponentDataAligned(source, destination, sourceRow, allocator) {
     const targetLength = destination.length++;
     destination.ensureSize(1, allocator);

@@ -8,21 +8,24 @@ import {
     table_hashes,
     table_encoding,
     table_defaults,
+    computeRemoveTagHash
 } from "../table/index"
 import {
     Allocator,
     i32Malloc
 } from "../allocator/index"
 
-export type MutatorStatusCode = (
-    0 | 1 | 2 | 3
+export type EntityMutationStatus = (
+   -1 | 0 | 1 | 2 | 3 | 4
 )
 
-export const enum mutation_status {
-    entity_uninitialized = 1,
-    successful_update = 0,
-    tag_exists = 2,
-    tag_does_not_exist = 3
+export const enum entity_mutation_status {
+    entity_uninitialized = -1,
+    successful_added = 0,
+    tag_exists = 1,
+    successfully_deleted = 2,
+    tag_not_found = 3,
+    successfully_removed = 4
 }
 
 
@@ -98,6 +101,80 @@ export function findTableOrCreate(
     )
     previousTable.addEdges.set(tagId, newTableId)
     createdTable.removeEdges.set(tagId, previousTable.id)
+    tableHashes.set(hash, newTableId)
+    tables.push(createdTable)
+    return createdTable
+}
+
+export function findTableOrCreateRemoveHash(
+    tableHashes: Map<string, number>,
+    previousTable: Table,
+    tagId: number,
+    tables: Table[],
+    allocator: Allocator,
+    componentViews: StructProxyClasses
+): Table {
+    const {
+        hash, 
+        removeIndex
+    } = computeRemoveTagHash(
+        previousTable.componentIds,
+        tagId,
+        previousTable.components.length
+    )
+    const nextTableId = tableHashes.get(hash)
+    // check if table has already been created
+    if (nextTableId !== undefined) {
+        previousTable.removeEdges.set(tagId, nextTableId)        
+        return tables[nextTableId]
+    }
+    const numberOfComponentIds = previousTable.componentIds.length - 1
+    const newTableComponentIds = i32Malloc(
+        allocator, numberOfComponentIds
+    )
+
+    for (let i = 0; i < removeIndex; i++) {
+        newTableComponentIds[i] = previousTable.componentIds[i]
+    }
+    for (let i = removeIndex; i < numberOfComponentIds; i++) {
+        newTableComponentIds[i] = previousTable.componentIds[i + 1]
+    }
+
+    const newTableComponentPtrs = i32Malloc(
+        allocator, previousTable.components.length
+    )
+    const componentData = []
+    for (let i = 0; i < previousTable.components.length; i++) {
+        const componentId = previousTable.componentIds[i]
+        const view = componentViews[componentId]
+        const ptr = allocator.malloc(
+            table_defaults.initial_capacity 
+            * view.bytesPerElement
+        )
+        newTableComponentPtrs[i] = ptr
+        const databuffer = new view.memoryConstructor(
+            allocator.buf, ptr,
+            table_defaults.initial_capacity
+        )
+        const component = new RawComponent(view, databuffer)
+        componentData.push(component)
+    }
+    const newTableId = tables.length
+    const newTableEntities = i32Malloc(
+        allocator, table_defaults.initial_capacity
+    )
+    const createdTable = new Table(
+        newTableId,
+        hash,
+        newTableComponentIds,
+        componentData,
+        i32Malloc(allocator, table_encoding.meta_size),
+        newTableComponentPtrs,
+        newTableEntities,
+        table_defaults.initial_capacity
+    )
+    previousTable.removeEdges.set(tagId, newTableId)
+    createdTable.addEdges.set(tagId, previousTable.id)
     tableHashes.set(hash, newTableId)
     tables.push(createdTable)
     return createdTable

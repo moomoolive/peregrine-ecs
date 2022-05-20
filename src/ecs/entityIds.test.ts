@@ -70,20 +70,20 @@ describe("entity creation", () => {
         const e = ecs.newId()
         expect(ecs.isAlive(e)).toBe(true)
         const status = ecs.delete(e)
-        expect(status).toBe(true)
+        expect(status).toBeGreaterThanOrEqual(0)
         expect(ecs.isAlive(e)).toBe(false)
         
         const e2 = ecs.newId()
         const e3 = ecs.newId()
         const e4 = ecs.newId()
 
-        expect(ecs.delete(e2)).toBe(true)
+        expect(ecs.delete(e2)).toBeGreaterThanOrEqual(0)
         expect(ecs.isAlive(e2)).toBe(false)
 
-        expect(ecs.delete(e3)).toBe(true)
+        expect(ecs.delete(e3)).toBeGreaterThanOrEqual(0)
         expect(ecs.isAlive(e3)).toBe(false)
 
-        expect(ecs.delete(e4)).toBe(true)
+        expect(ecs.delete(e4)).toBeGreaterThanOrEqual(0)
         expect(ecs.isAlive(e4)).toBe(false)
     })
 })

@@ -1,5 +1,5 @@
 import {createSharedInt32Array} from "../dataStructures/sharedArrays"
-import {preserveSixBits} from "./ids"
+import {preserveSixBits, extractGenerationCount} from "./ids"
 
 export const enum record_encoding {
     size_per_element = 3,
@@ -8,6 +8,17 @@ export const enum record_encoding {
     generation_count_offset = 2,
 
     unintialized = -1
+}
+
+export function entityIsInitialized(
+    tableId: number,
+    generationCount: number,
+    entityId: number
+): boolean {
+    return (
+        tableId !== record_encoding.unintialized
+        && generationCount === extractGenerationCount(entityId)
+    )
 }
 
 export class EntityRecords {

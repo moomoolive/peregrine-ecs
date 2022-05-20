@@ -1,5 +1,3 @@
-export {EntityRecords, record_encoding} from "./records"
-
 export const enum component_entity_encoding {
     /* right now max count is lower than future reserved 
     max count, because components take a lot of RAM right now. 

@@ -2,30 +2,30 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ecs = void 0;
 const standardTables_1 = require("../table/standardTables");
-const index_1 = require("../entities/index");
-const index_2 = require("../dataStructures/registries/index");
-const index_3 = require("../components/index");
+const records_1 = require("../entities/records");
+const index_1 = require("../dataStructures/registries/index");
+const index_2 = require("../components/index");
 const debugging_1 = require("./debugging");
 const mutations_1 = require("../entities/mutations");
 const sharedArrays_1 = require("../dataStructures/sharedArrays");
-const index_4 = require("../allocator/index");
+const index_3 = require("../allocator/index");
 const ids_1 = require("../entities/ids");
 const errors_1 = require("../debugging/errors");
 class Ecs {
     constructor(params, { maxEntities = 500000 /* limit */, allocatorInitialMemoryMB = 50, mode = "development", relations = [] } = {}) {
         const { components } = params;
         this.schemas = components;
-        const { proxyClasses, orderedComponentNames } = (0, index_3.generateComponentStructProxies)(components);
+        const { proxyClasses, orderedComponentNames } = (0, index_2.generateComponentStructProxies)(components);
         this.componentStructProxies = proxyClasses;
-        this.components = (0, index_2.componentRegistryMacro)(orderedComponentNames);
-        const { relations: generatedRelations } = (0, index_2.relationRegistryMacro)(relations);
+        this.components = (0, index_1.componentRegistryMacro)(orderedComponentNames);
+        const { relations: generatedRelations } = (0, index_1.relationRegistryMacro)(relations);
         this.relations = generatedRelations;
         this.declaredRelations = relations;
         this.unusedIds = (0, sharedArrays_1.createSharedInt32Array)(maxEntities);
         this.unusedIdsCount = 0;
         (0, errors_1.assert)(maxEntities < 5000 /* minimum */, `max entities must be ${5000 /* minimum */.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`);
-        this.records = new index_1.EntityRecords(maxEntities);
-        this.tableAllocator = (0, index_4.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
+        this.records = new records_1.EntityRecords(maxEntities);
+        this.tableAllocator = (0, index_3.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
         this.hashToTableIndex = new Map();
         this.largestId = 4095 /* start_of_user_defined_entities */;
         this.records.init();
@@ -62,7 +62,7 @@ class Ecs {
         const tooSmall = componentId < 50 /* components_start */;
         const tooLarge = componentId > 50 /* components_start */ + this.componentCount;
         (0, errors_1.assert)(tooSmall || tooLarge, `inputted id is not a component (got ${componentId.toLocaleString("en-us")})`);
-        const id = (0, index_3.deserializeComponentId)(componentId);
+        const id = (0, index_2.deserializeComponentId)(componentId);
         return this.componentDebugInfo[id];
     }
     addToBlankTable(id) {
@@ -86,43 +86,42 @@ class Ecs {
     }
     hasId(entityId, id) {
         const originalId = (0, ids_1.extractBaseId)(entityId);
-        const { tableId } = this.records.index(originalId);
-        if (tableId === -1 /* unintialized */) {
+        const { tableId, generationCount } = this.records.index(originalId);
+        if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
             return false;
         }
         return this.tables[tableId].has(id);
     }
     isAlive(entityId) {
         const originalId = (0, ids_1.extractBaseId)(entityId);
-        const entity = this.records.index(originalId);
-        return (entity.tableId !== -1 /* unintialized */
-            && entity.generationCount === (0, ids_1.extractGenerationCount)(entityId));
+        const { tableId, generationCount } = this.records.index(originalId);
+        return (0, records_1.entityIsInitialized)(tableId, generationCount, entityId);
     }
     delete(entityId) {
         const originalId = (0, ids_1.extractBaseId)(entityId);
         (0, errors_1.assert)(originalId < this.mutableEntitiesStart, `entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`);
-        const { tableId, row } = this.records.index(originalId);
-        if (tableId === -1 /* unintialized */) {
-            return false;
+        const { tableId, row, generationCount } = this.records.index(originalId);
+        if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+            return -1 /* entity_uninitialized */;
         }
         this.records.unsetEntity(originalId);
         this.tables[tableId].removeEntity(row);
         /* recycle entity id, stash for later use */
         const unusedSlot = this.unusedIdsCount++;
         this.unusedIds[unusedSlot] = originalId;
-        return true;
+        return 2 /* successfully_deleted */;
     }
-    addTag(entityId, tagId) {
+    addId(entityId, tagId) {
         const originalId = (0, ids_1.extractBaseId)(entityId);
         const entity = this.records.index(originalId);
-        const { tableId, row } = entity;
-        if (tableId === -1 /* unintialized */) {
-            return 1 /* entity_uninitialized */;
+        const { tableId, row, generationCount } = entity;
+        if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+            return -1 /* entity_uninitialized */;
         }
         const tables = this.tables;
         const table = tables[tableId];
         if (table.componentIndexes.has(tagId)) {
-            return 2 /* tag_exists */;
+            return 1 /* tag_exists */;
         }
         const targetTableId = table.addEdges.get(tagId);
         const allocator = this.tableAllocator;
@@ -134,7 +133,29 @@ class Ecs {
         const newRow = (0, mutations_1.shiftComponentDataAligned)(table, targetTable, row, allocator);
         entity.tableId = newTable;
         entity.row = newRow;
-        return 0 /* successful_update */;
+        return 0 /* successful_added */;
+    }
+    removeId(entityId, tagId) {
+        const originalId = (0, ids_1.extractBaseId)(entityId);
+        const entity = this.records.index(originalId);
+        const { tableId, row, generationCount } = entity;
+        if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+            return -1 /* entity_uninitialized */;
+        }
+        const tables = this.tables;
+        const table = tables[tableId];
+        if (!table.componentIndexes.has(tagId)) {
+            return 3 /* tag_not_found */;
+        }
+        const targetTableId = table.removeEdges.get(tagId);
+        const allocator = this.tableAllocator;
+        const targetTable = targetTableId !== undefined ?
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveHash)(this.hashToTableIndex, table, tagId, tables, allocator, this.componentStructProxies);
+        const newTable = targetTable.id;
+        const newRow = (0, mutations_1.shiftComponentDataAligned)(table, targetTable, row, allocator);
+        entity.tableId = newTable;
+        entity.row = newRow;
+        return 4 /* successfully_removed */;
     }
 }
 exports.Ecs = Ecs;

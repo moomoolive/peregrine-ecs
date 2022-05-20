@@ -6,12 +6,14 @@ import {
     standard_tables,
 } from "../table/standardTables"
 import {
-    EntityRecords,
-    record_encoding,
     entities_encoding,
     standard_entity,
-    relation_entity_encoding
+    relation_entity_encoding,
 } from "../entities/index"
+import {
+    EntityRecords,
+    entityIsInitialized
+} from "../entities/records"
 import {
     componentRegistryMacro,
     ComponentRegistry,
@@ -34,10 +36,11 @@ import {
     ComponentId
 } from "./debugging"
 import {
-    mutation_status,
-    MutatorStatusCode,
+    entity_mutation_status,
+    EntityMutationStatus,
     findTableOrCreate,
-    shiftComponentDataAligned
+    shiftComponentDataAligned,
+    findTableOrCreateRemoveHash
 } from "../entities/mutations"
 import {
     createSharedInt32Array,
@@ -50,7 +53,6 @@ import {
 import {
     createId,
     extractBaseId,
-    extractGenerationCount
 } from "../entities/ids"
 import {assert} from "../debugging/errors"
 
@@ -217,8 +219,8 @@ export class Ecs<
 
     hasId(entityId: number, id: number): boolean {
         const originalId = extractBaseId(entityId)
-        const {tableId} = this.records.index(originalId)
-        if (tableId === record_encoding.unintialized) {
+        const {tableId, generationCount} = this.records.index(originalId)
+        if (!entityIsInitialized(tableId, generationCount, entityId)) {
             return false
         }
         return this.tables[tableId].has(id)
@@ -226,39 +228,36 @@ export class Ecs<
 
     isAlive(entityId: number): boolean {
         const originalId = extractBaseId(entityId)
-        const entity = this.records.index(originalId)
-        return (
-            entity.tableId !== record_encoding.unintialized
-            && entity.generationCount === extractGenerationCount(entityId)
-        )
+        const {tableId, generationCount} = this.records.index(originalId)
+        return entityIsInitialized(tableId, generationCount, entityId)
     }
 
-    delete(entityId: number): boolean {
+    delete(entityId: number): EntityMutationStatus {
         const originalId = extractBaseId(entityId)
         assert(originalId < this.mutableEntitiesStart, `entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`)
-        const {tableId, row} = this.records.index(originalId)
-        if (tableId === record_encoding.unintialized) {
-            return false
+        const {tableId, row, generationCount} = this.records.index(originalId)
+        if (!entityIsInitialized(tableId, generationCount, entityId)) {
+            return entity_mutation_status.entity_uninitialized
         }
         this.records.unsetEntity(originalId)
         this.tables[tableId].removeEntity(row)
         /* recycle entity id, stash for later use */
         const unusedSlot = this.unusedIdsCount++
         this.unusedIds[unusedSlot] = originalId
-        return true
+        return entity_mutation_status.successfully_deleted
     }
 
-    addTag(entityId: number, tagId: number): MutatorStatusCode {
+    addId(entityId: number, tagId: number): EntityMutationStatus {
         const originalId = extractBaseId(entityId)
         const entity = this.records.index(originalId)
-        const {tableId, row} = entity
-        if (tableId === record_encoding.unintialized) {
-            return mutation_status.entity_uninitialized
+        const {tableId, row, generationCount} = entity
+        if (!entityIsInitialized(tableId, generationCount, entityId)) {
+            return entity_mutation_status.entity_uninitialized
         }
         const tables = this.tables
         const table = tables[tableId]
         if (table.componentIndexes.has(tagId)) {
-            return mutation_status.tag_exists
+            return entity_mutation_status.tag_exists
         }
         const targetTableId = table.addEdges.get(tagId)
         const allocator = this.tableAllocator
@@ -275,6 +274,34 @@ export class Ecs<
         )
         entity.tableId = newTable
         entity.row = newRow
-        return mutation_status.successful_update
+        return entity_mutation_status.successful_added
+    }
+
+    removeId(entityId: number, tagId: number): EntityMutationStatus {
+        const originalId = extractBaseId(entityId)
+        const entity = this.records.index(originalId)
+        const {tableId, row, generationCount} = entity
+        if (!entityIsInitialized(tableId, generationCount, entityId)) {
+            return entity_mutation_status.entity_uninitialized
+        }
+        const tables = this.tables
+        const table = tables[tableId]
+        if (!table.componentIndexes.has(tagId)) {
+            return entity_mutation_status.tag_not_found
+        }
+        const targetTableId = table.removeEdges.get(tagId)
+        const allocator = this.tableAllocator
+        const targetTable = targetTableId !== undefined ?
+            tables[targetTableId] : findTableOrCreateRemoveHash(
+                this.hashToTableIndex, table, tagId,
+                tables, allocator, this.componentStructProxies
+            )
+        const newTable = targetTable.id
+        const newRow = shiftComponentDataAligned(
+            table, targetTable, row, allocator
+        )
+        entity.tableId = newTable
+        entity.row = newRow
+        return entity_mutation_status.successfully_removed
     }
 }
