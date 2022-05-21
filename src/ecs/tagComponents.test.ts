@@ -83,6 +83,22 @@ describe("adding tag components", () => {
         expect(ecs.isAlive(e)).toBe(true)
         expect(ecs.hasId(e, tag))
     })
+
+    it("cannot add tags to immutable entities, (like components)", () => {
+        const ecs = new Ecs({
+            components: {
+                position: {x: "f64", y: "f64", z: "f64"},
+                controller: {up: "i32", down: "i32"},
+                inventory: {weight: "i32", items: "i32"},
+                playerType: {type: "i32"},
+                time: {value: "f32"}
+            }
+        })
+        const tag = ecs.newId()
+        const status = ecs.addId(ecs.components.controller as number, tag)
+        expect(status).toBe(entity_mutation_status.entity_immutable)
+        expect(ecs.hasId(ecs.components.controller as number, tag)).toBe(false)
+    })
 })
 
 describe("removing tag components", () => {
@@ -168,5 +184,21 @@ describe("removing tag components", () => {
         expect(ecs.hasId(e, tag3)).toBe(false)
         ecs.removeId(e, tag2)
         expect(ecs.hasId(e, tag2)).toBe(false)
+    })
+
+    it("cannot remove tags from immutable entities, (like components)", () => {
+        const ecs = new Ecs({
+            components: {
+                position: {x: "f64", y: "f64", z: "f64"},
+                controller: {up: "i32", down: "i32"},
+                inventory: {weight: "i32", items: "i32"},
+                playerType: {type: "i32"},
+                time: {value: "f32"}
+            }
+        })
+        const tag = ecs.newId()
+        const status = ecs.removeId(ecs.components.controller as number, tag)
+        expect(status).toBe(entity_mutation_status.entity_immutable)
+        
     })
 })

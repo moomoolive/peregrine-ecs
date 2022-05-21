@@ -26,9 +26,7 @@ class Ecs {
         if (maxEntities < 5000 /* minimum */) {
             throw (0, errors_1.assertion)(`max entities must be ${5000 /* minimum */.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`);
         }
-        this.records = new records_1.EntityRecords(maxEntities < 5000 /* minimum */ ?
-            5000 /* minimum */
-            : maxEntities);
+        this.records = new records_1.EntityRecords(maxEntities);
         this.tableAllocator = (0, index_3.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
         this.hashToTableIndex = new Map();
         this.largestId = 4095 /* start_of_user_defined_entities */;
@@ -56,17 +54,6 @@ class Ecs {
     get relationsCount() {
         return (this.declaredRelations.length
             + 1 /* standard_relations_count */);
-    }
-    allComponentDebugInfo() {
-        return this.componentDebugInfo;
-    }
-    debugComponent(componentId) {
-        const baseId = (0, ids_1.stripIdMeta)(componentId);
-        if (!(0, ids_1.isComponent)(baseId)) {
-            throw (0, errors_1.assertion)(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`);
-        }
-        const id = (0, index_2.deserializeComponentId)(baseId);
-        return this.componentDebugInfo[id];
     }
     addToBlankTable(id) {
         const blankTable = this.tables[2 /* ecs_root_table */];
@@ -100,23 +87,10 @@ class Ecs {
         const { tableId, generationCount } = this.records.index(originalId);
         return (0, records_1.entityIsInitialized)(tableId, generationCount, entityId);
     }
-    delete(entityId) {
-        if ((0, ids_1.isImmutable)(entityId)) {
-            throw (0, errors_1.assertion)(`entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`);
-        }
-        const originalId = (0, ids_1.stripIdMeta)(entityId);
-        const { tableId, row, generationCount } = this.records.index(originalId);
-        if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
-            return -1 /* entity_uninitialized */;
-        }
-        this.records.unsetEntity(originalId);
-        this.tables[tableId].removeEntity(row);
-        /* recycle entity id, stash for later use */
-        const unusedSlot = this.unusedIdsCount++;
-        this.unusedIds[unusedSlot] = originalId;
-        return 2 /* successfully_deleted */;
-    }
     addId(entityId, tagId) {
+        if ((0, ids_1.isImmutable)(entityId)) {
+            return -2 /* entity_immutable */;
+        }
         const originalId = (0, ids_1.stripIdMeta)(entityId);
         const entity = this.records.index(originalId);
         const { tableId, row, generationCount } = entity;
@@ -141,6 +115,9 @@ class Ecs {
         return 0 /* successful_added */;
     }
     removeId(entityId, tagId) {
+        if ((0, ids_1.isImmutable)(entityId)) {
+            return -2 /* entity_immutable */;
+        }
         const originalId = (0, ids_1.stripIdMeta)(entityId);
         const entity = this.records.index(originalId);
         const { tableId, row, generationCount } = entity;
@@ -161,6 +138,39 @@ class Ecs {
         entity.tableId = newTable;
         entity.row = newRow;
         return 4 /* successfully_removed */;
+    }
+    delete(entityId) {
+        if ((0, ids_1.isImmutable)(entityId)) {
+            return -2 /* entity_immutable */;
+        }
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
+        const { tableId, row, generationCount } = this.records.index(originalId);
+        if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+            return -1 /* entity_uninitialized */;
+        }
+        this.records.unsetEntity(originalId);
+        this.tables[tableId].removeEntity(row);
+        /* recycle entity id, stash for later use */
+        const unusedSlot = this.unusedIdsCount++;
+        this.unusedIds[unusedSlot] = originalId;
+        return 2 /* successfully_deleted */;
+    }
+    /* debugging tools */
+    "{all_components_info}"() {
+        return this.componentDebugInfo;
+    }
+    "{debug_component}"(componentId) {
+        const baseId = (0, ids_1.stripIdMeta)(componentId);
+        if (!(0, ids_1.isComponent)(baseId)) {
+            throw (0, errors_1.assertion)(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`);
+        }
+        const id = (0, index_2.deserializeComponentId)(baseId);
+        return this.componentDebugInfo[id];
+    }
+    "{entity_ptr}"(entityId) {
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
+        const { tableId, row, } = this.records.index(originalId);
+        return { table: tableId, row, id: entityId };
     }
 }
 exports.Ecs = Ecs;

@@ -1,7 +1,8 @@
 import { Table } from "../table/index";
 import { Allocator } from "../allocator/index";
-export declare type EntityMutationStatus = (-1 | 0 | 1 | 2 | 3 | 4);
+export declare type EntityMutationStatus = (-2 | -1 | 0 | 1 | 2 | 3 | 4);
 export declare const enum entity_mutation_status {
+    entity_immutable = -2,
     entity_uninitialized = -1,
     successful_added = 0,
     tag_exists = 1,

@@ -3,7 +3,6 @@ import {
     table_hashes,
     generateTableHash,
     createTableMeta,
-    table_encoding
 } from "./index"
 import {
     Allocator,
@@ -13,6 +12,7 @@ import {
     standard_entity,
     STANDARD_ENTITIES
 } from "../entities/index"
+import {deserializeComponentId} from "../components/index"
 import {EntityRecords} from "../entities/records"
 import {
     computeRelationId
@@ -96,7 +96,7 @@ function ecsComponentTable(
     const end  = start + componentCount
     for (let i = start; i < end; i++) {
         records.recordEntity(
-            i, standard_tables.ecs_component, i
+            i, i, standard_tables.ecs_component
         )
         entities[i] = i 
     }

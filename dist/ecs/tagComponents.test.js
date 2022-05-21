@@ -80,6 +80,21 @@ const index_1 = require("./index");
         (0, globals_1.expect)(ecs.isAlive(e)).toBe(true);
         (0, globals_1.expect)(ecs.hasId(e, tag));
     });
+    (0, globals_1.it)("cannot add tags to immutable entities, (like components)", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            }
+        });
+        const tag = ecs.newId();
+        const status = ecs.addId(ecs.components.controller, tag);
+        (0, globals_1.expect)(status).toBe(-2 /* entity_immutable */);
+        (0, globals_1.expect)(ecs.hasId(ecs.components.controller, tag)).toBe(false);
+    });
 });
 (0, globals_1.describe)("removing tag components", () => {
     (0, globals_1.it)("can remove tag components", () => {
@@ -161,5 +176,19 @@ const index_1 = require("./index");
         (0, globals_1.expect)(ecs.hasId(e, tag3)).toBe(false);
         ecs.removeId(e, tag2);
         (0, globals_1.expect)(ecs.hasId(e, tag2)).toBe(false);
+    });
+    (0, globals_1.it)("cannot remove tags from immutable entities, (like components)", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            }
+        });
+        const tag = ecs.newId();
+        const status = ecs.removeId(ecs.components.controller, tag);
+        (0, globals_1.expect)(status).toBe(-2 /* entity_immutable */);
     });
 });

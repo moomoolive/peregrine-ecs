@@ -34,14 +34,19 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     get preciseEntityCount(): number;
     get componentCount(): number;
     get relationsCount(): number;
-    allComponentDebugInfo(): ComponentDebug[];
-    debugComponent(componentId: ComponentId): ComponentDebug;
     private addToBlankTable;
     newId(): number;
     hasId(entityId: number, id: number): boolean;
     isAlive(entityId: number): boolean;
-    delete(entityId: number): EntityMutationStatus;
     addId(entityId: number, tagId: number): EntityMutationStatus;
     removeId(entityId: number, tagId: number): EntityMutationStatus;
+    delete(entityId: number): EntityMutationStatus;
+    "{all_components_info}"(): ComponentDebug[];
+    "{debug_component}"(componentId: ComponentId): ComponentDebug;
+    "{entity_ptr}"(entityId: number): {
+        table: number;
+        row: number;
+        id: number;
+    };
 }
 //# sourceMappingURL=index.d.ts.map

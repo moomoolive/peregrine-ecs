@@ -2,6 +2,7 @@ import {expect, it, describe} from "@jest/globals"
 import {Ecs} from "./index"
 import {standard_entity} from "../entities/index"
 import {stripIdMeta} from "../entities/ids"
+import {entity_mutation_status} from "../entities/mutations"
 
 describe("adding entity updates ecs stats", () => {
     it("entity count is updated when ecs adds entity", () => {
@@ -123,8 +124,8 @@ describe("immutable entities", () => {
                 time: {value: "f32"}
             }
         })
-        expect(() => ecs.delete(ecs.components.position as number)).toThrow()
-        expect(() => ecs.delete(ecs.components.inventory as number)).toThrow()
+        expect(ecs.delete(ecs.components.position as number)).toBe(entity_mutation_status.entity_immutable)
+        expect(ecs.delete(ecs.components.inventory as number)).toBe(entity_mutation_status.entity_immutable)
     })
 
     it("declared relations cannot be deleted", () => {
@@ -137,6 +138,6 @@ describe("immutable entities", () => {
                 time: {value: "f32"}
             }
         })
-        expect(() => ecs.delete(ecs.relations.instanceof)).toThrow()
+        expect(ecs.delete(ecs.relations.instanceof)).toBe(entity_mutation_status.entity_immutable)
     })
 })

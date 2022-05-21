@@ -128,11 +128,7 @@ export class Ecs<
             throw assertion(`max entities must be ${entities_encoding.minimum.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`)
         }
 
-        this.records = new EntityRecords(
-            maxEntities < entities_encoding.minimum ?
-                entities_encoding.minimum
-                : maxEntities
-        )
+        this.records = new EntityRecords(maxEntities)
         
         this.tableAllocator = createComponentAllocator(
             bytes.per_megabyte * allocatorInitialMemoryMB, 
@@ -186,19 +182,6 @@ export class Ecs<
         )
     }
 
-    allComponentDebugInfo(): ComponentDebug[] {
-        return this.componentDebugInfo
-    }
-
-    debugComponent(componentId: ComponentId): ComponentDebug {
-        const baseId = stripIdMeta(componentId as number)
-        if (!isComponent(baseId)) {
-            throw assertion(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`)
-        }
-        const id = deserializeComponentId(baseId)
-        return this.componentDebugInfo[id]
-    }
-
     private addToBlankTable(id: number) {
         const blankTable = this.tables[standard_tables.ecs_root_table]
         blankTable.ensureSize(1, this.tableAllocator)
@@ -237,24 +220,10 @@ export class Ecs<
         return entityIsInitialized(tableId, generationCount, entityId)
     }
 
-    delete(entityId: number): EntityMutationStatus {
-        if (isImmutable(entityId)) {
-            throw assertion(`entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`)
-        }
-        const originalId = stripIdMeta(entityId)
-        const {tableId, row, generationCount} = this.records.index(originalId)
-        if (!entityIsInitialized(tableId, generationCount, entityId)) {
-            return entity_mutation_status.entity_uninitialized
-        }
-        this.records.unsetEntity(originalId)
-        this.tables[tableId].removeEntity(row)
-        /* recycle entity id, stash for later use */
-        const unusedSlot = this.unusedIdsCount++
-        this.unusedIds[unusedSlot] = originalId
-        return entity_mutation_status.successfully_deleted
-    }
-
     addId(entityId: number, tagId: number): EntityMutationStatus {
+        if (isImmutable(entityId)) {
+            return entity_mutation_status.entity_immutable
+        }
         const originalId = stripIdMeta(entityId)
         const entity = this.records.index(originalId)
         const {tableId, row, generationCount} = entity
@@ -285,6 +254,9 @@ export class Ecs<
     }
 
     removeId(entityId: number, tagId: number): EntityMutationStatus {
+        if (isImmutable(entityId)) {
+            return entity_mutation_status.entity_immutable
+        }
         const originalId = stripIdMeta(entityId)
         const entity = this.records.index(originalId)
         const {tableId, row, generationCount} = entity
@@ -310,5 +282,50 @@ export class Ecs<
         entity.tableId = newTable
         entity.row = newRow
         return entity_mutation_status.successfully_removed
+    }
+
+    delete(entityId: number): EntityMutationStatus {
+        if (isImmutable(entityId)) {
+            return entity_mutation_status.entity_immutable
+        }
+        const originalId = stripIdMeta(entityId)
+        const {tableId, row, generationCount} = this.records.index(originalId)
+        if (!entityIsInitialized(tableId, generationCount, entityId)) {
+            return entity_mutation_status.entity_uninitialized
+        }
+        this.records.unsetEntity(originalId)
+        this.tables[tableId].removeEntity(row)
+        /* recycle entity id, stash for later use */
+        const unusedSlot = this.unusedIdsCount++
+        this.unusedIds[unusedSlot] = originalId
+        return entity_mutation_status.successfully_deleted
+    }
+
+    /* debugging tools */
+
+    "{all_components_info}"(): ComponentDebug[] {
+        return this.componentDebugInfo
+    }
+
+    "{debug_component}"(componentId: ComponentId): ComponentDebug {
+        const baseId = stripIdMeta(componentId as number)
+        if (!isComponent(baseId)) {
+            throw assertion(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`)
+        }
+        const id = deserializeComponentId(baseId)
+        return this.componentDebugInfo[id]
+    }
+
+    "{entity_ptr}"(entityId: number): {
+        table: number, 
+        row: number
+        id: number
+    } {
+        const originalId = stripIdMeta(entityId)
+        const {
+            tableId,
+            row,
+        } = this.records.index(originalId)
+        return {table: tableId, row, id: entityId}
     }
 }

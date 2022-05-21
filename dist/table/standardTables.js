@@ -39,7 +39,7 @@ function ecsComponentTable(allocator, records, componentCount) {
     const start = 50 /* reserved_end */;
     const end = start + componentCount;
     for (let i = start; i < end; i++) {
-        records.recordEntity(i, 1 /* ecs_component */, i);
+        records.recordEntity(i, i, 1 /* ecs_component */);
         entities[i] = i;
     }
     const table = new index_1.Table(1 /* ecs_component */, exports.ECS_COMPONENT_TABLE_HASH, componentIds, NO_COMPONENTS(), (0, index_1.createTableMeta)(allocator), NO_COMPONENT_PTRS(), entities, capacity);

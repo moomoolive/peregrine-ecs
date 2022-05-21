@@ -13,7 +13,7 @@ describe("component debugging", () => {
     
     it("correct number of debug logs should be generated for inputted components", () => {
         expect(ecs.componentCount).toBe(4)
-        const comps = ecs.allComponentDebugInfo()
+        const comps = ecs["{all_components_info}"]()
         {
             const {
                 name,
@@ -44,7 +44,7 @@ describe("component debugging", () => {
         const {
             name, 
             stringifiedDef
-        } = ecs.debugComponent(components.controller)
+        } = ecs["{debug_component}"](components.controller)
         expect(name).toBe("controller")
         expect(JSON.parse(stringifiedDef)).toEqual(
             schemas.controller
@@ -54,7 +54,7 @@ describe("component debugging", () => {
             const {
                 name, 
                 stringifiedDef
-            } = ecs.debugComponent(components.inventory)
+            } = ecs["{debug_component}"](components.inventory)
             expect(name).toBe("inventory")
             expect(JSON.parse(stringifiedDef)).toEqual(
                 schemas.inventory
@@ -64,6 +64,6 @@ describe("component debugging", () => {
 
     it("attempting to debug a non component with component debug should throw", () => {
         const nonComponent = ecs.newId()
-        expect(() => ecs.debugComponent(nonComponent)).toThrow()
+        expect(() => ecs["{debug_component}"](nonComponent)).toThrow()
     })
 })

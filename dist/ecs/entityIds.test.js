@@ -112,8 +112,8 @@ const ids_1 = require("../entities/ids");
                 time: { value: "f32" }
             }
         });
-        (0, globals_1.expect)(() => ecs.delete(ecs.components.position)).toThrow();
-        (0, globals_1.expect)(() => ecs.delete(ecs.components.inventory)).toThrow();
+        (0, globals_1.expect)(ecs.delete(ecs.components.position)).toBe(-2 /* entity_immutable */);
+        (0, globals_1.expect)(ecs.delete(ecs.components.inventory)).toBe(-2 /* entity_immutable */);
     });
     (0, globals_1.it)("declared relations cannot be deleted", () => {
         const ecs = new index_1.Ecs({
@@ -125,6 +125,6 @@ const ids_1 = require("../entities/ids");
                 time: { value: "f32" }
             }
         });
-        (0, globals_1.expect)(() => ecs.delete(ecs.relations.instanceof)).toThrow();
+        (0, globals_1.expect)(ecs.delete(ecs.relations.instanceof)).toBe(-2 /* entity_immutable */);
     });
 });
