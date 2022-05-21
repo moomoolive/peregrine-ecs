@@ -46,7 +46,7 @@ export type RawStructProxy<
     }
 )
 
-export interface ComponentViewFactory<
+export interface StructProxyFactory<
     Definition extends ComponentDefinition
 > {
     new(
@@ -59,7 +59,7 @@ function createComponentViewClass<
     Definition extends ComponentDefinition
 >(
     {fields}: ComponentTokens
-): ComponentViewFactory<Definition> {
+): StructProxyFactory<Definition> {
     const BaseView = function(
         this: RawStructProxy<ComponentDefinition>,
         component: ComponentReference,
@@ -87,7 +87,7 @@ function createComponentViewClass<
         })
     }
     BaseView.prototype = viewPrototype
-    return BaseView as unknown as ComponentViewFactory<Definition>
+    return BaseView as unknown as StructProxyFactory<Definition>
 }
 
 export class RawComponent<
@@ -96,28 +96,23 @@ export class RawComponent<
     readonly id: number
     readonly bytesPerElement: number
     readonly componentSegements: number
-    readonly bytesPerField: number
     databuffer: ComponentTypedArray
     memoryConstructor: ComponentTypedArrayConstructor
-    structProxyFactory: ComponentViewFactory<Definition>
+    structProxyFactory: StructProxyFactory<Definition>
 
     constructor(
-        {
-            View,
-            bytesPerElement,
-            componentSegements,
-            bytesPerField,
-            memoryConstructor,
-            id
-        }: StructProxyClass<Definition>,
+        id: number,
+        bytesPerElement: number,
+        componentSegments: number,
+        memoryConstructor: ComponentTypedArrayConstructor,
+        View: StructProxyFactory<Definition>,
         databuffer: ComponentTypedArray
     ) {
         this.memoryConstructor = memoryConstructor
         this.bytesPerElement = bytesPerElement
-        this.componentSegements = componentSegements
+        this.componentSegements = componentSegments
         this.databuffer = databuffer
         this.structProxyFactory = View
-        this.bytesPerField = bytesPerField
         this.id = id
     }
 
@@ -139,12 +134,12 @@ export class StructProxyClass<
     readonly bytesPerField: number
     readonly id: number
     memoryConstructor: ComponentTypedArrayConstructor
-    View: ComponentViewFactory<Definition>
+    View: StructProxyFactory<Definition>
 
     constructor(
         id: number,
         tokens: ComponentTokens,
-        View: ComponentViewFactory<Definition>
+        View: StructProxyFactory<Definition>
     ) {
         const {
             bytesPerElement, stringifiedDefinition,

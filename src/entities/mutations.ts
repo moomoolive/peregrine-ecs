@@ -34,8 +34,7 @@ export function findTableOrCreate(
     previousTable: Table,
     tagId: number,
     tables: Table[],
-    allocator: Allocator,
-    componentViews: StructProxyClasses
+    allocator: Allocator
 ): Table {
     const {
         hash, 
@@ -66,25 +65,33 @@ export function findTableOrCreate(
         )
         newTableComponentIds[insertIndex] = tagId
     }
+
     const newTableComponentPtrs = i32Malloc(
         allocator, previousTable.components.length
     )
     const componentData = []
     for (let i = 0; i < previousTable.components.length; i++) {
-        const componentId = previousTable.componentIds[i]
-        const view = componentViews[componentId]
+        const {
+            id, bytesPerElement, componentSegements,
+            memoryConstructor, structProxyFactory
+        } = previousTable.components[i]
         const ptr = allocator.malloc(
             table_defaults.initial_capacity 
-            * view.bytesPerElement
+            * bytesPerElement
         )
         newTableComponentPtrs[i] = ptr
-        const databuffer = new view.memoryConstructor(
+        const databuffer = new memoryConstructor(
             allocator.buf, ptr,
             table_defaults.initial_capacity
         )
-        const component = new RawComponent(view, databuffer)
-        componentData.push(component)
+        const targetComponent = new RawComponent(
+            id, bytesPerElement, componentSegements,
+            memoryConstructor, structProxyFactory,
+            databuffer
+        )
+        componentData.push(targetComponent)
     }
+
     const newTableId = tables.length
     const newTableEntities = i32Malloc(
         allocator, table_defaults.initial_capacity
@@ -112,7 +119,6 @@ export function findTableOrCreateRemoveHash(
     tagId: number,
     tables: Table[],
     allocator: Allocator,
-    componentViews: StructProxyClasses
 ): Table {
     const {
         hash, 
@@ -133,6 +139,33 @@ export function findTableOrCreateRemoveHash(
         allocator, numberOfComponentIds
     )
 
+    const newTableComponentPtrs = i32Malloc(
+        allocator, previousTable.components.length
+    )
+    const componentData = []
+    for (let i = 0; i < previousTable.components.length; i++) {
+        const {
+            id, bytesPerElement, componentSegements,
+            memoryConstructor, structProxyFactory
+        } = previousTable.components[i]
+        const ptr = allocator.malloc(
+            table_defaults.initial_capacity 
+            * bytesPerElement
+        )
+        newTableComponentPtrs[i] = ptr
+        const databuffer = new memoryConstructor(
+            allocator.buf, ptr,
+            table_defaults.initial_capacity
+        )
+        const targetComponent = new RawComponent(
+            id, bytesPerElement, componentSegements,
+            memoryConstructor, structProxyFactory,
+            databuffer
+        )
+        componentData.push(targetComponent)
+    }
+
+    // merged with top loop ?
     for (let i = 0; i < removeIndex; i++) {
         newTableComponentIds[i] = previousTable.componentIds[i]
     }
@@ -140,25 +173,6 @@ export function findTableOrCreateRemoveHash(
         newTableComponentIds[i] = previousTable.componentIds[i + 1]
     }
 
-    const newTableComponentPtrs = i32Malloc(
-        allocator, previousTable.components.length
-    )
-    const componentData = []
-    for (let i = 0; i < previousTable.components.length; i++) {
-        const componentId = previousTable.componentIds[i]
-        const view = componentViews[componentId]
-        const ptr = allocator.malloc(
-            table_defaults.initial_capacity 
-            * view.bytesPerElement
-        )
-        newTableComponentPtrs[i] = ptr
-        const databuffer = new view.memoryConstructor(
-            allocator.buf, ptr,
-            table_defaults.initial_capacity
-        )
-        const component = new RawComponent(view, databuffer)
-        componentData.push(component)
-    }
     const newTableId = tables.length
     const newTableEntities = i32Malloc(
         allocator, table_defaults.initial_capacity

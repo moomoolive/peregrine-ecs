@@ -26,13 +26,12 @@ function createComponentViewClass({ fields }) {
     return BaseView;
 }
 class RawComponent {
-    constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }, databuffer) {
+    constructor(id, bytesPerElement, componentSegments, memoryConstructor, View, databuffer) {
         this.memoryConstructor = memoryConstructor;
         this.bytesPerElement = bytesPerElement;
-        this.componentSegements = componentSegements;
+        this.componentSegements = componentSegments;
         this.databuffer = databuffer;
         this.structProxyFactory = View;
-        this.bytesPerField = bytesPerField;
         this.id = id;
     }
     index(index) {

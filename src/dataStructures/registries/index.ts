@@ -3,11 +3,12 @@ import {
     computeComponentId,
     orderKeysByName
 } from "../../components/index"
-import {err, assert} from "../../debugging/errors"
+import {err, assertion} from "../../debugging/errors"
 import {
     component_entity_encoding,
     standard_entity
 } from "../../entities/index"
+import {makeIdImmutable} from "../../entities/ids"
 
 export type ComponentRegistry<
     Declaration extends ComponentsDeclaration
@@ -40,7 +41,8 @@ export function componentRegistryMacro<
         if fields/component names are correct. 
         */
         const entityId = computeComponentId(i)
-        Object.defineProperty(registry, keys[i], {value: entityId})
+        const immutableId = makeIdImmutable(entityId)
+        Object.defineProperty(registry, keys[i], {value: immutableId})
     }
     return Object.freeze(registry) as ComponentRegistry<Declartion>
 }
@@ -72,7 +74,9 @@ export function relationRegistryMacro<
     relations: RelationRegisty<Declaration>,
     orderedKeys: string[]
 } {
-    assert(!Array.isArray(relationNames), `relations must be inputted as an array of strings (got type "${typeof relationNames}")`)
+    if (!Array.isArray(relationNames)) {
+        throw assertion(`relations must be inputted as an array of strings (got type "${typeof relationNames}")`)
+    } 
     const relationKeys = orderKeysByName([
         ...STANDARD_RELATIONS,
         ...relationNames.slice()
@@ -86,7 +90,8 @@ export function relationRegistryMacro<
         if fields/component names are correct. 
         */
         const entityId = computeRelationId(i)
-        Object.defineProperty(registry, relationKeys[i], {value: entityId})
+        const immutableId = makeIdImmutable(entityId)
+        Object.defineProperty(registry, relationKeys[i], {value: immutableId})
     }
     return {
         relations: Object.freeze(registry) as RelationRegisty<Declaration>,

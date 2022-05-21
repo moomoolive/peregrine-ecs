@@ -52,9 +52,11 @@ import {
 } from "../allocator/index"
 import {
     createId,
-    extractBaseId,
+    stripIdMeta,
+    isComponent,
+    isImmutable
 } from "../entities/ids"
-import {assert} from "../debugging/errors"
+import {assertion} from "../debugging/errors"
 
 export type EcsMode = "development" | "production"
 
@@ -80,7 +82,6 @@ export class Ecs<
     private unusedIdsCount: number
     private largestId: number
     private records: EntityRecords
-    private mutableEntitiesStart: number
 
     /* relations */
     readonly relations: RelationRegisty<Relations>
@@ -123,8 +124,15 @@ export class Ecs<
         this.unusedIds = createSharedInt32Array(maxEntities)
         this.unusedIdsCount = 0
         
-        assert(maxEntities < entities_encoding.minimum, `max entities must be ${entities_encoding.minimum.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`)
-        this.records = new EntityRecords(maxEntities)
+        if (maxEntities < entities_encoding.minimum) {
+            throw assertion(`max entities must be ${entities_encoding.minimum.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`)
+        }
+
+        this.records = new EntityRecords(
+            maxEntities < entities_encoding.minimum ?
+                entities_encoding.minimum
+                : maxEntities
+        )
         
         this.tableAllocator = createComponentAllocator(
             bytes.per_megabyte * allocatorInitialMemoryMB, 
@@ -148,10 +156,6 @@ export class Ecs<
         }
         this.componentDebugInfo = generateComponentDebugInfo(
             this.componentStructProxies
-        )
-        this.mutableEntitiesStart = (
-            standard_entity.relations_start 
-            + this.relationsCount
         )
     }
 
@@ -187,10 +191,11 @@ export class Ecs<
     }
 
     debugComponent(componentId: ComponentId): ComponentDebug {
-        const tooSmall = componentId < standard_entity.components_start
-        const tooLarge = componentId > standard_entity.components_start + this.componentCount
-        assert(tooSmall || tooLarge, `inputted id is not a component (got ${componentId.toLocaleString("en-us")})`)
-        const id = deserializeComponentId(componentId as number)
+        const baseId = stripIdMeta(componentId as number)
+        if (!isComponent(baseId)) {
+            throw assertion(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`)
+        }
+        const id = deserializeComponentId(baseId)
         return this.componentDebugInfo[id]
     }
 
@@ -218,7 +223,7 @@ export class Ecs<
     }
 
     hasId(entityId: number, id: number): boolean {
-        const originalId = extractBaseId(entityId)
+        const originalId = stripIdMeta(entityId)
         const {tableId, generationCount} = this.records.index(originalId)
         if (!entityIsInitialized(tableId, generationCount, entityId)) {
             return false
@@ -227,14 +232,16 @@ export class Ecs<
     }
 
     isAlive(entityId: number): boolean {
-        const originalId = extractBaseId(entityId)
+        const originalId = stripIdMeta(entityId)
         const {tableId, generationCount} = this.records.index(originalId)
         return entityIsInitialized(tableId, generationCount, entityId)
     }
 
     delete(entityId: number): EntityMutationStatus {
-        const originalId = extractBaseId(entityId)
-        assert(originalId < this.mutableEntitiesStart, `entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`)
+        if (isImmutable(entityId)) {
+            throw assertion(`entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`)
+        }
+        const originalId = stripIdMeta(entityId)
         const {tableId, row, generationCount} = this.records.index(originalId)
         if (!entityIsInitialized(tableId, generationCount, entityId)) {
             return entity_mutation_status.entity_uninitialized
@@ -248,7 +255,7 @@ export class Ecs<
     }
 
     addId(entityId: number, tagId: number): EntityMutationStatus {
-        const originalId = extractBaseId(entityId)
+        const originalId = stripIdMeta(entityId)
         const entity = this.records.index(originalId)
         const {tableId, row, generationCount} = entity
         if (!entityIsInitialized(tableId, generationCount, entityId)) {
@@ -264,7 +271,7 @@ export class Ecs<
         const targetTable = targetTableId !== undefined ?
             tables[targetTableId] : findTableOrCreate(
                 this.hashToTableIndex, table, tagId,
-                tables, allocator, this.componentStructProxies
+                tables, allocator
             )
         const newTable = targetTable.id
         // proceed to move entity data from current table to 
@@ -278,7 +285,7 @@ export class Ecs<
     }
 
     removeId(entityId: number, tagId: number): EntityMutationStatus {
-        const originalId = extractBaseId(entityId)
+        const originalId = stripIdMeta(entityId)
         const entity = this.records.index(originalId)
         const {tableId, row, generationCount} = entity
         if (!entityIsInitialized(tableId, generationCount, entityId)) {
@@ -294,7 +301,7 @@ export class Ecs<
         const targetTable = targetTableId !== undefined ?
             tables[targetTableId] : findTableOrCreateRemoveHash(
                 this.hashToTableIndex, table, tagId,
-                tables, allocator, this.componentStructProxies
+                tables, allocator
             )
         const newTable = targetTable.id
         const newRow = shiftComponentDataAligned(

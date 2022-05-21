@@ -103,7 +103,14 @@ describe("component iteration", () => {
             * proxyClass.bytesPerElement
         )
         const databuffer = new Int32Array(bytes)
-        const component = new RawComponent(proxyClass, databuffer)
+        const component = new RawComponent(
+            proxyClass.id,
+            proxyClass.bytesPerElement,
+            proxyClass.componentSegements,
+            proxyClass.memoryConstructor,
+            proxyClass.View, 
+            databuffer
+        )
 
         /* can iterate and access indivial elements */
         for (let i = 0; i < initialCapacity; i++) {
@@ -128,7 +135,14 @@ describe("component iteration", () => {
             * proxyClass.bytesPerElement
         )
         const databuffer = new Int32Array(bytes)
-        const component = new RawComponent(proxyClass, databuffer)
+        const component = new RawComponent(
+            proxyClass.id,
+            proxyClass.bytesPerElement,
+            proxyClass.componentSegements,
+            proxyClass.memoryConstructor,
+            proxyClass.View, 
+            databuffer
+        )
 
         {
             const pos = component.index(0)

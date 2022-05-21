@@ -75,7 +75,7 @@ const index_1 = require("./index");
             * initialCapacity
             * proxyClass.bytesPerElement);
         const databuffer = new Int32Array(bytes);
-        const component = new index_1.RawComponent(proxyClass, databuffer);
+        const component = new index_1.RawComponent(proxyClass.id, proxyClass.bytesPerElement, proxyClass.componentSegements, proxyClass.memoryConstructor, proxyClass.View, databuffer);
         /* can iterate and access indivial elements */
         for (let i = 0; i < initialCapacity; i++) {
             const pos = component.index(i);
@@ -99,7 +99,7 @@ const index_1 = require("./index");
             * initialCapacity
             * proxyClass.bytesPerElement);
         const databuffer = new Int32Array(bytes);
-        const component = new index_1.RawComponent(proxyClass, databuffer);
+        const component = new index_1.RawComponent(proxyClass.id, proxyClass.bytesPerElement, proxyClass.componentSegements, proxyClass.memoryConstructor, proxyClass.View, databuffer);
         {
             const pos = component.index(0);
             pos.x = 1.0;

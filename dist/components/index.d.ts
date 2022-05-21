@@ -19,18 +19,17 @@ export declare type RawStructProxy<Definition extends ComponentDefinition> = (St
     "@@component": ComponentReference;
     "@@offset": number;
 });
-export interface ComponentViewFactory<Definition extends ComponentDefinition> {
+export interface StructProxyFactory<Definition extends ComponentDefinition> {
     new (component: ComponentReference, offset: number): RawStructProxy<Definition>;
 }
 export declare class RawComponent<Definition extends ComponentDefinition> {
     readonly id: number;
     readonly bytesPerElement: number;
     readonly componentSegements: number;
-    readonly bytesPerField: number;
     databuffer: ComponentTypedArray;
     memoryConstructor: ComponentTypedArrayConstructor;
-    structProxyFactory: ComponentViewFactory<Definition>;
-    constructor({ View, bytesPerElement, componentSegements, bytesPerField, memoryConstructor, id }: StructProxyClass<Definition>, databuffer: ComponentTypedArray);
+    structProxyFactory: StructProxyFactory<Definition>;
+    constructor(id: number, bytesPerElement: number, componentSegments: number, memoryConstructor: ComponentTypedArrayConstructor, View: StructProxyFactory<Definition>, databuffer: ComponentTypedArray);
     index(index: number): StructProxy<Definition>;
 }
 export declare class StructProxyClass<Definition extends ComponentDefinition> {
@@ -42,8 +41,8 @@ export declare class StructProxyClass<Definition extends ComponentDefinition> {
     readonly bytesPerField: number;
     readonly id: number;
     memoryConstructor: ComponentTypedArrayConstructor;
-    View: ComponentViewFactory<Definition>;
-    constructor(id: number, tokens: ComponentTokens, View: ComponentViewFactory<Definition>);
+    View: StructProxyFactory<Definition>;
+    constructor(id: number, tokens: ComponentTokens, View: StructProxyFactory<Definition>);
 }
 export declare function structProxyMacro<Definition extends ComponentDefinition>(id: number, name: string, definition: Definition): StructProxyClass<Definition>;
 export declare type ComponentsDeclaration = {

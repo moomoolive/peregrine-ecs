@@ -1,12 +1,14 @@
 import {describe, it, expect} from "@jest/globals"
 import {
     createId, 
-    extractBaseId, 
+    stripIdMeta, 
     extractGenerationCount,
     relationship,
     isRelationship,
     extractRelation,
-    extractRelatedEntity
+    extractRelatedEntity,
+    makeIdImmutable,
+    isImmutable
 } from "./ids"
 
 describe("should be able to deserialize createId sections", () => {
@@ -19,13 +21,13 @@ describe("should be able to deserialize createId sections", () => {
 
     it("generation count & and base createId should be able to be extracted without corruption", () => {
         const id1 = createId(66_111, 5)
-        expect(extractBaseId(id1)).toBe(66_111)
+        expect(stripIdMeta(id1)).toBe(66_111)
         expect(extractGenerationCount(id1)).toBe(5)
         const id2 = createId(2_345, 0)
-        expect(extractBaseId(id2)).toBe(2_345)
+        expect(stripIdMeta(id2)).toBe(2_345)
         expect(extractGenerationCount(id2)).toBe(0)
         const id3 = createId(5, 23)
-        expect(extractBaseId(id3)).toBe(5)
+        expect(stripIdMeta(id3)).toBe(5)
         expect(extractGenerationCount(id3)).toBe(23)
     })
 
@@ -63,5 +65,21 @@ describe("relationship id generation", () => {
         const eatsMangos = relationship(eats, mangos)
         expect(extractRelation(eatsMangos)).toBe(eats)
         expect(extractRelatedEntity(eatsMangos)).toBe(mangos)
+    })
+})
+
+describe("immutability", () => {
+    it("can make id immutable", () => {
+        const id = 0
+        const immutableId = makeIdImmutable(id)
+        expect(isImmutable(immutableId)).toBe(true)
+    })
+
+    it("relationships cannot be immutable", () => {
+        const eats = 2
+        const mangos = 45_000
+        const eatsMangos = relationship(eats, mangos)
+        const immutableEatsMangos = makeIdImmutable(eatsMangos)
+        expect(isImmutable(immutableEatsMangos)).toBe(false)
     })
 })

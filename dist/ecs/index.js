@@ -23,8 +23,12 @@ class Ecs {
         this.declaredRelations = relations;
         this.unusedIds = (0, sharedArrays_1.createSharedInt32Array)(maxEntities);
         this.unusedIdsCount = 0;
-        (0, errors_1.assert)(maxEntities < 5000 /* minimum */, `max entities must be ${5000 /* minimum */.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`);
-        this.records = new records_1.EntityRecords(maxEntities);
+        if (maxEntities < 5000 /* minimum */) {
+            throw (0, errors_1.assertion)(`max entities must be ${5000 /* minimum */.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`);
+        }
+        this.records = new records_1.EntityRecords(maxEntities < 5000 /* minimum */ ?
+            5000 /* minimum */
+            : maxEntities);
         this.tableAllocator = (0, index_3.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
         this.hashToTableIndex = new Map();
         this.largestId = 4095 /* start_of_user_defined_entities */;
@@ -35,8 +39,6 @@ class Ecs {
             this.hashToTableIndex.set(hash, id);
         }
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
-        this.mutableEntitiesStart = (562 /* relations_start */
-            + this.relationsCount);
     }
     get entityCount() {
         return (this.largestId
@@ -59,10 +61,11 @@ class Ecs {
         return this.componentDebugInfo;
     }
     debugComponent(componentId) {
-        const tooSmall = componentId < 50 /* components_start */;
-        const tooLarge = componentId > 50 /* components_start */ + this.componentCount;
-        (0, errors_1.assert)(tooSmall || tooLarge, `inputted id is not a component (got ${componentId.toLocaleString("en-us")})`);
-        const id = (0, index_2.deserializeComponentId)(componentId);
+        const baseId = (0, ids_1.stripIdMeta)(componentId);
+        if (!(0, ids_1.isComponent)(baseId)) {
+            throw (0, errors_1.assertion)(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`);
+        }
+        const id = (0, index_2.deserializeComponentId)(baseId);
         return this.componentDebugInfo[id];
     }
     addToBlankTable(id) {
@@ -85,7 +88,7 @@ class Ecs {
         return (0, ids_1.createId)(id, generation);
     }
     hasId(entityId, id) {
-        const originalId = (0, ids_1.extractBaseId)(entityId);
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
         const { tableId, generationCount } = this.records.index(originalId);
         if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
             return false;
@@ -93,13 +96,15 @@ class Ecs {
         return this.tables[tableId].has(id);
     }
     isAlive(entityId) {
-        const originalId = (0, ids_1.extractBaseId)(entityId);
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
         const { tableId, generationCount } = this.records.index(originalId);
         return (0, records_1.entityIsInitialized)(tableId, generationCount, entityId);
     }
     delete(entityId) {
-        const originalId = (0, ids_1.extractBaseId)(entityId);
-        (0, errors_1.assert)(originalId < this.mutableEntitiesStart, `entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`);
+        if ((0, ids_1.isImmutable)(entityId)) {
+            throw (0, errors_1.assertion)(`entity ${entityId.toLocaleString("en-us")} cannot be deleted, as it was declared as immutable. Components and declared relations are immutable cannot be deleted, are you attempting to do so?`);
+        }
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
         const { tableId, row, generationCount } = this.records.index(originalId);
         if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
             return -1 /* entity_uninitialized */;
@@ -112,7 +117,7 @@ class Ecs {
         return 2 /* successfully_deleted */;
     }
     addId(entityId, tagId) {
-        const originalId = (0, ids_1.extractBaseId)(entityId);
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
         const entity = this.records.index(originalId);
         const { tableId, row, generationCount } = entity;
         if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
@@ -126,7 +131,7 @@ class Ecs {
         const targetTableId = table.addEdges.get(tagId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreate)(this.hashToTableIndex, table, tagId, tables, allocator, this.componentStructProxies);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreate)(this.hashToTableIndex, table, tagId, tables, allocator);
         const newTable = targetTable.id;
         // proceed to move entity data from current table to 
         // target table, (identical components, tags + new)
@@ -136,7 +141,7 @@ class Ecs {
         return 0 /* successful_added */;
     }
     removeId(entityId, tagId) {
-        const originalId = (0, ids_1.extractBaseId)(entityId);
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
         const entity = this.records.index(originalId);
         const { tableId, row, generationCount } = entity;
         if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
@@ -150,7 +155,7 @@ class Ecs {
         const targetTableId = table.removeEdges.get(tagId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveHash)(this.hashToTableIndex, table, tagId, tables, allocator, this.componentStructProxies);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveHash)(this.hashToTableIndex, table, tagId, tables, allocator);
         const newTable = targetTable.id;
         const newRow = (0, mutations_1.shiftComponentDataAligned)(table, targetTable, row, allocator);
         entity.tableId = newTable;

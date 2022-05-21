@@ -4,7 +4,7 @@ exports.shiftComponentDataAligned = exports.findTableOrCreateRemoveHash = export
 const index_1 = require("../components/index");
 const index_2 = require("../table/index");
 const index_3 = require("../allocator/index");
-function findTableOrCreate(tableHashes, previousTable, tagId, tables, allocator, componentViews) {
+function findTableOrCreate(tableHashes, previousTable, tagId, tables, allocator) {
     const { hash, insertIndex } = (0, index_2.computeAdditonalTagHash)(previousTable.componentIds, tagId, previousTable.components.length);
     const nextTableId = tableHashes.get(hash);
     // check if table has already been created
@@ -25,14 +25,13 @@ function findTableOrCreate(tableHashes, previousTable, tagId, tables, allocator,
     const newTableComponentPtrs = (0, index_3.i32Malloc)(allocator, previousTable.components.length);
     const componentData = [];
     for (let i = 0; i < previousTable.components.length; i++) {
-        const componentId = previousTable.componentIds[i];
-        const view = componentViews[componentId];
+        const { id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory } = previousTable.components[i];
         const ptr = allocator.malloc(1 /* initial_capacity */
-            * view.bytesPerElement);
+            * bytesPerElement);
         newTableComponentPtrs[i] = ptr;
-        const databuffer = new view.memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
-        const component = new index_1.RawComponent(view, databuffer);
-        componentData.push(component);
+        const databuffer = new memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
+        const targetComponent = new index_1.RawComponent(id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory, databuffer);
+        componentData.push(targetComponent);
     }
     const newTableId = tables.length;
     const newTableEntities = (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */);
@@ -44,7 +43,7 @@ function findTableOrCreate(tableHashes, previousTable, tagId, tables, allocator,
     return createdTable;
 }
 exports.findTableOrCreate = findTableOrCreate;
-function findTableOrCreateRemoveHash(tableHashes, previousTable, tagId, tables, allocator, componentViews) {
+function findTableOrCreateRemoveHash(tableHashes, previousTable, tagId, tables, allocator) {
     const { hash, removeIndex } = (0, index_2.computeRemoveTagHash)(previousTable.componentIds, tagId, previousTable.components.length);
     const nextTableId = tableHashes.get(hash);
     // check if table has already been created
@@ -54,23 +53,23 @@ function findTableOrCreateRemoveHash(tableHashes, previousTable, tagId, tables, 
     }
     const numberOfComponentIds = previousTable.componentIds.length - 1;
     const newTableComponentIds = (0, index_3.i32Malloc)(allocator, numberOfComponentIds);
+    const newTableComponentPtrs = (0, index_3.i32Malloc)(allocator, previousTable.components.length);
+    const componentData = [];
+    for (let i = 0; i < previousTable.components.length; i++) {
+        const { id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory } = previousTable.components[i];
+        const ptr = allocator.malloc(1 /* initial_capacity */
+            * bytesPerElement);
+        newTableComponentPtrs[i] = ptr;
+        const databuffer = new memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
+        const targetComponent = new index_1.RawComponent(id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory, databuffer);
+        componentData.push(targetComponent);
+    }
+    // merged with top loop ?
     for (let i = 0; i < removeIndex; i++) {
         newTableComponentIds[i] = previousTable.componentIds[i];
     }
     for (let i = removeIndex; i < numberOfComponentIds; i++) {
         newTableComponentIds[i] = previousTable.componentIds[i + 1];
-    }
-    const newTableComponentPtrs = (0, index_3.i32Malloc)(allocator, previousTable.components.length);
-    const componentData = [];
-    for (let i = 0; i < previousTable.components.length; i++) {
-        const componentId = previousTable.componentIds[i];
-        const view = componentViews[componentId];
-        const ptr = allocator.malloc(1 /* initial_capacity */
-            * view.bytesPerElement);
-        newTableComponentPtrs[i] = ptr;
-        const databuffer = new view.memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
-        const component = new index_1.RawComponent(view, databuffer);
-        componentData.push(component);
     }
     const newTableId = tables.length;
     const newTableEntities = (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */);

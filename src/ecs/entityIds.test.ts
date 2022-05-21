@@ -1,7 +1,7 @@
 import {expect, it, describe} from "@jest/globals"
 import {Ecs} from "./index"
 import {standard_entity} from "../entities/index"
-import {extractBaseId} from "../entities/ids"
+import {stripIdMeta} from "../entities/ids"
 
 describe("adding entity updates ecs stats", () => {
     it("entity count is updated when ecs adds entity", () => {
@@ -103,7 +103,7 @@ describe("ecs id management", () => {
         ecs.delete(oldId)
         const newId = ecs.newId()
         /* same base id */
-        expect(extractBaseId(oldId)).toBe(extractBaseId(newId))
+        expect(stripIdMeta(oldId)).toBe(stripIdMeta(newId))
         /* but they are not equal */
         expect(newId).not.toBe(oldId)
         /* deleted id fails check */
@@ -127,7 +127,7 @@ describe("immutable entities", () => {
         expect(() => ecs.delete(ecs.components.inventory as number)).toThrow()
     })
 
-    it("declared relation entities cannot be deleted", () => {
+    it("declared relations cannot be deleted", () => {
         const ecs = new Ecs({
             components: {
                 position: {x: "f64", y: "f64", z: "f64"},

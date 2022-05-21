@@ -2,10 +2,10 @@ import {expect, describe, it} from "@jest/globals"
 import {
     componentRegistryMacro, 
     registry_encoding,
-    relationRegistryMacro
+    relationRegistryMacro,
 } from "./index"
-import {standard_entity} from "../../entities/index"
 import {orderComponentsByName} from "../../components/index"
+import {isImmutable} from "../../entities/ids"
 
 describe("component registry", () => {
     it("should generate object will inputted keys", () => {
@@ -15,12 +15,8 @@ describe("component registry", () => {
         } as const
         const names = orderComponentsByName(defs)
         const components = componentRegistryMacro<typeof defs>(names)
-        expect(components.likeability).toBe(
-            standard_entity.components_start + 0
-        )
-        expect(components.pets).toBe(
-            standard_entity.components_start + 1
-        )
+        expect(typeof components.likeability).toBe("number")
+        expect(typeof components.pets).toBe("number")
 
         const defs2 = {
             position: {x: "f32", y: "f32", z: "f32"},
@@ -30,14 +26,11 @@ describe("component registry", () => {
         const components2 = componentRegistryMacro<typeof defs2>(
             names2
         )
-        expect(components2.position).toBe(
-            standard_entity.components_start + 0
-        )
-        expect(components2.velocity).toBe(
-            standard_entity.components_start + 1)
+        expect(typeof components2.position).toBe("number")
+        expect(typeof components2.velocity).toBe("number")
     })
 
-    it("should throw error if attempting to set key", () => {
+    it("component registry should be immutable", () => {
         const def = {
             likeability: {x: "i32"},
             pets: {age: "i32", type: "i32"}
@@ -48,6 +41,19 @@ describe("component registry", () => {
         )
         // @ts-ignore
         expect(() => components.likeability = 2).toThrow()
+    })
+
+    it("component ids in registry should be marked as immutable", () => {
+        const def = {
+            likeability: {x: "i32"},
+            pets: {age: "i32", type: "i32"}
+        } as const
+        const names = orderComponentsByName(def)
+        const components = componentRegistryMacro<typeof def>(
+            names
+        )
+        expect(isImmutable(components.likeability as number)).toBe(true)
+        expect(isImmutable(components.pets as number)).toBe(true)
     })
 
     it("should throw error if input is object with no keys", () => {

@@ -3,6 +3,5 @@ export declare const enum error_msgs {
     assertion = " ASSERTION_FAILED "
 }
 export declare function err(msg: string): string;
-export declare function assertion(msg: string): string;
-export declare function assert(failed: boolean, onFailMsg: string): void;
+export declare function assertion(msg: string): TypeError;
 //# sourceMappingURL=errors.d.ts.map

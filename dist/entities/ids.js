@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.extractRelatedEntity = exports.extractRelation = exports.isRelationship = exports.relationship = exports.extractGenerationCount = exports.extractBaseId = exports.createId = exports.preserveSixBits = void 0;
+exports.isComponent = exports.isImmutable = exports.makeIdImmutable = exports.extractRelatedEntity = exports.extractRelation = exports.isRelationship = exports.relationship = exports.extractGenerationCount = exports.stripIdMeta = exports.createId = exports.preserveSixBits = void 0;
 function preserveSixBits(num) {
     return num & 63 /* max_generation_count */;
 }
@@ -10,10 +10,10 @@ function createId(baseId, generationCount) {
     return baseId | serializedGenerationCount;
 }
 exports.createId = createId;
-function extractBaseId(id) {
+function stripIdMeta(id) {
     return id & 524287 /* base_id_mask */;
 }
-exports.extractBaseId = extractBaseId;
+exports.stripIdMeta = stripIdMeta;
 function extractGenerationCount(id) {
     return (id & 33030144 /* generation_count_mask */) >> 19 /* generation_count_bit_offset */;
 }
@@ -36,3 +36,17 @@ function extractRelatedEntity(relationship) {
     return (relationship & 2147483647 /* related_entity_mask */) >> 11 /* relation_bits */;
 }
 exports.extractRelatedEntity = extractRelatedEntity;
+function makeIdImmutable(id) {
+    return id | 33554432 /* immutable_entity_flag */;
+}
+exports.makeIdImmutable = makeIdImmutable;
+function isImmutable(id) {
+    const hasImmutableFlag = (id & 33554432 /* immutable_entity_flag */) !== 0;
+    return hasImmutableFlag && !isRelationship(id);
+}
+exports.isImmutable = isImmutable;
+function isComponent(originalId) {
+    return (originalId >= 50 /* components_start */
+        && originalId <= 562 /* components_end */);
+}
+exports.isComponent = isComponent;

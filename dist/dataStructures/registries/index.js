@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.relationRegistryMacro = exports.computeRelationId = exports.componentRegistryMacro = void 0;
 const index_1 = require("../../components/index");
 const errors_1 = require("../../debugging/errors");
+const ids_1 = require("../../entities/ids");
 function componentRegistryMacro(componentNames) {
     if (componentNames.length < 1) {
         throw SyntaxError((0, errors_1.err)("component declaration must have at least one component"));
@@ -20,7 +21,8 @@ function componentRegistryMacro(componentNames) {
         if fields/component names are correct.
         */
         const entityId = (0, index_1.computeComponentId)(i);
-        Object.defineProperty(registry, keys[i], { value: entityId });
+        const immutableId = (0, ids_1.makeIdImmutable)(entityId);
+        Object.defineProperty(registry, keys[i], { value: immutableId });
     }
     return Object.freeze(registry);
 }
@@ -33,7 +35,9 @@ const STANDARD_RELATIONS = [
     "instanceof"
 ];
 function relationRegistryMacro(relationNames) {
-    (0, errors_1.assert)(!Array.isArray(relationNames), `relations must be inputted as an array of strings (got type "${typeof relationNames}")`);
+    if (!Array.isArray(relationNames)) {
+        throw (0, errors_1.assertion)(`relations must be inputted as an array of strings (got type "${typeof relationNames}")`);
+    }
     const relationKeys = (0, index_1.orderKeysByName)([
         ...STANDARD_RELATIONS,
         ...relationNames.slice()
@@ -47,7 +51,8 @@ function relationRegistryMacro(relationNames) {
         if fields/component names are correct.
         */
         const entityId = computeRelationId(i);
-        Object.defineProperty(registry, relationKeys[i], { value: entityId });
+        const immutableId = (0, ids_1.makeIdImmutable)(entityId);
+        Object.defineProperty(registry, relationKeys[i], { value: immutableId });
     }
     return {
         relations: Object.freeze(registry),

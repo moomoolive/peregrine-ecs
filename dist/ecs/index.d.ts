@@ -18,7 +18,6 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     private unusedIdsCount;
     private largestId;
     private records;
-    private mutableEntitiesStart;
     readonly relations: RelationRegisty<Relations>;
     readonly declaredRelations: Relations;
     private tables;

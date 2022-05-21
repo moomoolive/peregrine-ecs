@@ -93,7 +93,7 @@ const ids_1 = require("../entities/ids");
         ecs.delete(oldId);
         const newId = ecs.newId();
         /* same base id */
-        (0, globals_1.expect)((0, ids_1.extractBaseId)(oldId)).toBe((0, ids_1.extractBaseId)(newId));
+        (0, globals_1.expect)((0, ids_1.stripIdMeta)(oldId)).toBe((0, ids_1.stripIdMeta)(newId));
         /* but they are not equal */
         (0, globals_1.expect)(newId).not.toBe(oldId);
         /* deleted id fails check */
@@ -115,7 +115,7 @@ const ids_1 = require("../entities/ids");
         (0, globals_1.expect)(() => ecs.delete(ecs.components.position)).toThrow();
         (0, globals_1.expect)(() => ecs.delete(ecs.components.inventory)).toThrow();
     });
-    (0, globals_1.it)("declared relation entities cannot be deleted", () => {
+    (0, globals_1.it)("declared relations cannot be deleted", () => {
         const ecs = new index_1.Ecs({
             components: {
                 position: { x: "f64", y: "f64", z: "f64" },
