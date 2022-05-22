@@ -46,15 +46,24 @@ function ecsComponentTable(allocator, records, componentCount) {
     table.length += capacity;
     return table;
 }
-function ecsEntityTable(allocator, records, relationsCount) {
+function ecsEntityTable(allocator, records, relationsCount, reservedEntitiesCount) {
     const componentIds = (0, index_2.i32Malloc)(allocator, 1);
     componentIds[0 /* ecs_id */] = 0 /* ecs_id */;
-    const capacity = 50 + relationsCount;
+    const capacity = (50
+        + relationsCount
+        + reservedEntitiesCount);
     const entities = (0, index_2.i32Malloc)(allocator, capacity);
     for (let i = 0; i < relationsCount; i++) {
         const id = (0, index_4.computeRelationId)(i);
         records.recordEntity(id, i, 2 /* ecs_root_table */);
         entities[i] = id;
+    }
+    const start = relationsCount;
+    const end = relationsCount + reservedEntitiesCount;
+    for (let i = start; i < end; i++) {
+        const id = (0, index_4.computeEntityId)(i - relationsCount);
+        records.recordEntity(id, i, 2 /* ecs_root_table */);
+        entities;
     }
     const components = NO_COMPONENTS();
     const table = new index_1.Table(2 /* ecs_root_table */, (0, index_1.generateTableHash)(componentIds, components.length), componentIds, components, (0, index_1.createTableMeta)(allocator), NO_COMPONENT_PTRS(), entities, capacity);
@@ -62,12 +71,12 @@ function ecsEntityTable(allocator, records, relationsCount) {
     return table;
 }
 exports.ecsEntityTable = ecsEntityTable;
-function createDefaultTables(allocator, records, componentCount, relationsCount) {
+function createDefaultTables(allocator, records, componentCount, relationsCount, reservedEntitiesCount) {
     return {
         defaultTables: [
             ecsIdTable(allocator, records),
             ecsComponentTable(allocator, records, componentCount),
-            ecsEntityTable(allocator, records, relationsCount)
+            ecsEntityTable(allocator, records, relationsCount, reservedEntitiesCount)
         ]
     };
 }

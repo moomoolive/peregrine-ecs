@@ -156,7 +156,8 @@ export class Ecs<
             this.tableAllocator,
             this.records,
             this.componentCount,
-            this.relationsCount
+            this.relationsCount,
+            entityKeys.length
         )
         this.tables = [...defaultTables]
         for (const {id, hash} of defaultTables) {

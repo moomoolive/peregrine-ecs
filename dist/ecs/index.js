@@ -36,7 +36,7 @@ class Ecs {
         this.largestIndex = (4095 /* start_of_user_defined_entities */
             + entityKeys.length);
         this.records.init();
-        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this.componentCount, this.relationsCount);
+        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this.componentCount, this.relationsCount, entityKeys.length);
         this.tables = [...defaultTables];
         for (const { id, hash } of defaultTables) {
             this.hashToTableIndex.set(hash, id);

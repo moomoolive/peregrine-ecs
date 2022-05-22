@@ -12,10 +12,10 @@ import {
     standard_entity,
     STANDARD_ENTITIES
 } from "../entities/index"
-import {deserializeComponentId} from "../components/index"
 import {EntityIndex} from "../entities/records"
 import {
-    computeRelationId
+    computeRelationId,
+    computeEntityId
 } from "../dataStructures/registries/index"
 
 export const enum standard_tables {
@@ -117,11 +117,16 @@ function ecsComponentTable(
 export function ecsEntityTable(
     allocator: Allocator,
     records: EntityIndex,
-    relationsCount: number
+    relationsCount: number,
+    reservedEntitiesCount: number
 ): Table {
     const componentIds = i32Malloc(allocator, 1)
     componentIds[standard_entity.ecs_id] = standard_entity.ecs_id
-    const capacity = 50 + relationsCount
+    const capacity = (
+        50 
+        + relationsCount
+        + reservedEntitiesCount
+    )
     const entities = i32Malloc(allocator, capacity)
     for (let i = 0; i < relationsCount; i++) {
         const id = computeRelationId(i)
@@ -131,6 +136,17 @@ export function ecsEntityTable(
             standard_tables.ecs_root_table
         )
         entities[i] = id
+    }
+    const start = relationsCount
+    const end = relationsCount + reservedEntitiesCount
+    for (let i = start; i < end; i++) {
+        const id = computeEntityId(i - relationsCount)
+        records.recordEntity(
+            id,
+            i,
+            standard_tables.ecs_root_table
+        )
+        entities
     }
     const components = NO_COMPONENTS()
     const table = new Table(
@@ -151,13 +167,19 @@ export function createDefaultTables(
     allocator: Allocator,
     records: EntityIndex,
     componentCount: number,
-    relationsCount: number
+    relationsCount: number,
+    reservedEntitiesCount: number,
 ): {defaultTables: Table[]} {
     return {
         defaultTables: [
             ecsIdTable(allocator, records),
             ecsComponentTable(allocator, records, componentCount),
-            ecsEntityTable(allocator, records, relationsCount)
+            ecsEntityTable(
+                allocator,
+                records,
+                relationsCount,
+                reservedEntitiesCount
+            )
         ]
     }
 }

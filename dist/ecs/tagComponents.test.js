@@ -88,12 +88,40 @@ const index_1 = require("./index");
                 inventory: { weight: "i32", items: "i32" },
                 playerType: { type: "i32" },
                 time: { value: "f32" }
+            },
+            relations: {
+                marriedTo: "immutable"
+            },
+            entities: {
+                myNpc: "immutable"
             }
         });
         const tag = ecs.newId();
         const status = ecs.addId(ecs.components.controller, tag);
         (0, globals_1.expect)(status).toBe(-2 /* entity_immutable */);
         (0, globals_1.expect)(ecs.hasId(ecs.components.controller, tag)).toBe(false);
+        (0, globals_1.expect)(ecs.addId(ecs.relations.marriedTo, tag)).toBe(-2 /* entity_immutable */);
+        (0, globals_1.expect)(ecs.hasId(ecs.relations.marriedTo, tag)).toBe(false);
+        (0, globals_1.expect)(ecs.addId(ecs.entities.myNpc, tag)).toBe(-2 /* entity_immutable */);
+        (0, globals_1.expect)(ecs.hasId(ecs.entities.myNpc, tag)).toBe(false);
+    });
+    (0, globals_1.it)("can add tags to reserved entities", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            },
+            entities: {
+                myNpc: "reserved"
+            }
+        });
+        const tag = ecs.newId();
+        (0, globals_1.expect)(ecs.isAlive(ecs.entities.myNpc)).toBe(true);
+        ecs.addId(ecs.entities.myNpc, tag);
+        (0, globals_1.expect)(ecs.hasId(ecs.entities.myNpc, tag)).toBe(true);
     });
 });
 (0, globals_1.describe)("removing tag components", () => {
@@ -185,10 +213,38 @@ const index_1 = require("./index");
                 inventory: { weight: "i32", items: "i32" },
                 playerType: { type: "i32" },
                 time: { value: "f32" }
+            },
+            relations: {
+                marriedTo: "immutable"
+            },
+            entities: {
+                myNpc: "immutable"
             }
         });
         const tag = ecs.newId();
-        const status = ecs.removeId(ecs.components.controller, tag);
-        (0, globals_1.expect)(status).toBe(-2 /* entity_immutable */);
+        (0, globals_1.expect)(ecs.removeId(ecs.components.controller, tag)).toBe(-2 /* entity_immutable */);
+        (0, globals_1.expect)(ecs.removeId(ecs.relations.marriedTo, tag)).toBe(-2 /* entity_immutable */);
+        (0, globals_1.expect)(ecs.removeId(ecs.entities.myNpc, tag)).toBe(-2 /* entity_immutable */);
+    });
+    (0, globals_1.it)("can remove tags from reserved entities", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            },
+            entities: {
+                myNpc: "reserved"
+            }
+        });
+        const tag = ecs.newId();
+        (0, globals_1.expect)(ecs.isAlive(ecs.entities.myNpc)).toBe(true);
+        ecs.addId(ecs.entities.myNpc, tag);
+        (0, globals_1.expect)(ecs.hasId(ecs.entities.myNpc, tag)).toBe(true);
+        ecs.removeId(ecs.entities.myNpc, tag);
+        (0, globals_1.expect)(ecs.hasId(ecs.entities.myNpc, tag)).toBe(false);
+        (0, globals_1.expect)(ecs.isAlive(ecs.entities.myNpc)).toBe(true);
     });
 });

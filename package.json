@@ -1,7 +1,7 @@
 {
   "name": "peregrine-ecs",
   "version": "0.1.0",
-  "description": "a multi-threaded, archetypal ecs",
+  "description": "a multi-threaded ecs for javascript",
   "main": "index.js",
   "scripts": {
     "build:node": "tsc --project ./buildTools/tsconfig.dist.json",
@@ -10,7 +10,7 @@
     "pre-commit": "npm run test && npm run build && git add -A",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
     "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --watchAll",
-    "test:dev": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js ./src/dataStructures --runInBand --watchAll",
+    "test:dev": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js ./src/ecs/tagComponents --runInBand --watchAll",
     "ci": "npm i && npm run test"
   },
   "repository": {

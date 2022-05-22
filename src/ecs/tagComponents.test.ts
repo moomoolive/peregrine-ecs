@@ -92,12 +92,45 @@ describe("adding tag components", () => {
                 inventory: {weight: "i32", items: "i32"},
                 playerType: {type: "i32"},
                 time: {value: "f32"}
+            },
+            relations: {
+                marriedTo: "immutable"
+            },
+            entities: {
+                myNpc: "immutable"
             }
         })
         const tag = ecs.newId()
         const status = ecs.addId(ecs.components.controller as number, tag)
         expect(status).toBe(entity_mutation_status.entity_immutable)
         expect(ecs.hasId(ecs.components.controller as number, tag)).toBe(false)
+        expect(ecs.addId(ecs.relations.marriedTo, tag)).toBe(
+            entity_mutation_status.entity_immutable
+        )
+        expect(ecs.hasId(ecs.relations.marriedTo, tag)).toBe(false)
+        expect(ecs.addId(ecs.entities.myNpc, tag)).toBe(
+            entity_mutation_status.entity_immutable
+        )
+        expect(ecs.hasId(ecs.entities.myNpc, tag)).toBe(false)
+    })
+
+    it("can add tags to reserved entities", () => {
+        const ecs = new Ecs({
+            components: {
+                position: {x: "f64", y: "f64", z: "f64"},
+                controller: {up: "i32", down: "i32"},
+                inventory: {weight: "i32", items: "i32"},
+                playerType: {type: "i32"},
+                time: {value: "f32"}
+            },
+            entities: {
+                myNpc: "reserved"
+            }
+        })
+        const tag = ecs.newId()
+        expect(ecs.isAlive(ecs.entities.myNpc)).toBe(true)
+        ecs.addId(ecs.entities.myNpc, tag)
+        expect(ecs.hasId(ecs.entities.myNpc, tag)).toBe(true)
     })
 })
 
@@ -194,11 +227,45 @@ describe("removing tag components", () => {
                 inventory: {weight: "i32", items: "i32"},
                 playerType: {type: "i32"},
                 time: {value: "f32"}
+            },
+            relations: {
+                marriedTo: "immutable"
+            },
+            entities: {
+                myNpc: "immutable"
             }
         })
         const tag = ecs.newId()
-        const status = ecs.removeId(ecs.components.controller as number, tag)
-        expect(status).toBe(entity_mutation_status.entity_immutable)
-        
+        expect(ecs.removeId(ecs.components.controller as number, tag)).toBe(
+            entity_mutation_status.entity_immutable
+        )
+        expect(ecs.removeId(ecs.relations.marriedTo, tag)).toBe(
+            entity_mutation_status.entity_immutable
+        )
+        expect(ecs.removeId(ecs.entities.myNpc, tag)).toBe(
+            entity_mutation_status.entity_immutable
+        )
+    })
+
+    it("can remove tags from reserved entities", () => {
+        const ecs = new Ecs({
+            components: {
+                position: {x: "f64", y: "f64", z: "f64"},
+                controller: {up: "i32", down: "i32"},
+                inventory: {weight: "i32", items: "i32"},
+                playerType: {type: "i32"},
+                time: {value: "f32"}
+            },
+            entities: {
+                myNpc: "reserved"
+            }
+        })
+        const tag = ecs.newId()
+        expect(ecs.isAlive(ecs.entities.myNpc)).toBe(true)
+        ecs.addId(ecs.entities.myNpc, tag)
+        expect(ecs.hasId(ecs.entities.myNpc, tag)).toBe(true)
+        ecs.removeId(ecs.entities.myNpc, tag)
+        expect(ecs.hasId(ecs.entities.myNpc, tag)).toBe(false)
+        expect(ecs.isAlive(ecs.entities.myNpc)).toBe(true)
     })
 })
