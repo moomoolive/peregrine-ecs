@@ -15,7 +15,6 @@ describe("adding entity updates ecs stats", () => {
                 time: {value: "f32"}
             }
         })
-
         expect(ecs.entityCount).toBe(0)
         ecs.newId()
         expect(ecs.entityCount).toBe(1)
@@ -32,13 +31,13 @@ describe("adding entity updates ecs stats", () => {
             }
         })
 
-        expect(ecs.entityCount).toBeLessThan(ecs.preciseEntityCount)
+        expect(ecs.entityCount).toBeLessThan(ecs["~preciseEntityCount"])
         ecs.newId()
-        expect(ecs.entityCount).toBeLessThan(ecs.preciseEntityCount)
+        expect(ecs.entityCount).toBeLessThan(ecs["~preciseEntityCount"])
         ecs.newId()
         ecs.newId()
         ecs.newId()
-        expect(ecs.entityCount).toBeLessThan(ecs.preciseEntityCount)
+        expect(ecs.entityCount).toBeLessThan(ecs["~preciseEntityCount"])
     })
 })
 

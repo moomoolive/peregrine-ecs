@@ -12,24 +12,29 @@ const index_3 = require("../allocator/index");
 const ids_1 = require("../entities/ids");
 const errors_1 = require("../debugging/errors");
 class Ecs {
-    constructor(params, { maxEntities = 500000 /* limit */, allocatorInitialMemoryMB = 50, mode = "development", relations = [] } = {}) {
-        const { components } = params;
-        this.schemas = components;
+    constructor(params) {
+        const { components, relations = {}, entities = {}, maxEntities = 500000 /* limit */, allocatorInitialMemoryMB = 50, mode = "development" } = params;
+        this.declaredComponents = components;
         const { proxyClasses, orderedComponentNames } = (0, index_2.generateComponentStructProxies)(components);
         this.componentStructProxies = proxyClasses;
         this.components = (0, index_1.componentRegistryMacro)(orderedComponentNames);
-        const { relations: generatedRelations } = (0, index_1.relationRegistryMacro)(relations);
+        const { registry: generatedRelations, orderedKeys: relationKeys } = (0, index_1.relationRegistryMacro)(relations);
         this.relations = generatedRelations;
         this.declaredRelations = relations;
-        this.unusedIds = (0, sharedArrays_1.createSharedInt32Array)(maxEntities);
-        this.unusedIdsCount = 0;
+        this.relationsCount = relationKeys.length;
+        const { registry: generatedEntites, orderedKeys: entityKeys } = (0, index_1.entitiesRegistryMacro)(entities);
+        this.entities = generatedEntites;
+        this.declaredEntities = entities;
+        this.unusedIndexes = (0, sharedArrays_1.createSharedInt32Array)(maxEntities);
+        this.unusedIndexesCount = 0;
         if (maxEntities < 5000 /* minimum */) {
             throw (0, errors_1.assertion)(`max entities must be ${5000 /* minimum */.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`);
         }
-        this.records = new records_1.EntityRecords(maxEntities);
+        this.records = new records_1.EntityIndex(maxEntities);
         this.tableAllocator = (0, index_3.createComponentAllocator)(1048576 /* per_megabyte */ * allocatorInitialMemoryMB, false);
         this.hashToTableIndex = new Map();
-        this.largestId = 4095 /* start_of_user_defined_entities */;
+        this.largestIndex = (4095 /* start_of_user_defined_entities */
+            + entityKeys.length);
         this.records.init();
         const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this.componentCount, this.relationsCount);
         this.tables = [...defaultTables];
@@ -39,39 +44,29 @@ class Ecs {
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
     }
     get entityCount() {
-        return (this.largestId
+        return (this.largestIndex
             - 4095 /* start_of_user_defined_entities */);
-    }
-    get preciseEntityCount() {
-        return (this.entityCount
-            + 50 /* reserved_count */
-            + this.componentCount
-            + this.relationsCount);
     }
     get componentCount() {
         return this.componentStructProxies.length;
     }
-    get relationsCount() {
-        return (this.declaredRelations.length
-            + 1 /* standard_relations_count */);
-    }
-    addToBlankTable(id) {
-        const blankTable = this.tables[2 /* ecs_root_table */];
-        blankTable.ensureSize(1, this.tableAllocator);
-        const row = blankTable.length++;
-        blankTable.entities[row] = id;
+    addToRootTable(id) {
+        const rootTable = this.tables[2 /* ecs_root_table */];
+        rootTable.ensureSize(1, this.tableAllocator);
+        const row = rootTable.length++;
+        rootTable.entities[row] = id;
         const generationCount = this.records.recordEntity(id, row, 2 /* ecs_root */);
         return generationCount;
     }
     newId() {
-        if (this.unusedIdsCount < 1) {
-            const id = this.largestId++;
-            const generation = this.addToBlankTable(id);
-            return (0, ids_1.createId)(id, generation);
+        if (this.unusedIndexesCount < 1) {
+            const index = this.largestIndex++;
+            const generation = this.addToRootTable(index);
+            return (0, ids_1.createId)(index, generation);
         }
-        const index = --this.unusedIdsCount;
-        const id = this.unusedIds[index];
-        const generation = this.addToBlankTable(this.unusedIds[index]);
+        const index = --this.unusedIndexesCount;
+        const id = this.unusedIndexes[index];
+        const generation = this.addToRootTable(this.unusedIndexes[index]);
         return (0, ids_1.createId)(id, generation);
     }
     hasId(entityId, id) {
@@ -151,15 +146,15 @@ class Ecs {
         this.records.unsetEntity(originalId);
         this.tables[tableId].removeEntity(row);
         /* recycle entity id, stash for later use */
-        const unusedSlot = this.unusedIdsCount++;
-        this.unusedIds[unusedSlot] = originalId;
+        const unusedSlot = this.unusedIndexesCount++;
+        this.unusedIndexes[unusedSlot] = originalId;
         return 2 /* successfully_deleted */;
     }
     /* debugging tools */
-    "{all_components_info}"() {
+    "~all_components_info"() {
         return this.componentDebugInfo;
     }
-    "{debug_component}"(componentId) {
+    "~debug_component"(componentId) {
         const baseId = (0, ids_1.stripIdMeta)(componentId);
         if (!(0, ids_1.isComponent)(baseId)) {
             throw (0, errors_1.assertion)(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`);
@@ -167,10 +162,21 @@ class Ecs {
         const id = (0, index_2.deserializeComponentId)(baseId);
         return this.componentDebugInfo[id];
     }
-    "{entity_ptr}"(entityId) {
+    "~entity_index"(entityId) {
         const originalId = (0, ids_1.stripIdMeta)(entityId);
         const { tableId, row, } = this.records.index(originalId);
-        return { table: tableId, row, id: entityId };
+        return {
+            id: entityId,
+            table: tableId,
+            row,
+            index: originalId
+        };
+    }
+    get "~preciseEntityCount"() {
+        return (this.entityCount
+            + 50 /* reserved_count */
+            + this.componentCount
+            + this.relationsCount);
     }
 }
 exports.Ecs = Ecs;

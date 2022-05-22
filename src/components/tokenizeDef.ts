@@ -1,6 +1,11 @@
 import {err} from "../debugging/errors"
 
-export const DATA_TYPES = ["num", "f64", "f32", "i32"] as const
+export const DATA_TYPES = [
+    "num", /* alias for f64 */ 
+    "f64", 
+    "f32", 
+    "i32"
+] as const
 
 export type Types = typeof DATA_TYPES[number]
 

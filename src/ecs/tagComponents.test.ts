@@ -11,7 +11,7 @@ describe("adding tag components", () => {
                 inventory: {weight: "i32", items: "i32"},
                 playerType: {type: "i32"},
                 time: {value: "f32"}
-            }
+            },
         })
         const e = ecs.newId()
         const tag = ecs.newId()

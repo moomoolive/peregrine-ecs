@@ -28,13 +28,13 @@ const ids_1 = require("../entities/ids");
                 time: { value: "f32" }
             }
         });
-        (0, globals_1.expect)(ecs.entityCount).toBeLessThan(ecs.preciseEntityCount);
+        (0, globals_1.expect)(ecs.entityCount).toBeLessThan(ecs["~preciseEntityCount"]);
         ecs.newId();
-        (0, globals_1.expect)(ecs.entityCount).toBeLessThan(ecs.preciseEntityCount);
+        (0, globals_1.expect)(ecs.entityCount).toBeLessThan(ecs["~preciseEntityCount"]);
         ecs.newId();
         ecs.newId();
         ecs.newId();
-        (0, globals_1.expect)(ecs.entityCount).toBeLessThan(ecs.preciseEntityCount);
+        (0, globals_1.expect)(ecs.entityCount).toBeLessThan(ecs["~preciseEntityCount"]);
     });
 });
 (0, globals_1.describe)("entity creation", () => {

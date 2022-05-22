@@ -21,7 +21,7 @@ export function entityIsInitialized(
     )
 }
 
-export class EntityRecords {
+export class EntityIndex {
     buffer: Int32Array
     protected _index: number
 

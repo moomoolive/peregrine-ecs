@@ -13,7 +13,7 @@ import {
     STANDARD_ENTITIES
 } from "../entities/index"
 import {deserializeComponentId} from "../components/index"
-import {EntityRecords} from "../entities/records"
+import {EntityIndex} from "../entities/records"
 import {
     computeRelationId
 } from "../dataStructures/registries/index"
@@ -43,7 +43,7 @@ const STANDARD_COMPONENTS_HASH = (
 export const ECS_ID_TABLE_HASH = `${table_hashes.non_standard_hash_prefix}id${table_hashes.tag_component_divider}${STANDARD_COMPONENTS_HASH}`
 function ecsIdTable(
     allocator: Allocator,
-    records: EntityRecords
+    records: EntityIndex
 ): Table {
     const componentIds = i32Malloc(allocator, 2)
     componentIds[standard_entity.ecs_id] = standard_entity.ecs_id
@@ -75,7 +75,7 @@ function ecsIdTable(
 export const ECS_COMPONENT_TABLE_HASH = `${table_hashes.non_standard_hash_prefix}component${table_hashes.tag_component_divider}${STANDARD_COMPONENTS_HASH}`
 function ecsComponentTable(
     allocator: Allocator,
-    records: EntityRecords,
+    records: EntityIndex,
     componentCount: number
 ): Table {
     const componentIds = i32Malloc(allocator, 2)
@@ -116,7 +116,7 @@ function ecsComponentTable(
 
 export function ecsEntityTable(
     allocator: Allocator,
-    records: EntityRecords,
+    records: EntityIndex,
     relationsCount: number
 ): Table {
     const componentIds = i32Malloc(allocator, 1)
@@ -149,7 +149,7 @@ export function ecsEntityTable(
 
 export function createDefaultTables(
     allocator: Allocator,
-    records: EntityRecords,
+    records: EntityIndex,
     componentCount: number,
     relationsCount: number
 ): {defaultTables: Table[]} {

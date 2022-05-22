@@ -1,11 +1,6 @@
 import { Types, ComponentTypedArrayConstructor, ComponentTokens, ComponentTypedArray } from "./tokenizeDef";
 export type { Types, ComponentTokens } from "./tokenizeDef";
 export { struct_proxy_encoding } from "./tokenizeDef";
-export declare type i32<Type extends Types> = Type extends "i32" ? Int32Array : never;
-export declare type f32<Type extends Types> = Type extends "f32" ? Float32Array : never;
-export declare type f64<Type extends Types> = Type extends "f64" ? Float64Array : never;
-export declare type num<Type extends Types> = Type extends "num" ? Float64Array : never;
-export declare type ComponentType<Type extends Types> = (f64<Type> | num<Type> | f32<Type> | i32<Type>);
 export declare type ComponentDefinition = {
     readonly [key: string]: Types;
 };

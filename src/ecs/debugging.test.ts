@@ -13,7 +13,7 @@ describe("component debugging", () => {
     
     it("correct number of debug logs should be generated for inputted components", () => {
         expect(ecs.componentCount).toBe(4)
-        const comps = ecs["{all_components_info}"]()
+        const comps = ecs["~all_components_info"]()
         {
             const {
                 name,
@@ -22,7 +22,7 @@ describe("component debugging", () => {
             } = comps.find(({name}) => name === "controller")!
             expect(name).toBe("controller")
             expect(bytesPerElement).toBe(8)
-            const {controller} = ecs.schemas
+            const {controller} = ecs.declaredComponents
             expect(JSON.parse(stringifiedDef)).toEqual(controller)
         }
         {
@@ -33,37 +33,37 @@ describe("component debugging", () => {
             } = comps.find(({name}) => name === "playerType")!
             expect(name).toBe("playerType")
             expect(bytesPerElement).toBe(4)
-            const {playerType} = ecs.schemas
+            const {playerType} = ecs.declaredComponents
             expect(JSON.parse(stringifiedDef)).toEqual(playerType)
         }
     })
 
     it("should be able to debug component  through it's registry key", () => {
-        const {components, schemas} = ecs
+        const {components, declaredComponents} = ecs
         {
         const {
             name, 
             stringifiedDef
-        } = ecs["{debug_component}"](components.controller)
+        } = ecs["~debug_component"](components.controller)
         expect(name).toBe("controller")
         expect(JSON.parse(stringifiedDef)).toEqual(
-            schemas.controller
+            declaredComponents.controller
         )
         }
         {
             const {
                 name, 
                 stringifiedDef
-            } = ecs["{debug_component}"](components.inventory)
+            } = ecs["~debug_component"](components.inventory)
             expect(name).toBe("inventory")
             expect(JSON.parse(stringifiedDef)).toEqual(
-                schemas.inventory
+                declaredComponents.inventory
             )
         }
     })
 
     it("attempting to debug a non component with component debug should throw", () => {
         const nonComponent = ecs.newId()
-        expect(() => ecs["{debug_component}"](nonComponent)).toThrow()
+        expect(() => ecs["~debug_component"](nonComponent)).toThrow()
     })
 })

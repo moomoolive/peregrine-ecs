@@ -11,7 +11,7 @@ import {
     relation_entity_encoding,
 } from "../entities/index"
 import {
-    EntityRecords,
+    EntityIndex,
     entityIsInitialized
 } from "../entities/records"
 import {
@@ -21,7 +21,8 @@ import {
     relationRegistryMacro,
     RelationRegisty,
     IdDeclaration,
-    relation_registy_encoding
+    EntityRegistry,
+    entitiesRegistryMacro
 } from "../dataStructures/registries/index"
 import {
     ComponentsDeclaration,
@@ -58,34 +59,27 @@ import {
 } from "../entities/ids"
 import {assertion} from "../debugging/errors"
 
-export type EcsMode = "development" | "production"
-
-export type EcsOptions<
-    Relations extends IdDeclaration
-> = {
-    maxEntities: number,
-    allocatorInitialMemoryMB: number
-    mode: "development" | "production"
-    relations: Relations
-}
-
 export class Ecs<
     Components extends ComponentsDeclaration,
-    Relations extends IdDeclaration
+    Relations extends IdDeclaration,
+    Entities extends IdDeclaration,
 > {
     static readonly MAX_FIELDS_PER_COMPONENT = struct_proxy_encoding.max_fields
     static readonly MAX_COMPONENTS = registry_encoding.max_components
     static readonly MAX_RELATIONS = relation_entity_encoding.approx_max_count
 
     /* entity ids & records */
-    private unusedIds: Int32Array
-    private unusedIdsCount: number
-    private largestId: number
-    private records: EntityRecords
+    private unusedIndexes: Int32Array
+    private unusedIndexesCount: number
+    private largestIndex: number
+    private records: EntityIndex
+    readonly entities: EntityRegistry<Entities>
+    readonly declaredEntities: Entities
 
     /* relations */
     readonly relations: RelationRegisty<Relations>
     readonly declaredRelations: Relations
+    readonly relationsCount: number
 
     /* tables (sometimes called archetypes) */
     private tables: Table[]
@@ -96,19 +90,25 @@ export class Ecs<
     readonly components: ComponentRegistry<Components>
     private readonly componentStructProxies: StructProxyClasses
     private componentDebugInfo: ComponentDebug[]
-    readonly schemas: Components
+    readonly declaredComponents: Components
 
     constructor(params: {
-        readonly components: Components
-    },
-    {
-        maxEntities = entities_encoding.limit,
-        allocatorInitialMemoryMB = 50,
-        mode = "development",
-        relations = [] as ReadonlyArray<string> as Relations
-    }: Partial<EcsOptions<Relations>> = {}) {
-        const {components} = params
-        this.schemas = components
+        readonly components: Components,
+        readonly relations?: Relations,
+        readonly entities?: Entities,
+        maxEntities?: number
+        allocatorInitialMemoryMB?: number,
+        mode?: "development" | "production"
+    }) {
+        const {
+            components, 
+            relations = {} as Relations,
+            entities = {} as Entities,
+            maxEntities = entities_encoding.limit,
+            allocatorInitialMemoryMB = 50,
+            mode = "development"
+        } = params
+        this.declaredComponents = components
         const {
             proxyClasses,
             orderedComponentNames
@@ -116,19 +116,28 @@ export class Ecs<
         this.componentStructProxies = proxyClasses
         this.components = componentRegistryMacro(orderedComponentNames)
         const {
-            relations: generatedRelations
+            registry: generatedRelations,
+            orderedKeys: relationKeys
         } = relationRegistryMacro(relations)
         this.relations = generatedRelations
         this.declaredRelations = relations
+        this.relationsCount = relationKeys.length
 
-        this.unusedIds = createSharedInt32Array(maxEntities)
-        this.unusedIdsCount = 0
+        const {
+            registry: generatedEntites,
+            orderedKeys: entityKeys
+        } = entitiesRegistryMacro(entities)
+        this.entities = generatedEntites
+        this.declaredEntities = entities
+
+        this.unusedIndexes = createSharedInt32Array(maxEntities)
+        this.unusedIndexesCount = 0
         
         if (maxEntities < entities_encoding.minimum) {
             throw assertion(`max entities must be ${entities_encoding.minimum.toLocaleString("en-us")} or greater (got ${maxEntities.toLocaleString("en-us")})`)
         }
 
-        this.records = new EntityRecords(maxEntities)
+        this.records = new EntityIndex(maxEntities)
         
         this.tableAllocator = createComponentAllocator(
             bytes.per_megabyte * allocatorInitialMemoryMB, 
@@ -137,7 +146,10 @@ export class Ecs<
 
         this.hashToTableIndex = new Map()
 
-        this.largestId = standard_entity.start_of_user_defined_entities
+        this.largestIndex = (
+            standard_entity.start_of_user_defined_entities
+            + entityKeys.length
+        )
 
         this.records.init()
         const {defaultTables} = createDefaultTables(
@@ -157,17 +169,8 @@ export class Ecs<
 
     get entityCount(): number {
         return (
-            this.largestId 
+            this.largestIndex 
             - standard_entity.start_of_user_defined_entities
-        )
-    }
-
-    get preciseEntityCount(): number {
-        return (
-            this.entityCount 
-            + standard_entity.reserved_count
-            + this.componentCount
-            + this.relationsCount
         )
     }
 
@@ -175,18 +178,11 @@ export class Ecs<
         return this.componentStructProxies.length
     }
 
-    get relationsCount(): number {
-        return (
-            this.declaredRelations.length
-            + relation_registy_encoding.standard_relations_count
-        )
-    }
-
-    private addToBlankTable(id: number) {
-        const blankTable = this.tables[standard_tables.ecs_root_table]
-        blankTable.ensureSize(1, this.tableAllocator)
-        const row = blankTable.length++ 
-        blankTable.entities[row] = id
+    private addToRootTable(id: number) {
+        const rootTable = this.tables[standard_tables.ecs_root_table]
+        rootTable.ensureSize(1, this.tableAllocator)
+        const row = rootTable.length++ 
+        rootTable.entities[row] = id
         const generationCount = this.records.recordEntity(
             id, row, standard_entity.ecs_root
         )
@@ -194,14 +190,14 @@ export class Ecs<
     }
 
     newId(): number {
-        if (this.unusedIdsCount < 1) {
-            const id = this.largestId++
-            const generation = this.addToBlankTable(id)
-            return createId(id, generation)
+        if (this.unusedIndexesCount < 1) {
+            const index = this.largestIndex++
+            const generation = this.addToRootTable(index)
+            return createId(index, generation)
         }
-        const index = --this.unusedIdsCount
-        const id = this.unusedIds[index]
-        const generation = this.addToBlankTable(this.unusedIds[index])
+        const index = --this.unusedIndexesCount
+        const id = this.unusedIndexes[index]
+        const generation = this.addToRootTable(this.unusedIndexes[index])
         return createId(id, generation)
     }
 
@@ -296,18 +292,18 @@ export class Ecs<
         this.records.unsetEntity(originalId)
         this.tables[tableId].removeEntity(row)
         /* recycle entity id, stash for later use */
-        const unusedSlot = this.unusedIdsCount++
-        this.unusedIds[unusedSlot] = originalId
+        const unusedSlot = this.unusedIndexesCount++
+        this.unusedIndexes[unusedSlot] = originalId
         return entity_mutation_status.successfully_deleted
     }
 
     /* debugging tools */
 
-    "{all_components_info}"(): ComponentDebug[] {
+    "~all_components_info"(): ComponentDebug[] {
         return this.componentDebugInfo
     }
 
-    "{debug_component}"(componentId: ComponentId): ComponentDebug {
+    "~debug_component"(componentId: ComponentId): ComponentDebug {
         const baseId = stripIdMeta(componentId as number)
         if (!isComponent(baseId)) {
             throw assertion(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`)
@@ -316,8 +312,9 @@ export class Ecs<
         return this.componentDebugInfo[id]
     }
 
-    "{entity_ptr}"(entityId: number): {
-        table: number, 
+    "~entity_index"(entityId: number): {
+        table: number,
+        index: number,
         row: number
         id: number
     } {
@@ -326,6 +323,20 @@ export class Ecs<
             tableId,
             row,
         } = this.records.index(originalId)
-        return {table: tableId, row, id: entityId}
+        return {
+            id: entityId,
+            table: tableId, 
+            row, 
+            index: originalId
+        }
+    }
+
+    get "~preciseEntityCount"(): number {
+        return (
+            this.entityCount 
+            + standard_entity.reserved_count
+            + this.componentCount
+            + this.relationsCount
+        )
     }
 }

@@ -2,7 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.tokenizeComponentDef = exports.DATA_TYPES = void 0;
 const errors_1 = require("../debugging/errors");
-exports.DATA_TYPES = ["num", "f64", "f32", "i32"];
+exports.DATA_TYPES = [
+    "num",
+    "f64",
+    "f32",
+    "i32"
+];
 function validName(name) {
     return !name.startsWith("@@" /* internal_field_prefix */);
 }

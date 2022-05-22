@@ -1,6 +1,6 @@
 import { Table } from "./index";
 import { Allocator } from "../allocator/index";
-import { EntityRecords } from "../entities/records";
+import { EntityIndex } from "../entities/records";
 export declare const enum standard_tables {
     count = 3,
     ecs_id = 0,
@@ -9,8 +9,8 @@ export declare const enum standard_tables {
 }
 export declare const ECS_ID_TABLE_HASH: string;
 export declare const ECS_COMPONENT_TABLE_HASH: string;
-export declare function ecsEntityTable(allocator: Allocator, records: EntityRecords, relationsCount: number): Table;
-export declare function createDefaultTables(allocator: Allocator, records: EntityRecords, componentCount: number, relationsCount: number): {
+export declare function ecsEntityTable(allocator: Allocator, records: EntityIndex, relationsCount: number): Table;
+export declare function createDefaultTables(allocator: Allocator, records: EntityIndex, componentCount: number, relationsCount: number): {
     defaultTables: Table[];
 };
 //# sourceMappingURL=standardTables.d.ts.map

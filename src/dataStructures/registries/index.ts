@@ -3,7 +3,10 @@ import {
     computeComponentId,
     orderKeysByName
 } from "../../components/index"
-import {err, assertion} from "../../debugging/errors"
+import {
+    err,
+    incorrectSchema
+} from "../../debugging/errors"
 import {
     component_entity_encoding,
     standard_entity
@@ -47,54 +50,131 @@ export function componentRegistryMacro<
     return Object.freeze(registry) as ComponentRegistry<Declartion>
 }
 
-export type IdDeclaration = ReadonlyArray<string>
-
 export function computeRelationId(offset: number): number {
     return offset + standard_entity.relations_start
 }
 
-const STANDARD_RELATIONS = [
-    "instanceof"
+export const ENTITY_DECLARATION_TYPES = [
+    "immutable",
+    "reserved"
 ] as const
+
+function correctEntityType(type: string): boolean {
+    switch(type) {
+        case "immutable":
+        case "reserved":
+            return true
+        default:
+            return false
+    }
+}
+
+export type EntityType = (
+    typeof ENTITY_DECLARATION_TYPES[number] & string
+)
+
+export type IdDeclaration = {
+    readonly [key: string]: EntityType
+}
+
+export type IdRegistry<Declaration extends IdDeclaration> = {
+    readonly [key in keyof Declaration]: number
+}
 
 export const enum relation_registy_encoding {
     standard_relations_count = 1
 }
 
+function entityRegistryMacro<
+    Declaration extends IdDeclaration,
+    StandardEntities extends IdDeclaration
+>(
+    declaredEntities: Declaration,
+    registryFor: string,
+    standardEntities: StandardEntities,
+    idComputeFn: (offset: number) => number
+): {
+    registry: (
+        IdRegistry<Declaration>
+        & IdRegistry<StandardEntities>
+    ),
+    orderedKeys: string[]
+} {
+    if (typeof declaredEntities !== "object" || declaredEntities ===  null || Array.isArray(declaredEntities)) {
+        throw incorrectSchema(`declared ${registryFor} must be an object with string values of ${ENTITY_DECLARATION_TYPES.join(", ")}. Got ${declaredEntities} (type=${typeof declaredEntities}).`)
+    }
+    const keys = {...standardEntities, ...declaredEntities}
+    const relationKeys = orderKeysByName(Object.keys(keys))
+    const registry = {}
+    for (let i = 0; i < relationKeys.length; i++) {
+        const name = relationKeys[i]
+        const type = keys[name]
+        if (typeof type !== "string" || !correctEntityType(type)) {
+            throw incorrectSchema(`declared ${registryFor} "${name}" is an incorrect type (type=${typeof type}, value=${type}). Declared ${registryFor} must be a string value of ${ENTITY_DECLARATION_TYPES.join(", ")}.`)
+        }
+        const entityId = idComputeFn(i)
+        const idWithMeta = type === "immutable" ? 
+            makeIdImmutable(entityId) : entityId
+        Object.defineProperty(
+            registry, relationKeys[i], {value: idWithMeta}
+        )
+    }
+    return {
+        registry: Object.freeze(registry) as (
+            IdRegistry<Declaration>
+            & IdRegistry<StandardEntities>
+        ),
+        orderedKeys: relationKeys
+    }
+}
+
+export const STANDARD_RELATIONS = {
+    instanceof: "immutable",
+    wildcard: "immutable"
+} as const
+
 export type RelationRegisty<
     Declaration extends IdDeclaration
 > = (
-    { readonly [key in Declaration[number]]: number }
-    & { readonly [key in typeof STANDARD_RELATIONS[number]]: number }
+    IdRegistry<Declaration>
+    & IdRegistry<typeof STANDARD_RELATIONS>
 )
 
 export function relationRegistryMacro<
     Declaration extends IdDeclaration
->(relationNames: Declaration): {
-    relations: RelationRegisty<Declaration>,
+>(declaredRelations: Declaration): {
+    registry: RelationRegisty<Declaration>,
     orderedKeys: string[]
 } {
-    if (!Array.isArray(relationNames)) {
-        throw assertion(`relations must be inputted as an array of strings (got type "${typeof relationNames}")`)
-    } 
-    const relationKeys = orderKeysByName([
-        ...STANDARD_RELATIONS,
-        ...relationNames.slice()
-    ])
-    const registry = {}
-    for (let i = 0; i < relationKeys.length; i++) {
-        /* 
-        the component name and fields are sanitized by 
-        the macro that creates the components classes,
-        which runs before this. So there is no need to check
-        if fields/component names are correct. 
-        */
-        const entityId = computeRelationId(i)
-        const immutableId = makeIdImmutable(entityId)
-        Object.defineProperty(registry, relationKeys[i], {value: immutableId})
-    }
-    return {
-        relations: Object.freeze(registry) as RelationRegisty<Declaration>,
-        orderedKeys: relationKeys
-    }
+    return entityRegistryMacro(
+        declaredRelations, "relations", STANDARD_RELATIONS,
+        computeRelationId
+    ) 
+}
+
+export const STANDARD_ENTITIES = {
+
+} as const
+
+export type EntityRegistry<
+    Declaration extends IdDeclaration
+> = (
+    IdRegistry<Declaration>
+    & IdRegistry<typeof STANDARD_ENTITIES>
+)
+
+export function computeEntityId(offset: number): number {
+    return offset + standard_entity.start_of_user_defined_entities
+}
+
+export function entitiesRegistryMacro<
+    Declaration extends IdDeclaration
+>(declaredRelations: Declaration): {
+    registry: EntityRegistry<Declaration>,
+    orderedKeys: string[]
+} {
+    return entityRegistryMacro(
+        declaredRelations, "entities", STANDARD_ENTITIES,
+        computeEntityId
+    ) 
 }

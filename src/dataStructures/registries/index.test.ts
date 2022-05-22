@@ -69,15 +69,33 @@ describe("component registry", () => {
     })
 })
 
-describe("relation registry", () => {
+describe("relation registry (id registry generation)", () => {
+    it("inputting incorrect type to relation registry should throw error", () => {
+        expect(() => relationRegistryMacro(null as any)).toThrow()
+        expect(() => relationRegistryMacro(0 as any)).toThrow()
+        expect(() => relationRegistryMacro(true as any)).toThrow()
+        expect(() => relationRegistryMacro("relations" as any)).toThrow()
+        expect(() => relationRegistryMacro(Symbol() as any)).toThrow()
+        expect(() => relationRegistryMacro(undefined as any)).toThrow()
+        expect(() => relationRegistryMacro([] as any)).toThrow()
+    })
+
+    it("inputting incorrect entity type should throw error", () => {
+        expect(() => relationRegistryMacro({rel: null} as any)).toThrow()
+        expect(() => relationRegistryMacro({rel: undefined} as any)).toThrow()
+        expect(() => relationRegistryMacro({rel: 2} as any)).toThrow()
+        expect(() => relationRegistryMacro({rel: "no a real component"} as any)).toThrow()
+        expect(() => relationRegistryMacro({rel: true} as any)).toThrow()
+        expect(() => relationRegistryMacro({rel: Symbol()} as any)).toThrow()
+    })
+
     it("should generate object with inputted keys", () => {
-        const rels = [
-            "marriedTo",
-            "eats",
-            "livesIn",
-            "hates"
-        ] as const
-        const {relations} = relationRegistryMacro(rels)
+        const {registry: relations} = relationRegistryMacro({
+            marriedTo: "immutable",
+            eats: "immutable",
+            livesIn: "reserved",
+            hates: "immutable"
+        })
         expect(typeof relations.eats).toBe("number")
         expect(typeof relations.livesIn).toBe("number")
         expect(typeof relations.hates).toBe("number")
@@ -85,14 +103,26 @@ describe("relation registry", () => {
     })
 
     it("relations registry should be immutable", () => {
-        const rels = [
-            "marriedTo",
-            "eats",
-            "livesIn",
-            "hates"
-        ] as const
-        const {relations} = relationRegistryMacro(rels)
+        const {registry: relations} = relationRegistryMacro({
+            marriedTo: "immutable",
+            eats: "immutable",
+            livesIn: "reserved",
+            hates: "immutable"
+        })
         // @ts-ignore
         expect(() => relations.eats = 4).toThrow()
+    })
+
+    it("relations declared as immutable should have immutable ids, otherwise they shouldn't", () => {
+        const {registry: relations} = relationRegistryMacro({
+            marriedTo: "immutable",
+            eats: "immutable",
+            livesIn: "reserved",
+            hates: "immutable"
+        })
+        expect(isImmutable(relations.marriedTo)).toBe(true)
+        expect(isImmutable(relations.eats)).toBe(true)
+        expect(isImmutable(relations.livesIn)).toBe(false)
+        expect(isImmutable(relations.hates)).toBe(true)
     })
 })

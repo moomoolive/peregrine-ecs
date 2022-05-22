@@ -1,52 +1,53 @@
 import { relation_entity_encoding } from "../entities/index";
-import { ComponentRegistry, registry_encoding, RelationRegisty, IdDeclaration } from "../dataStructures/registries/index";
+import { ComponentRegistry, registry_encoding, RelationRegisty, IdDeclaration, EntityRegistry } from "../dataStructures/registries/index";
 import { ComponentsDeclaration, struct_proxy_encoding } from "../components/index";
 import { ComponentDebug, ComponentId } from "./debugging";
 import { EntityMutationStatus } from "../entities/mutations";
-export declare type EcsMode = "development" | "production";
-export declare type EcsOptions<Relations extends IdDeclaration> = {
-    maxEntities: number;
-    allocatorInitialMemoryMB: number;
-    mode: "development" | "production";
-    relations: Relations;
-};
-export declare class Ecs<Components extends ComponentsDeclaration, Relations extends IdDeclaration> {
+export declare class Ecs<Components extends ComponentsDeclaration, Relations extends IdDeclaration, Entities extends IdDeclaration> {
     static readonly MAX_FIELDS_PER_COMPONENT = struct_proxy_encoding.max_fields;
     static readonly MAX_COMPONENTS: registry_encoding;
     static readonly MAX_RELATIONS: relation_entity_encoding;
-    private unusedIds;
-    private unusedIdsCount;
-    private largestId;
+    private unusedIndexes;
+    private unusedIndexesCount;
+    private largestIndex;
     private records;
+    readonly entities: EntityRegistry<Entities>;
+    readonly declaredEntities: Entities;
     readonly relations: RelationRegisty<Relations>;
     readonly declaredRelations: Relations;
+    readonly relationsCount: number;
     private tables;
     private tableAllocator;
     private hashToTableIndex;
     readonly components: ComponentRegistry<Components>;
     private readonly componentStructProxies;
     private componentDebugInfo;
-    readonly schemas: Components;
+    readonly declaredComponents: Components;
     constructor(params: {
         readonly components: Components;
-    }, { maxEntities, allocatorInitialMemoryMB, mode, relations }?: Partial<EcsOptions<Relations>>);
+        readonly relations?: Relations;
+        readonly entities?: Entities;
+        maxEntities?: number;
+        allocatorInitialMemoryMB?: number;
+        mode?: "development" | "production";
+    });
     get entityCount(): number;
-    get preciseEntityCount(): number;
     get componentCount(): number;
-    get relationsCount(): number;
-    private addToBlankTable;
+    private addToRootTable;
     newId(): number;
     hasId(entityId: number, id: number): boolean;
     isAlive(entityId: number): boolean;
     addId(entityId: number, tagId: number): EntityMutationStatus;
     removeId(entityId: number, tagId: number): EntityMutationStatus;
     delete(entityId: number): EntityMutationStatus;
-    "{all_components_info}"(): ComponentDebug[];
-    "{debug_component}"(componentId: ComponentId): ComponentDebug;
-    "{entity_ptr}"(entityId: number): {
+    "~all_components_info"(): ComponentDebug[];
+    "~debug_component"(componentId: ComponentId): ComponentDebug;
+    "~entity_index"(entityId: number): {
         table: number;
+        index: number;
         row: number;
         id: number;
     };
+    get "~preciseEntityCount"(): number;
 }
 //# sourceMappingURL=index.d.ts.map
