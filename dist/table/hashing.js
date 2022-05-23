@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.computeAdditonalComponentHash = exports.computeRemoveTagHash = exports.computeAdditonalTagHash = exports.generateTableHash = void 0;
+exports.computeRemoveComponentHash = exports.computeAdditonalComponentHash = exports.computeRemoveTagHash = exports.computeAdditonalTagHash = exports.generateTableHash = void 0;
 function hashComponent(componentId) {
     return "." /* component_separator */ + componentId.toString();
 }
@@ -111,3 +111,26 @@ function computeAdditonalComponentHash(referingTableComponentIds, componentId, c
     return additionHash;
 }
 exports.computeAdditonalComponentHash = computeAdditonalComponentHash;
+function computeRemoveComponentHash(referingTableComponentIds, removeComponentId, componentsLength) {
+    /* compute section for components */
+    let hash = "";
+    /* compute section for tags */
+    let removeIndex = 0;
+    const start = 0;
+    const len = componentsLength;
+    for (let i = start; i < len; i++) {
+        const tag = referingTableComponentIds[i];
+        if (tag === removeComponentId) {
+            removeIndex = i;
+            continue;
+        }
+        hash += hashComponent(tag);
+    }
+    hash += "&" /* tag_component_divider */;
+    /* compute section for tags */
+    hash += computeTagsHashSection(referingTableComponentIds, componentsLength);
+    removeHash.hash = hash;
+    removeHash.removeIndex = removeIndex;
+    return removeHash;
+}
+exports.computeRemoveComponentHash = computeRemoveComponentHash;

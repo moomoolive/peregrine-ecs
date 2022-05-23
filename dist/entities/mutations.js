@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.shiftComponentDataUnaligned = exports.findTableOrCreateAddComponent = exports.shiftComponentDataAligned = exports.findTableOrCreateRemoveTag = exports.findTableOrCreateAddTag = void 0;
+exports.findTableOrCreateRemoveComponent = exports.shiftComponentDataUnaligned = exports.findTableOrCreateAddComponent = exports.shiftComponentDataAligned = exports.findTableOrCreateRemoveTag = exports.findTableOrCreateAddTag = void 0;
 const index_1 = require("../components/index");
 const hashing_1 = require("../table/hashing");
 const index_2 = require("../table/index");
@@ -172,8 +172,7 @@ function findTableOrCreateAddComponent(tableHashes, previousTable, componentId, 
     return createdTable;
 }
 exports.findTableOrCreateAddComponent = findTableOrCreateAddComponent;
-/* only works for adding right now */
-function shiftComponentDataUnaligned(source, destination, sourceRow, allocator, unalignedIndex) {
+function shiftComponentDataUnaligned(source, destination, sourceRow, allocator, unalignedIndex, add) {
     const targetLength = destination.length++;
     destination.ensureSize(1, allocator);
     const targetComponentIndex = targetLength - 1;
@@ -199,12 +198,24 @@ function shiftComponentDataUnaligned(source, destination, sourceRow, allocator, 
             currentComponent.databuffer[currentComponentIndex] = (currentComponent.databuffer[currentComponentLastOffset + i]);
         }
     }
-    /* shift bytes after unalignment, skip unaligned component */
-    for (let c = unalignedIndex; c < source.components.length; c++) {
-        const targetComponent = destination.components[c + 1];
+    let len;
+    let targetIncrement;
+    let currentIncrement;
+    if (add) {
+        len = source.components.length;
+        targetIncrement = 1;
+        currentIncrement = 0;
+    }
+    else {
+        len = destination.components.length;
+        targetIncrement = 0;
+        currentIncrement = 1;
+    }
+    for (let c = unalignedIndex; c < len; c++) {
+        const targetComponent = destination.components[c + targetIncrement];
         const componentSegements = targetComponent.componentSegements;
         const targetComponentOffset = componentSegements * targetComponentIndex;
-        const currentComponent = source.components[c];
+        const currentComponent = source.components[c + currentIncrement];
         const currentComponentOffset = sourceRow * componentSegements;
         const currentComponentLastOffset = currentComponentLastIndex * componentSegements;
         for (let i = 0; i < componentSegements; i++) {
@@ -223,3 +234,50 @@ function shiftComponentDataUnaligned(source, destination, sourceRow, allocator, 
     return targetLength;
 }
 exports.shiftComponentDataUnaligned = shiftComponentDataUnaligned;
+function findTableOrCreateRemoveComponent(tableHashes, previousTable, componentId, tables, allocator) {
+    const { hash, removeIndex } = (0, hashing_1.computeRemoveComponentHash)(previousTable.componentIds, componentId, previousTable.components.length);
+    const nextTableId = tableHashes.get(hash);
+    // check if table has already been created
+    if (nextTableId !== undefined) {
+        previousTable.removeEdges.set(componentId, nextTableId);
+        return tables[nextTableId];
+    }
+    const newTableComponentIds = (0, index_3.i32Malloc)(allocator, previousTable.componentIds.length - 1);
+    const newTableComponentPtrs = (0, index_3.i32Malloc)(allocator, previousTable.components.length - 1);
+    const componentData = [];
+    for (let i = 0; i < removeIndex; i++) {
+        const { id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory } = previousTable.components[i];
+        const ptr = allocator.malloc(1 /* initial_capacity */
+            * bytesPerElement);
+        newTableComponentPtrs[i] = ptr;
+        const databuffer = new memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
+        const targetComponent = new index_1.RawComponent(id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory, databuffer);
+        componentData.push(targetComponent);
+    }
+    const previousComponentCount = previousTable.components.length;
+    for (let i = removeIndex + 1; i < previousComponentCount; i++) {
+        const { id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory } = previousTable.components[i];
+        const ptr = allocator.malloc(1 /* initial_capacity */
+            * bytesPerElement);
+        newTableComponentPtrs[i - 1] = ptr;
+        const databuffer = new memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
+        const targetComponent = new index_1.RawComponent(id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory, databuffer);
+        componentData.push(targetComponent);
+    }
+    // merged with top loop ?
+    for (let i = 0; i < removeIndex; i++) {
+        newTableComponentIds[i] = previousTable.componentIds[i];
+    }
+    for (let i = removeIndex + 1; i < previousComponentCount; i++) {
+        newTableComponentIds[i - 1] = previousTable.componentIds[i];
+    }
+    const newTableId = tables.length;
+    const newTableEntities = (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */);
+    const createdTable = new index_2.Table(newTableId, hash, newTableComponentIds, componentData, (0, index_3.i32Malloc)(allocator, 6 /* meta_size */), newTableComponentPtrs, newTableEntities, 1 /* initial_capacity */);
+    previousTable.removeEdges.set(componentId, newTableId);
+    createdTable.addEdges.set(componentId, previousTable.id);
+    tableHashes.set(hash, newTableId);
+    tables.push(createdTable);
+    return createdTable;
+}
+exports.findTableOrCreateRemoveComponent = findTableOrCreateRemoveComponent;

@@ -17,4 +17,8 @@ export declare function computeAdditonalComponentHash(referingTableComponentIds:
     hash: string;
     insertIndex: number;
 };
+export declare function computeRemoveComponentHash(referingTableComponentIds: Int32Array, removeComponentId: number, componentsLength: number): {
+    hash: string;
+    removeIndex: number;
+};
 //# sourceMappingURL=hashing.d.ts.map

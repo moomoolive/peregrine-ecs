@@ -43,7 +43,8 @@ import {
     shiftComponentDataAligned,
     findTableOrCreateRemoveTag,
     findTableOrCreateAddComponent,
-    shiftComponentDataUnaligned
+    shiftComponentDataUnaligned,
+    findTableOrCreateRemoveComponent,
 } from "../entities/mutations"
 import {
     createSharedInt32Array,
@@ -332,7 +333,49 @@ export class Ecs<
         const insertIndex = targetTable.componentIndexes.get(componentOriginalId)
         const newRow = shiftComponentDataUnaligned(
             table, targetTable, row, allocator,
-            insertIndex!
+            insertIndex!, true
+        )
+        entity.tableId = newTable
+        entity.row = newRow
+        return entity_mutation_status.successful_added
+    }
+
+    removeComponent(
+        entityId: number, 
+        componentId: ComponentId
+    ): EntityMutationStatus {
+        const originalId = stripIdMeta(entityId)
+        const componentOriginalId = stripIdMeta(componentId as number)
+        if (!isComponent(componentOriginalId)) {
+            return entity_mutation_status.not_component
+        }
+        const entity = this.records.index(originalId)
+        const {tableId, row, generationCount} = this.records.index(originalId)
+        if (!entityIsInitialized(tableId, generationCount, entityId)) {
+            return entity_mutation_status.entity_uninitialized
+        }
+        const tables = this.tables
+        const table = tables[tableId]
+        if (!table.componentIndexes.has(componentOriginalId)) {
+            return entity_mutation_status.component_not_found
+        }
+        const targetTableId = table.removeEdges.get(
+            componentOriginalId
+        )
+        const allocator = this.tableAllocator
+        const targetTable = targetTableId !== undefined ?
+            tables[targetTableId] : findTableOrCreateRemoveComponent(
+                this.hashToTableIndex, table, componentOriginalId,
+                tables, allocator,
+            )
+        
+        const newTable = targetTable.id
+        const removeIndex = table.componentIndexes.get(
+            componentOriginalId
+        )
+        const newRow = shiftComponentDataUnaligned(
+            table, targetTable, row, allocator,
+            removeIndex!, false
         )
         entity.tableId = newTable
         entity.row = newRow

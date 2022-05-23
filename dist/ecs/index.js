@@ -172,7 +172,34 @@ class Ecs {
             tables[targetTableId] : (0, mutations_1.findTableOrCreateAddComponent)(this.hashToTableIndex, table, componentOriginalId, tables, allocator, this.componentStructProxies[(0, index_2.deserializeComponentId)(componentOriginalId)]);
         const newTable = targetTable.id;
         const insertIndex = targetTable.componentIndexes.get(componentOriginalId);
-        const newRow = (0, mutations_1.shiftComponentDataUnaligned)(table, targetTable, row, allocator, insertIndex);
+        const newRow = (0, mutations_1.shiftComponentDataUnaligned)(table, targetTable, row, allocator, insertIndex, true);
+        entity.tableId = newTable;
+        entity.row = newRow;
+        return 0 /* successful_added */;
+    }
+    removeComponent(entityId, componentId) {
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
+        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
+        if (!(0, ids_1.isComponent)(componentOriginalId)) {
+            return -3 /* not_component */;
+        }
+        const entity = this.records.index(originalId);
+        const { tableId, row, generationCount } = this.records.index(originalId);
+        if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+            return -1 /* entity_uninitialized */;
+        }
+        const tables = this.tables;
+        const table = tables[tableId];
+        if (!table.componentIndexes.has(componentOriginalId)) {
+            return 3 /* component_not_found */;
+        }
+        const targetTableId = table.removeEdges.get(componentOriginalId);
+        const allocator = this.tableAllocator;
+        const targetTable = targetTableId !== undefined ?
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveComponent)(this.hashToTableIndex, table, componentOriginalId, tables, allocator);
+        const newTable = targetTable.id;
+        const removeIndex = table.componentIndexes.get(componentOriginalId);
+        const newRow = (0, mutations_1.shiftComponentDataUnaligned)(table, targetTable, row, allocator, removeIndex, false);
         entity.tableId = newTable;
         entity.row = newRow;
         return 0 /* successful_added */;

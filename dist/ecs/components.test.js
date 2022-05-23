@@ -67,3 +67,75 @@ const index_1 = require("./index");
         (0, globals_1.expect)(status).toBeLessThan(0);
     });
 });
+(0, globals_1.describe)("remove components", () => {
+    (0, globals_1.it)("should be able to add components", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            }
+        });
+        const e = ecs.newId();
+        ecs.addComponent(e, ecs.components.position);
+        (0, globals_1.expect)(ecs.hasComponent(e, ecs.components.position)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(true);
+        ecs.removeComponent(e, ecs.components.position);
+        (0, globals_1.expect)(ecs.hasComponent(e, ecs.components.position)).toBe(false);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(true);
+    });
+    (0, globals_1.it)("can remove multiple components", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            }
+        });
+        const e = ecs.newId();
+        ecs.addComponent(e, ecs.components.position);
+        ecs.addComponent(e, ecs.components.controller);
+        ecs.addComponent(e, ecs.components.inventory);
+        ecs.removeComponent(e, ecs.components.position);
+        (0, globals_1.expect)(ecs.hasComponent(e, ecs.components.position)).toBe(false);
+        ecs.removeComponent(e, ecs.components.controller);
+        (0, globals_1.expect)(ecs.hasComponent(e, ecs.components.controller)).toBe(false);
+        ecs.removeComponent(e, ecs.components.inventory);
+        (0, globals_1.expect)(ecs.hasComponent(e, ecs.components.inventory)).toBe(false);
+        console.log(ecs["tables"].slice(2));
+    });
+    (0, globals_1.it)("cannot remove non-components as components", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            }
+        });
+        const e = ecs.newId();
+        const status = ecs.removeComponent(e, ecs.relations.instanceof);
+        (0, globals_1.expect)(status).toBeLessThan(0);
+    });
+    (0, globals_1.it)("cannot remove components from uninitialized entity", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            }
+        });
+        const e = ecs.newId();
+        ecs.delete(e);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(false);
+        const status = ecs.removeComponent(e, ecs.relations.instanceof);
+        (0, globals_1.expect)(status).toBeLessThan(0);
+    });
+});

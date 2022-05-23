@@ -40,6 +40,7 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     removeId(entityId: number, tagId: number): EntityMutationStatus;
     delete(entityId: number): EntityMutationStatus;
     addComponent(entityId: number, componentId: ComponentId): EntityMutationStatus;
+    removeComponent(entityId: number, componentId: ComponentId): EntityMutationStatus;
     "~all_components_info"(): ComponentDebug[];
     "~debug_component"(componentId: ComponentId): ComponentDebug;
     "~entity_index"(entityId: number): {

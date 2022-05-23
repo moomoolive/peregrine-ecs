@@ -3,7 +3,8 @@ import {
     computeAdditonalTagHash,
     table_hashes,
     computeRemoveTagHash,
-    computeAdditonalComponentHash
+    computeAdditonalComponentHash,
+    computeRemoveComponentHash
 } from "./hashing"
 
 describe("additional tag hash", () => {
@@ -141,5 +142,55 @@ describe("additional component hash", () => {
         )
         expect(hash).toBe(".1.4.6.9888&.777.5600")
         expect(insertIndex).toBe(table_hashes.last_index)
+    })
+})
+
+describe("remove component hash", () => {
+    it("remove tag id hash at end", () => {
+        const tagToRemove = 55_666
+        const referingTableComponentIds = new Int32Array(
+            [1, tagToRemove]
+        )
+        const componentsLength = 2
+        const {hash, removeIndex} = computeRemoveComponentHash(
+            referingTableComponentIds,
+            tagToRemove,
+            componentsLength
+        )
+        expect(hash).toBe(".1&")
+        /* signal that new tag should be added at the end */
+        expect(removeIndex).toBe(1)
+    })
+
+    it("remove tag id hash with multiple tags", () => {
+        const tagToRemove = 777
+        const referingTableComponentIds = new Int32Array(
+            [1, 55, tagToRemove, 9_906, 40_767]
+        )
+        const componentsLength = 5
+        const {hash, removeIndex} = computeRemoveComponentHash(
+            referingTableComponentIds,
+            tagToRemove,
+            componentsLength
+        )
+        expect(hash).toBe(".1.55.9906.40767&")
+        /* signal that new tag should be added at the end */
+        expect(removeIndex).toBe(2)
+    })
+
+    it("remove tag id hash with multiple tags & components", () => {
+        const tagToRemove = 8_765
+        const referingTableComponentIds = new Int32Array(
+            [1, 55, 100, 432, tagToRemove, 9_906, 40_767]
+        )
+        const componentsLength = 6
+        const {hash, removeIndex} = computeRemoveComponentHash(
+            referingTableComponentIds,
+            tagToRemove,
+            componentsLength
+        )
+        expect(hash).toBe(".1.55.100.432.9906&.40767")
+        /* signal that new tag should be added at the end */
+        expect(removeIndex).toBe(4)
     })
 })

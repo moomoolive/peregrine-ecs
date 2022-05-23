@@ -37,6 +37,7 @@ function computeComponentHashSection(
 }
 
 const additionHash = {hash: "", insertIndex: 0} 
+
 export function computeAdditonalTagHash(
     referingTableComponentIds: Int32Array,
     additionalTag: number,
@@ -72,6 +73,7 @@ export function computeAdditonalTagHash(
 }
 
 const removeHash = {hash: "", removeIndex: 0}
+
 export function computeRemoveTagHash(
     referingTableComponentIds: Int32Array,
     removeTag: number,
@@ -148,4 +150,36 @@ export function computeAdditonalComponentHash(
     additionHash.hash = hash
     additionHash.insertIndex = insertIndex
     return additionHash
+}
+
+export function computeRemoveComponentHash(
+    referingTableComponentIds: Int32Array,
+    removeComponentId: number,
+    componentsLength: number
+): {hash: string, removeIndex: number} {
+    /* compute section for components */
+    let hash = ""
+    /* compute section for tags */
+    let removeIndex = 0
+    const start = 0
+    const len = componentsLength
+    for (let i = start; i < len; i++) {
+        const tag = referingTableComponentIds[i]
+        if (tag === removeComponentId) {
+            removeIndex = i
+            continue
+        }
+        hash += hashComponent(tag)
+    }
+    
+    hash += table_hashes.tag_component_divider
+
+    /* compute section for tags */
+    hash += computeTagsHashSection(
+        referingTableComponentIds,
+        componentsLength
+    )
+    removeHash.hash = hash
+    removeHash.removeIndex = removeIndex
+    return removeHash
 }
