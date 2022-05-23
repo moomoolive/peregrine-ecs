@@ -4,7 +4,7 @@ export declare const enum id_encoding {
     generation_count_bits = 6,
     max_generation_count = 63,
     generation_count_mask = 33030144,
-    immutable_entity_flag = 33554432,
+    immutable_flag = 33554432,
     sized_flag = 67108864
 }
 export declare function preserveSixBits(num: number): number;

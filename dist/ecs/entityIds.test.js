@@ -14,9 +14,9 @@ const ids_1 = require("../entities/ids");
                 time: { value: "f32" }
             }
         });
-        (0, globals_1.expect)(ecs["~entityCount"]).toBe(0);
+        (0, globals_1.expect)(ecs["~entity_count"]).toBe(0);
         ecs.newId();
-        (0, globals_1.expect)(ecs["~entityCount"]).toBe(1);
+        (0, globals_1.expect)(ecs["~entity_count"]).toBe(1);
     });
     (0, globals_1.it)("precise entity count should always be higher than normal entity count", () => {
         const ecs = new index_1.Ecs({
@@ -28,13 +28,13 @@ const ids_1 = require("../entities/ids");
                 time: { value: "f32" }
             }
         });
-        (0, globals_1.expect)(ecs["~entityCount"]).toBeLessThan(ecs["~preciseEntityCount"]);
+        (0, globals_1.expect)(ecs["~entity_count"]).toBeLessThan(ecs["~preciseEntityCount"]);
         ecs.newId();
-        (0, globals_1.expect)(ecs["~entityCount"]).toBeLessThan(ecs["~preciseEntityCount"]);
+        (0, globals_1.expect)(ecs["~entity_count"]).toBeLessThan(ecs["~preciseEntityCount"]);
         ecs.newId();
         ecs.newId();
         ecs.newId();
-        (0, globals_1.expect)(ecs["~entityCount"]).toBeLessThan(ecs["~preciseEntityCount"]);
+        (0, globals_1.expect)(ecs["~entity_count"]).toBeLessThan(ecs["~preciseEntityCount"]);
     });
 });
 (0, globals_1.describe)("entity creation", () => {

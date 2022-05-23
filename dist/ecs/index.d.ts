@@ -15,7 +15,10 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     readonly declaredEntities: Entities;
     readonly relations: RelationRegisty<Relations>;
     readonly declaredRelations: Relations;
-    readonly relationsCount: number;
+    readonly "~declaredRelationsCount": number;
+    private unusedRelations;
+    private unusedRelationsCount;
+    private largestRelationIndex;
     private tables;
     private tableAllocator;
     private hashToTableIndex;
@@ -35,9 +38,12 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     newId(): number;
     hasId(entityId: number, id: number): boolean;
     hasComponent(entityId: number, componentId: ComponentId): boolean;
+    hasRelationship(entityId: number, relation: number, entity: number): boolean;
     isActive(entityId: number): boolean;
     addId(entityId: number, tagId: number): EntityMutationStatus;
+    addRelationship(entityId: number, relation: number, entity: number): EntityMutationStatus;
     removeId(entityId: number, tagId: number): EntityMutationStatus;
+    removeRelationship(entityId: number, relation: number, entity: number): EntityMutationStatus;
     delete(entityId: number): EntityMutationStatus;
     addComponent(entityId: number, componentId: ComponentId): EntityMutationStatus;
     removeComponent(entityId: number, componentId: ComponentId): EntityMutationStatus;
@@ -51,7 +57,8 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
         id: number;
     };
     get "~preciseEntityCount"(): number;
-    get "~entityCount"(): number;
-    get "~componentCount"(): number;
+    get "~entity_count"(): number;
+    get "~component_count"(): number;
+    get "~relation_count"(): number;
 }
 //# sourceMappingURL=index.d.ts.map

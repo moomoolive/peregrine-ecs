@@ -32,9 +32,11 @@ export const enum entity_mutation_status {
     successful_added = 0,
     tag_exists = 1,
     component_exists = tag_exists,
+    relationship_exists = tag_exists,
     successfully_deleted = 2,
     tag_not_found = 3,
     component_not_found = tag_not_found,
+    relationship_not_found = tag_not_found,
     successfully_removed = 4
 }
 

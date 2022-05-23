@@ -12,7 +12,7 @@ const index_1 = require("./index");
         }
     });
     (0, globals_1.it)("correct number of debug logs should be generated for inputted components", () => {
-        (0, globals_1.expect)(ecs["~componentCount"]).toBe(4);
+        (0, globals_1.expect)(ecs["~component_count"]).toBe(4);
         const comps = ecs["~all_components_info"]();
         {
             const { name, bytesPerElement, stringifiedDef, } = comps.find(({ name }) => name === "controller");

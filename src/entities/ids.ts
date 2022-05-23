@@ -1,6 +1,5 @@
 import {
     relation_entity_encoding,
-    standard_entity
 } from "./index"
 
 export const enum id_encoding {
@@ -13,7 +12,7 @@ export const enum id_encoding {
         max_generation_count << generation_count_bit_offset
     ),
 
-    immutable_entity_flag = 1 << 25, /* after generation count */
+    immutable_flag = 1 << 25, /* after generation count */
     sized_flag = 1 << 26, /* entity has size greater than zero (is a component) */
 }
 
@@ -68,11 +67,11 @@ export function extractRelatedEntity(
 }
 
 export function makeIdImmutable(id: number): number {
-    return id | id_encoding.immutable_entity_flag
+    return id | id_encoding.immutable_flag
 }
 
 export function isImmutable(id: number): boolean {
-    const hasImmutableFlag = (id & id_encoding.immutable_entity_flag) !== 0
+    const hasImmutableFlag = (id & id_encoding.immutable_flag) !== 0
     return hasImmutableFlag && !isRelationship(id)
 }
 

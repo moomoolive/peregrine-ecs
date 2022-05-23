@@ -37,11 +37,11 @@ function extractRelatedEntity(relationship) {
 }
 exports.extractRelatedEntity = extractRelatedEntity;
 function makeIdImmutable(id) {
-    return id | 33554432 /* immutable_entity_flag */;
+    return id | 33554432 /* immutable_flag */;
 }
 exports.makeIdImmutable = makeIdImmutable;
 function isImmutable(id) {
-    const hasImmutableFlag = (id & 33554432 /* immutable_entity_flag */) !== 0;
+    const hasImmutableFlag = (id & 33554432 /* immutable_flag */) !== 0;
     return hasImmutableFlag && !isRelationship(id);
 }
 exports.isImmutable = isImmutable;

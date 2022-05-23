@@ -9,9 +9,11 @@ export declare const enum entity_mutation_status {
     successful_added = 0,
     tag_exists = 1,
     component_exists = 1,
+    relationship_exists = 1,
     successfully_deleted = 2,
     tag_not_found = 3,
     component_not_found = 3,
+    relationship_not_found = 3,
     successfully_removed = 4
 }
 export declare function findTableOrCreateAddTag(tableHashes: Map<string, number>, previousTable: Table, tagId: number, tables: Table[], allocator: Allocator): Table;

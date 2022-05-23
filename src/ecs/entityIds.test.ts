@@ -15,9 +15,9 @@ describe("adding entity updates ecs stats", () => {
                 time: {value: "f32"}
             }
         })
-        expect(ecs["~entityCount"]).toBe(0)
+        expect(ecs["~entity_count"]).toBe(0)
         ecs.newId()
-        expect(ecs["~entityCount"]).toBe(1)
+        expect(ecs["~entity_count"]).toBe(1)
     })
 
     it("precise entity count should always be higher than normal entity count", () => {
@@ -30,14 +30,13 @@ describe("adding entity updates ecs stats", () => {
                 time: {value: "f32"}
             }
         })
-
-        expect(ecs["~entityCount"]).toBeLessThan(ecs["~preciseEntityCount"])
+        expect(ecs["~entity_count"]).toBeLessThan(ecs["~preciseEntityCount"])
         ecs.newId()
-        expect(ecs["~entityCount"]).toBeLessThan(ecs["~preciseEntityCount"])
-        ecs.newId()
+        expect(ecs["~entity_count"]).toBeLessThan(ecs["~preciseEntityCount"])
         ecs.newId()
         ecs.newId()
-        expect(ecs["~entityCount"]).toBeLessThan(ecs["~preciseEntityCount"])
+        ecs.newId()
+        expect(ecs["~entity_count"]).toBeLessThan(ecs["~preciseEntityCount"])
     })
 })
 

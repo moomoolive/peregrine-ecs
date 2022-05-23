@@ -21,7 +21,12 @@ class Ecs {
         const { registry: generatedRelations, orderedKeys: relationKeys } = (0, index_1.relationRegistryMacro)(relations);
         this.relations = generatedRelations;
         this.declaredRelations = relations;
-        this.relationsCount = relationKeys.length;
+        this["~declaredRelationsCount"] = relationKeys.length;
+        this.unusedRelations = new Int32Array(2047 /* max_id */ -
+            562 /* relations_start */);
+        this.unusedRelationsCount = 0;
+        this.largestRelationIndex = (562 /* relations_start */
+            + relationKeys.length);
         const { registry: generatedEntites, orderedKeys: entityKeys } = (0, index_1.entitiesRegistryMacro)(entities);
         this.entities = generatedEntites;
         this.declaredEntities = entities;
@@ -36,7 +41,7 @@ class Ecs {
         this.largestIndex = (4095 /* start_of_user_defined_entities */
             + entityKeys.length);
         this.records.init();
-        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this["~componentCount"], this.relationsCount, entityKeys.length);
+        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this["~component_count"], this["~declaredRelationsCount"], entityKeys.length);
         this.tables = [...defaultTables];
         for (const { id, hash } of defaultTables) {
             this.hashToTableIndex.set(hash, id);
@@ -72,10 +77,10 @@ class Ecs {
     }
     /* alias for "hasId" */
     hasComponent(entityId, componentId) {
-        return this.hasId(
-        // should components be added with
-        // raw id?
-        entityId, (0, ids_1.stripIdMeta)(componentId));
+        return this.hasId(entityId, componentId);
+    }
+    hasRelationship(entityId, relation, entity) {
+        return this.hasId(entityId, (0, ids_1.relationship)(relation, entity));
     }
     isActive(entityId) {
         const originalId = (0, ids_1.stripIdMeta)(entityId);
@@ -109,6 +114,9 @@ class Ecs {
         entity.row = newRow;
         return 0 /* successful_added */;
     }
+    addRelationship(entityId, relation, entity) {
+        return this.addId(entityId, (0, ids_1.relationship)(relation, entity));
+    }
     removeId(entityId, tagId) {
         if ((0, ids_1.isImmutable)(entityId)) {
             return -2 /* entity_immutable */;
@@ -134,6 +142,9 @@ class Ecs {
         entity.row = newRow;
         return 4 /* successfully_removed */;
     }
+    removeRelationship(entityId, relation, entity) {
+        return this.removeId(entityId, (0, ids_1.relationship)(relation, entity));
+    }
     delete(entityId) {
         if ((0, ids_1.isImmutable)(entityId)) {
             return -2 /* entity_immutable */;
@@ -151,11 +162,11 @@ class Ecs {
         return 2 /* successfully_deleted */;
     }
     addComponent(entityId, componentId) {
-        if (!(0, ids_1.isComponent)(componentId)) {
+        const cId = componentId;
+        if (!(0, ids_1.isComponent)(cId)) {
             return -3 /* not_component */;
         }
         const originalId = (0, ids_1.stripIdMeta)(entityId);
-        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
         const entity = this.records.index(originalId);
         const { tableId, row, generationCount } = this.records.index(originalId);
         if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
@@ -163,26 +174,26 @@ class Ecs {
         }
         const tables = this.tables;
         const table = tables[tableId];
-        if (table.componentIndexes.has(componentOriginalId)) {
+        if (table.componentIndexes.has(cId)) {
             return 1 /* component_exists */;
         }
-        const targetTableId = table.addEdges.get(componentOriginalId);
+        const targetTableId = table.addEdges.get(cId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreateAddComponent)(this.hashToTableIndex, table, componentOriginalId, tables, allocator, this.componentStructProxies[(0, index_2.deserializeComponentId)(componentOriginalId)]);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateAddComponent)(this.hashToTableIndex, table, cId, tables, allocator, this.componentStructProxies[(0, index_2.deserializeComponentId)((0, ids_1.stripIdMeta)(cId))]);
         const newTable = targetTable.id;
-        const insertIndex = targetTable.componentIndexes.get(componentOriginalId);
+        const insertIndex = targetTable.componentIndexes.get(cId);
         const newRow = (0, mutations_1.shiftComponentDataUnaligned)(table, targetTable, row, allocator, insertIndex, true);
         entity.tableId = newTable;
         entity.row = newRow;
         return 0 /* successful_added */;
     }
     removeComponent(entityId, componentId) {
-        if (!(0, ids_1.isComponent)(componentId)) {
+        const cId = componentId;
+        if (!(0, ids_1.isComponent)(cId)) {
             return -3 /* not_component */;
         }
         const originalId = (0, ids_1.stripIdMeta)(entityId);
-        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
         const entity = this.records.index(originalId);
         const { tableId, row, generationCount } = this.records.index(originalId);
         if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
@@ -190,15 +201,15 @@ class Ecs {
         }
         const tables = this.tables;
         const table = tables[tableId];
-        if (!table.componentIndexes.has(componentOriginalId)) {
+        if (!table.componentIndexes.has(cId)) {
             return 3 /* component_not_found */;
         }
-        const targetTableId = table.removeEdges.get(componentOriginalId);
+        const targetTableId = table.removeEdges.get(cId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveComponent)(this.hashToTableIndex, table, componentOriginalId, tables, allocator);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveComponent)(this.hashToTableIndex, table, cId, tables, allocator);
         const newTable = targetTable.id;
-        const removeIndex = table.componentIndexes.get(componentOriginalId);
+        const removeIndex = table.componentIndexes.get(cId);
         const newRow = (0, mutations_1.shiftComponentDataUnaligned)(table, targetTable, row, allocator, removeIndex, false);
         entity.tableId = newTable;
         entity.row = newRow;
@@ -207,13 +218,13 @@ class Ecs {
     getComponent(entityId, componentId) {
         const originalId = (0, ids_1.stripIdMeta)(entityId);
         const { tableId, row, generationCount } = this.records.index(originalId);
-        if (!(0, ids_1.isComponent)(componentId) || !(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+        const cId = componentId;
+        if (!(0, ids_1.isComponent)(cId) || !(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
             return null;
         }
-        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
         const tables = this.tables;
         const table = tables[tableId];
-        const index = table.componentIndexes.get(componentOriginalId);
+        const index = table.componentIndexes.get(cId);
         if (index === undefined) {
             return null;
         }
@@ -243,17 +254,21 @@ class Ecs {
         };
     }
     get "~preciseEntityCount"() {
-        return (this["~entityCount"]
+        return (this["~entity_count"]
             + 50 /* reserved_count */
-            + this["~componentCount"]
-            + this.relationsCount);
+            + this["~component_count"]
+            + this["~relation_count"]);
     }
-    get "~entityCount"() {
+    get "~entity_count"() {
         return (this.largestIndex
             - 4095 /* start_of_user_defined_entities */);
     }
-    get "~componentCount"() {
+    get "~component_count"() {
         return this.componentStructProxies.length;
+    }
+    get "~relation_count"() {
+        return (this.largestRelationIndex
+            - 562 /* relations_start */);
     }
 }
 exports.Ecs = Ecs;

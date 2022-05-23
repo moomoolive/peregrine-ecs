@@ -60,7 +60,8 @@ import {
     createId,
     stripIdMeta,
     isComponent,
-    isImmutable
+    isImmutable,
+    relationship
 } from "../entities/ids"
 import {assertion} from "../debugging/errors"
 
@@ -84,7 +85,10 @@ export class Ecs<
     /* relations */
     readonly relations: RelationRegisty<Relations>
     readonly declaredRelations: Relations
-    readonly relationsCount: number
+    readonly "~declaredRelationsCount": number
+    private unusedRelations: Int32Array
+    private unusedRelationsCount: number
+    private largestRelationIndex: number
 
     /* tables (sometimes called archetypes) */
     private tables: Table[]
@@ -126,7 +130,17 @@ export class Ecs<
         } = relationRegistryMacro(relations)
         this.relations = generatedRelations
         this.declaredRelations = relations
-        this.relationsCount = relationKeys.length
+        this["~declaredRelationsCount"] = relationKeys.length
+
+        this.unusedRelations = new Int32Array(
+            relation_entity_encoding.max_id -
+            standard_entity.relations_start
+        )
+        this.unusedRelationsCount = 0
+        this.largestRelationIndex = (
+            standard_entity.relations_start
+            + relationKeys.length
+        )
 
         const {
             registry: generatedEntites,
@@ -160,8 +174,8 @@ export class Ecs<
         const {defaultTables} = createDefaultTables(
             this.tableAllocator,
             this.records,
-            this["~componentCount"],
-            this.relationsCount,
+            this["~component_count"],
+            this["~declaredRelationsCount"],
             entityKeys.length
         )
         this.tables = [...defaultTables]
@@ -208,9 +222,18 @@ export class Ecs<
     /* alias for "hasId" */
     hasComponent(entityId: number, componentId: ComponentId): boolean {
         return this.hasId(
-            // should components be added with
-            // raw id?
-            entityId, stripIdMeta(componentId as number)
+            entityId, componentId as number
+        )
+    }
+
+    hasRelationship(
+        entityId: number, 
+        relation: number,
+        entity: number
+    ): boolean {
+        return this.hasId(
+            entityId, 
+            relationship(relation, entity)
         )
     }
 
@@ -253,6 +276,17 @@ export class Ecs<
         return entity_mutation_status.successful_added
     }
 
+    addRelationship(
+        entityId: number, 
+        relation: number,
+        entity: number
+    ): EntityMutationStatus {
+        return this.addId(
+            entityId, 
+            relationship(relation, entity)
+        )
+    }
+
     removeId(entityId: number, tagId: number): EntityMutationStatus {
         if (isImmutable(entityId)) {
             return entity_mutation_status.entity_immutable
@@ -284,6 +318,17 @@ export class Ecs<
         return entity_mutation_status.successfully_removed
     }
 
+    removeRelationship(
+        entityId: number, 
+        relation: number,
+        entity: number
+    ): EntityMutationStatus {
+        return this.removeId(
+            entityId, 
+            relationship(relation, entity)
+        )
+    }
+
     delete(entityId: number): EntityMutationStatus {
         if (isImmutable(entityId)) {
             return entity_mutation_status.entity_immutable
@@ -305,11 +350,11 @@ export class Ecs<
         entityId: number, 
         componentId: ComponentId
     ): EntityMutationStatus {
-        if (!isComponent(componentId as number)) {
+        const cId = componentId as number
+        if (!isComponent(cId)) {
             return entity_mutation_status.not_component
         }
         const originalId = stripIdMeta(entityId)
-        const componentOriginalId = stripIdMeta(componentId as number)
         const entity = this.records.index(originalId)
         const {tableId, row, generationCount} = this.records.index(originalId)
         if (!entityIsInitialized(tableId, generationCount, entityId)) {
@@ -317,21 +362,21 @@ export class Ecs<
         }
         const tables = this.tables
         const table = tables[tableId]
-        if (table.componentIndexes.has(componentOriginalId)) {
+        if (table.componentIndexes.has(cId)) {
             return entity_mutation_status.component_exists
         }
         const targetTableId = table.addEdges.get(
-            componentOriginalId
+            cId
         )
         const allocator = this.tableAllocator
         const targetTable = targetTableId !== undefined ?
             tables[targetTableId] : findTableOrCreateAddComponent(
-                this.hashToTableIndex, table, componentOriginalId,
+                this.hashToTableIndex, table, cId,
                 tables, allocator, 
-                this.componentStructProxies[deserializeComponentId(componentOriginalId)]
+                this.componentStructProxies[deserializeComponentId(stripIdMeta(cId))]
             )
         const newTable = targetTable.id
-        const insertIndex = targetTable.componentIndexes.get(componentOriginalId)
+        const insertIndex = targetTable.componentIndexes.get(cId)
         const newRow = shiftComponentDataUnaligned(
             table, targetTable, row, allocator,
             insertIndex!, true
@@ -345,11 +390,11 @@ export class Ecs<
         entityId: number, 
         componentId: ComponentId
     ): EntityMutationStatus {
-        if (!isComponent(componentId as number)) {
+        const cId = componentId as number
+        if (!isComponent(cId)) {
             return entity_mutation_status.not_component
         }
         const originalId = stripIdMeta(entityId)
-        const componentOriginalId = stripIdMeta(componentId as number)
         const entity = this.records.index(originalId)
         const {tableId, row, generationCount} = this.records.index(originalId)
         if (!entityIsInitialized(tableId, generationCount, entityId)) {
@@ -357,22 +402,22 @@ export class Ecs<
         }
         const tables = this.tables
         const table = tables[tableId]
-        if (!table.componentIndexes.has(componentOriginalId)) {
+        if (!table.componentIndexes.has(cId)) {
             return entity_mutation_status.component_not_found
         }
         const targetTableId = table.removeEdges.get(
-            componentOriginalId
+            cId
         )
         const allocator = this.tableAllocator
         const targetTable = targetTableId !== undefined ?
             tables[targetTableId] : findTableOrCreateRemoveComponent(
-                this.hashToTableIndex, table, componentOriginalId,
+                this.hashToTableIndex, table, cId,
                 tables, allocator,
             )
         
         const newTable = targetTable.id
         const removeIndex = table.componentIndexes.get(
-            componentOriginalId
+            cId
         )
         const newRow = shiftComponentDataUnaligned(
             table, targetTable, row, allocator,
@@ -389,13 +434,13 @@ export class Ecs<
     ): StructProxy<Definition> | null {
         const originalId = stripIdMeta(entityId)
         const {tableId, row, generationCount} = this.records.index(originalId)
-        if (!isComponent(componentId as number) || !entityIsInitialized(tableId, generationCount, entityId)) {
+        const cId = componentId as number
+        if (!isComponent(cId) || !entityIsInitialized(tableId, generationCount, entityId)) {
             return null
         }
-        const componentOriginalId = stripIdMeta(componentId as number)
         const tables = this.tables
         const table = tables[tableId]
-        const index = table.componentIndexes.get(componentOriginalId)
+        const index = table.componentIndexes.get(cId)
         if (index === undefined) {
             return null
         }
@@ -439,21 +484,28 @@ export class Ecs<
 
     get "~preciseEntityCount"(): number {
         return (
-            this["~entityCount"] 
+            this["~entity_count"] 
             + standard_entity.reserved_count
-            + this["~componentCount"]
-            + this.relationsCount
+            + this["~component_count"]
+            + this["~relation_count"]
         )
     }
 
-    get "~entityCount"(): number {
+    get "~entity_count"(): number {
         return (
             this.largestIndex 
             - standard_entity.start_of_user_defined_entities
         )
     }
 
-    get "~componentCount"(): number {
+    get "~component_count"(): number {
         return this.componentStructProxies.length
+    }
+
+    get "~relation_count"(): number {
+        return (
+            this.largestRelationIndex
+            - standard_entity.relations_start
+        )
     }
 }
