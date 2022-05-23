@@ -20,7 +20,7 @@ const index_1 = require("./index");
         (0, globals_1.expect)(ecs.hasId(e, tag)).toBe(true);
         // can delete entity with added tags normally
         ecs.delete(e);
-        (0, globals_1.expect)(ecs.isAlive(e)).toBe(false);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(false);
     });
     (0, globals_1.it)("can add multiple tags to entity", () => {
         const ecs = new index_1.Ecs({
@@ -58,8 +58,8 @@ const index_1 = require("./index");
         ecs.delete(e);
         const failStatus = ecs.addId(e, tag);
         (0, globals_1.expect)(failStatus).toBeLessThan(0);
-        (0, globals_1.expect)(ecs.isAlive(e)).toBe(false);
-        (0, globals_1.expect)(ecs.isAlive(tag)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(false);
+        (0, globals_1.expect)(ecs.isActive(tag)).toBe(true);
     });
     (0, globals_1.it)("adding the same tag to the same entity multiple times does nothing", () => {
         const ecs = new index_1.Ecs({
@@ -77,7 +77,7 @@ const index_1 = require("./index");
         const status2 = ecs.addId(e, tag);
         (0, globals_1.expect)(status).toBeGreaterThanOrEqual(0);
         (0, globals_1.expect)(status2).toBe(1 /* tag_exists */);
-        (0, globals_1.expect)(ecs.isAlive(e)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(true);
         (0, globals_1.expect)(ecs.hasId(e, tag));
     });
     (0, globals_1.it)("cannot add tags to immutable entities, (like components)", () => {
@@ -119,7 +119,7 @@ const index_1 = require("./index");
             }
         });
         const tag = ecs.newId();
-        (0, globals_1.expect)(ecs.isAlive(ecs.entities.myNpc)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(ecs.entities.myNpc)).toBe(true);
         ecs.addId(ecs.entities.myNpc, tag);
         (0, globals_1.expect)(ecs.hasId(ecs.entities.myNpc, tag)).toBe(true);
     });
@@ -142,7 +142,7 @@ const index_1 = require("./index");
         const removeStatus = ecs.removeId(e, tag);
         (0, globals_1.expect)(removeStatus).toBeGreaterThanOrEqual(0);
         (0, globals_1.expect)(ecs.hasId(e, tag)).toBe(false);
-        (0, globals_1.expect)(ecs.isAlive(e)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(true);
     });
     (0, globals_1.it)("attempting to remove a tag twice does nothing", () => {
         const ecs = new index_1.Ecs({
@@ -161,7 +161,7 @@ const index_1 = require("./index");
         const removeStatus = ecs.removeId(e, tag);
         (0, globals_1.expect)(removeStatus).toBeGreaterThanOrEqual(0);
         (0, globals_1.expect)(ecs.removeId(e, tag)).toBe(3 /* tag_not_found */);
-        (0, globals_1.expect)(ecs.isAlive(e)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(true);
     });
     (0, globals_1.it)("should not be able delete id on uninitalized entity", () => {
         const ecs = new index_1.Ecs({
@@ -240,11 +240,11 @@ const index_1 = require("./index");
             }
         });
         const tag = ecs.newId();
-        (0, globals_1.expect)(ecs.isAlive(ecs.entities.myNpc)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(ecs.entities.myNpc)).toBe(true);
         ecs.addId(ecs.entities.myNpc, tag);
         (0, globals_1.expect)(ecs.hasId(ecs.entities.myNpc, tag)).toBe(true);
         ecs.removeId(ecs.entities.myNpc, tag);
         (0, globals_1.expect)(ecs.hasId(ecs.entities.myNpc, tag)).toBe(false);
-        (0, globals_1.expect)(ecs.isAlive(ecs.entities.myNpc)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(ecs.entities.myNpc)).toBe(true);
     });
 });

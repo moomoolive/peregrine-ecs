@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createDefaultTables = exports.ecsEntityTable = exports.ECS_COMPONENT_TABLE_HASH = exports.ECS_ID_TABLE_HASH = void 0;
 const index_1 = require("./index");
+const hashing_1 = require("./hashing");
 const index_2 = require("../allocator/index");
 const index_3 = require("../entities/index");
 const index_4 = require("../dataStructures/registries/index");
@@ -66,7 +67,7 @@ function ecsEntityTable(allocator, records, relationsCount, reservedEntitiesCoun
         entities;
     }
     const components = NO_COMPONENTS();
-    const table = new index_1.Table(2 /* ecs_root_table */, (0, index_1.generateTableHash)(componentIds, components.length), componentIds, components, (0, index_1.createTableMeta)(allocator), NO_COMPONENT_PTRS(), entities, capacity);
+    const table = new index_1.Table(2 /* ecs_root_table */, (0, hashing_1.generateTableHash)(componentIds, components.length), componentIds, components, (0, index_1.createTableMeta)(allocator), NO_COMPONENT_PTRS(), entities, capacity);
     table.length += relationsCount;
     return table;
 }

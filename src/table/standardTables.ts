@@ -1,9 +1,11 @@
 import {
     Table,
-    table_hashes,
-    generateTableHash,
     createTableMeta,
 } from "./index"
+import {
+    table_hashes,
+    generateTableHash,
+} from "./hashing"
 import {
     Allocator,
     i32Malloc

@@ -36,19 +36,12 @@ class Ecs {
         this.largestIndex = (4095 /* start_of_user_defined_entities */
             + entityKeys.length);
         this.records.init();
-        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this.componentCount, this.relationsCount, entityKeys.length);
+        const { defaultTables } = (0, standardTables_1.createDefaultTables)(this.tableAllocator, this.records, this["~componentCount"], this.relationsCount, entityKeys.length);
         this.tables = [...defaultTables];
         for (const { id, hash } of defaultTables) {
             this.hashToTableIndex.set(hash, id);
         }
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
-    }
-    get entityCount() {
-        return (this.largestIndex
-            - 4095 /* start_of_user_defined_entities */);
-    }
-    get componentCount() {
-        return this.componentStructProxies.length;
     }
     addToRootTable(id) {
         const rootTable = this.tables[2 /* ecs_root_table */];
@@ -77,7 +70,14 @@ class Ecs {
         }
         return this.tables[tableId].has(id);
     }
-    isAlive(entityId) {
+    /* alias for "hasId" */
+    hasComponent(entityId, componentId) {
+        return this.hasId(
+        // should components be added with
+        // raw id?
+        entityId, (0, ids_1.stripIdMeta)(componentId));
+    }
+    isActive(entityId) {
         const originalId = (0, ids_1.stripIdMeta)(entityId);
         const { tableId, generationCount } = this.records.index(originalId);
         return (0, records_1.entityIsInitialized)(tableId, generationCount, entityId);
@@ -100,7 +100,7 @@ class Ecs {
         const targetTableId = table.addEdges.get(tagId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreate)(this.hashToTableIndex, table, tagId, tables, allocator);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateAddTag)(this.hashToTableIndex, table, tagId, tables, allocator);
         const newTable = targetTable.id;
         // proceed to move entity data from current table to 
         // target table, (identical components, tags + new)
@@ -127,7 +127,7 @@ class Ecs {
         const targetTableId = table.removeEdges.get(tagId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveHash)(this.hashToTableIndex, table, tagId, tables, allocator);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveTag)(this.hashToTableIndex, table, tagId, tables, allocator);
         const newTable = targetTable.id;
         const newRow = (0, mutations_1.shiftComponentDataAligned)(table, targetTable, row, allocator);
         entity.tableId = newTable;
@@ -149,6 +149,33 @@ class Ecs {
         const unusedSlot = this.unusedIndexesCount++;
         this.unusedIndexes[unusedSlot] = originalId;
         return 2 /* successfully_deleted */;
+    }
+    addComponent(entityId, componentId) {
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
+        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
+        if (!(0, ids_1.isComponent)(componentOriginalId)) {
+            return -3 /* not_component */;
+        }
+        const entity = this.records.index(originalId);
+        const { tableId, row, generationCount } = this.records.index(originalId);
+        if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+            return -1 /* entity_uninitialized */;
+        }
+        const tables = this.tables;
+        const table = tables[tableId];
+        if (table.componentIndexes.has(componentOriginalId)) {
+            return 1 /* component_exists */;
+        }
+        const targetTableId = table.addEdges.get(componentOriginalId);
+        const allocator = this.tableAllocator;
+        const targetTable = targetTableId !== undefined ?
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateAddComponent)(this.hashToTableIndex, table, componentOriginalId, tables, allocator, this.componentStructProxies[(0, index_2.deserializeComponentId)(componentOriginalId)]);
+        const newTable = targetTable.id;
+        const insertIndex = targetTable.componentIndexes.get(componentOriginalId);
+        const newRow = (0, mutations_1.shiftComponentDataUnaligned)(table, targetTable, row, allocator, insertIndex);
+        entity.tableId = newTable;
+        entity.row = newRow;
+        return 0 /* successful_added */;
     }
     /* debugging tools */
     "~all_components_info"() {
@@ -173,10 +200,17 @@ class Ecs {
         };
     }
     get "~preciseEntityCount"() {
-        return (this.entityCount
+        return (this["~entityCount"]
             + 50 /* reserved_count */
-            + this.componentCount
+            + this["~componentCount"]
             + this.relationsCount);
+    }
+    get "~entityCount"() {
+        return (this.largestIndex
+            - 4095 /* start_of_user_defined_entities */);
+    }
+    get "~componentCount"() {
+        return this.componentStructProxies.length;
     }
 }
 exports.Ecs = Ecs;

@@ -14,9 +14,9 @@ const ids_1 = require("../entities/ids");
                 time: { value: "f32" }
             }
         });
-        (0, globals_1.expect)(ecs.entityCount).toBe(0);
+        (0, globals_1.expect)(ecs["~entityCount"]).toBe(0);
         ecs.newId();
-        (0, globals_1.expect)(ecs.entityCount).toBe(1);
+        (0, globals_1.expect)(ecs["~entityCount"]).toBe(1);
     });
     (0, globals_1.it)("precise entity count should always be higher than normal entity count", () => {
         const ecs = new index_1.Ecs({
@@ -28,13 +28,13 @@ const ids_1 = require("../entities/ids");
                 time: { value: "f32" }
             }
         });
-        (0, globals_1.expect)(ecs.entityCount).toBeLessThan(ecs["~preciseEntityCount"]);
+        (0, globals_1.expect)(ecs["~entityCount"]).toBeLessThan(ecs["~preciseEntityCount"]);
         ecs.newId();
-        (0, globals_1.expect)(ecs.entityCount).toBeLessThan(ecs["~preciseEntityCount"]);
+        (0, globals_1.expect)(ecs["~entityCount"]).toBeLessThan(ecs["~preciseEntityCount"]);
         ecs.newId();
         ecs.newId();
         ecs.newId();
-        (0, globals_1.expect)(ecs.entityCount).toBeLessThan(ecs["~preciseEntityCount"]);
+        (0, globals_1.expect)(ecs["~entityCount"]).toBeLessThan(ecs["~preciseEntityCount"]);
     });
 });
 (0, globals_1.describe)("entity creation", () => {
@@ -50,7 +50,7 @@ const ids_1 = require("../entities/ids");
         });
         const e = ecs.newId();
         (0, globals_1.expect)(ecs.hasId(e, 0 /* ecs_id */)).toBe(true);
-        (0, globals_1.expect)(ecs.isAlive(e)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(true);
     });
     (0, globals_1.it)("entity should be able to be deleted", () => {
         const ecs = new index_1.Ecs({
@@ -63,19 +63,19 @@ const ids_1 = require("../entities/ids");
             }
         });
         const e = ecs.newId();
-        (0, globals_1.expect)(ecs.isAlive(e)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(true);
         const status = ecs.delete(e);
         (0, globals_1.expect)(status).toBeGreaterThanOrEqual(0);
-        (0, globals_1.expect)(ecs.isAlive(e)).toBe(false);
+        (0, globals_1.expect)(ecs.isActive(e)).toBe(false);
         const e2 = ecs.newId();
         const e3 = ecs.newId();
         const e4 = ecs.newId();
         (0, globals_1.expect)(ecs.delete(e2)).toBeGreaterThanOrEqual(0);
-        (0, globals_1.expect)(ecs.isAlive(e2)).toBe(false);
+        (0, globals_1.expect)(ecs.isActive(e2)).toBe(false);
         (0, globals_1.expect)(ecs.delete(e3)).toBeGreaterThanOrEqual(0);
-        (0, globals_1.expect)(ecs.isAlive(e3)).toBe(false);
+        (0, globals_1.expect)(ecs.isActive(e3)).toBe(false);
         (0, globals_1.expect)(ecs.delete(e4)).toBeGreaterThanOrEqual(0);
-        (0, globals_1.expect)(ecs.isAlive(e4)).toBe(false);
+        (0, globals_1.expect)(ecs.isActive(e4)).toBe(false);
     });
 });
 (0, globals_1.describe)("ecs id management", () => {
@@ -97,8 +97,8 @@ const ids_1 = require("../entities/ids");
         /* but they are not equal */
         (0, globals_1.expect)(newId).not.toBe(oldId);
         /* deleted id fails check */
-        (0, globals_1.expect)(ecs.isAlive(oldId)).toBe(false);
-        (0, globals_1.expect)(ecs.isAlive(newId)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(oldId)).toBe(false);
+        (0, globals_1.expect)(ecs.isActive(newId)).toBe(true);
     });
 });
 (0, globals_1.describe)("immutable entities", () => {
@@ -115,7 +115,7 @@ const ids_1 = require("../entities/ids");
         (0, globals_1.expect)(ecs.delete(ecs.components.position)).toBe(-2 /* entity_immutable */);
         (0, globals_1.expect)(ecs.delete(ecs.components.inventory)).toBe(-2 /* entity_immutable */);
     });
-    (0, globals_1.it)("declared relations cannot be deleted", () => {
+    (0, globals_1.it)("declared immutable relations/entities cannot be deleted", () => {
         const ecs = new index_1.Ecs({
             components: {
                 position: { x: "f64", y: "f64", z: "f64" },
@@ -123,8 +123,59 @@ const ids_1 = require("../entities/ids");
                 inventory: { weight: "i32", items: "i32" },
                 playerType: { type: "i32" },
                 time: { value: "f32" }
+            },
+            relations: {
+                eats: "immutable"
+            },
+            entities: {
+                apples: "immutable"
             }
         });
-        (0, globals_1.expect)(ecs.delete(ecs.relations.instanceof)).toBe(-2 /* entity_immutable */);
+        (0, globals_1.expect)(ecs.delete(ecs.relations.eats)).toBe(-2 /* entity_immutable */);
+        (0, globals_1.expect)(ecs.delete(ecs.entities.apples)).toBe(-2 /* entity_immutable */);
+    });
+});
+(0, globals_1.describe)("reserved entities", () => {
+    (0, globals_1.it)("reserved entities are pre-initialized", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            },
+            relations: {
+                eats: "reserved"
+            },
+            entities: {
+                apples: "reserved"
+            }
+        });
+        (0, globals_1.expect)(ecs.isActive(ecs.relations.eats)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(ecs.entities.apples)).toBe(true);
+    });
+    (0, globals_1.it)("reserved entities can be deleted", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            },
+            relations: {
+                eats: "reserved"
+            },
+            entities: {
+                apples: "reserved"
+            }
+        });
+        (0, globals_1.expect)(ecs.isActive(ecs.relations.eats)).toBe(true);
+        (0, globals_1.expect)(ecs.isActive(ecs.entities.apples)).toBe(true);
+        ecs.delete(ecs.relations.eats);
+        (0, globals_1.expect)(ecs.isActive(ecs.relations.eats)).toBe(false);
+        ecs.delete(ecs.entities.apples);
+        (0, globals_1.expect)(ecs.isActive(ecs.entities.apples)).toBe(false);
     });
 });

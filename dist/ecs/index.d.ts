@@ -31,15 +31,15 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
         allocatorInitialMemoryMB?: number;
         mode?: "development" | "production";
     });
-    get entityCount(): number;
-    get componentCount(): number;
     private addToRootTable;
     newId(): number;
     hasId(entityId: number, id: number): boolean;
-    isAlive(entityId: number): boolean;
+    hasComponent(entityId: number, componentId: ComponentId): boolean;
+    isActive(entityId: number): boolean;
     addId(entityId: number, tagId: number): EntityMutationStatus;
     removeId(entityId: number, tagId: number): EntityMutationStatus;
     delete(entityId: number): EntityMutationStatus;
+    addComponent(entityId: number, componentId: ComponentId): EntityMutationStatus;
     "~all_components_info"(): ComponentDebug[];
     "~debug_component"(componentId: ComponentId): ComponentDebug;
     "~entity_index"(entityId: number): {
@@ -49,5 +49,7 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
         id: number;
     };
     get "~preciseEntityCount"(): number;
+    get "~entityCount"(): number;
+    get "~componentCount"(): number;
 }
 //# sourceMappingURL=index.d.ts.map

@@ -78,6 +78,6 @@ export function isImmutable(id: number): boolean {
 export function isComponent(originalId: number): boolean {
     return (
         originalId >= standard_entity.components_start
-        && originalId <= standard_entity.components_end
+        && originalId < standard_entity.components_end
     )
 }

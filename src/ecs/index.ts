@@ -39,9 +39,11 @@ import {
 import {
     entity_mutation_status,
     EntityMutationStatus,
-    findTableOrCreate,
+    findTableOrCreateAddTag,
     shiftComponentDataAligned,
-    findTableOrCreateRemoveHash
+    findTableOrCreateRemoveTag,
+    findTableOrCreateAddComponent,
+    shiftComponentDataUnaligned
 } from "../entities/mutations"
 import {
     createSharedInt32Array,
@@ -155,7 +157,7 @@ export class Ecs<
         const {defaultTables} = createDefaultTables(
             this.tableAllocator,
             this.records,
-            this.componentCount,
+            this["~componentCount"],
             this.relationsCount,
             entityKeys.length
         )
@@ -166,17 +168,6 @@ export class Ecs<
         this.componentDebugInfo = generateComponentDebugInfo(
             this.componentStructProxies
         )
-    }
-
-    get entityCount(): number {
-        return (
-            this.largestIndex 
-            - standard_entity.start_of_user_defined_entities
-        )
-    }
-
-    get componentCount(): number {
-        return this.componentStructProxies.length
     }
 
     private addToRootTable(id: number) {
@@ -211,7 +202,16 @@ export class Ecs<
         return this.tables[tableId].has(id)
     }
 
-    isAlive(entityId: number): boolean {
+    /* alias for "hasId" */
+    hasComponent(entityId: number, componentId: ComponentId): boolean {
+        return this.hasId(
+            // should components be added with
+            // raw id?
+            entityId, stripIdMeta(componentId as number)
+        )
+    }
+
+    isActive(entityId: number): boolean {
         const originalId = stripIdMeta(entityId)
         const {tableId, generationCount} = this.records.index(originalId)
         return entityIsInitialized(tableId, generationCount, entityId)
@@ -235,7 +235,7 @@ export class Ecs<
         const targetTableId = table.addEdges.get(tagId)
         const allocator = this.tableAllocator
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : findTableOrCreate(
+            tables[targetTableId] : findTableOrCreateAddTag(
                 this.hashToTableIndex, table, tagId,
                 tables, allocator
             )
@@ -268,7 +268,7 @@ export class Ecs<
         const targetTableId = table.removeEdges.get(tagId)
         const allocator = this.tableAllocator
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : findTableOrCreateRemoveHash(
+            tables[targetTableId] : findTableOrCreateRemoveTag(
                 this.hashToTableIndex, table, tagId,
                 tables, allocator
             )
@@ -296,6 +296,47 @@ export class Ecs<
         const unusedSlot = this.unusedIndexesCount++
         this.unusedIndexes[unusedSlot] = originalId
         return entity_mutation_status.successfully_deleted
+    }
+
+    addComponent(
+        entityId: number, 
+        componentId: ComponentId
+    ): EntityMutationStatus {
+        const originalId = stripIdMeta(entityId)
+        const componentOriginalId = stripIdMeta(componentId as number)
+        if (!isComponent(componentOriginalId)) {
+            return entity_mutation_status.not_component
+        }
+        const entity = this.records.index(originalId)
+        const {tableId, row, generationCount} = this.records.index(originalId)
+        if (!entityIsInitialized(tableId, generationCount, entityId)) {
+            return entity_mutation_status.entity_uninitialized
+        }
+        const tables = this.tables
+        const table = tables[tableId]
+        if (table.componentIndexes.has(componentOriginalId)) {
+            return entity_mutation_status.component_exists
+        }
+        const targetTableId = table.addEdges.get(
+            componentOriginalId
+        )
+        const allocator = this.tableAllocator
+        const targetTable = targetTableId !== undefined ?
+            tables[targetTableId] : findTableOrCreateAddComponent(
+                this.hashToTableIndex, table, componentOriginalId,
+                tables, allocator, 
+                this.componentStructProxies[deserializeComponentId(componentOriginalId)]
+            )
+        
+        const newTable = targetTable.id
+        const insertIndex = targetTable.componentIndexes.get(componentOriginalId)
+        const newRow = shiftComponentDataUnaligned(
+            table, targetTable, row, allocator,
+            insertIndex!
+        )
+        entity.tableId = newTable
+        entity.row = newRow
+        return entity_mutation_status.successful_added
     }
 
     /* debugging tools */
@@ -334,10 +375,21 @@ export class Ecs<
 
     get "~preciseEntityCount"(): number {
         return (
-            this.entityCount 
+            this["~entityCount"] 
             + standard_entity.reserved_count
-            + this.componentCount
+            + this["~componentCount"]
             + this.relationsCount
         )
+    }
+
+    get "~entityCount"(): number {
+        return (
+            this.largestIndex 
+            - standard_entity.start_of_user_defined_entities
+        )
+    }
+
+    get "~componentCount"(): number {
+        return this.componentStructProxies.length
     }
 }

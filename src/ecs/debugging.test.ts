@@ -12,7 +12,7 @@ describe("component debugging", () => {
     })
     
     it("correct number of debug logs should be generated for inputted components", () => {
-        expect(ecs.componentCount).toBe(4)
+        expect(ecs["~componentCount"]).toBe(4)
         const comps = ecs["~all_components_info"]()
         {
             const {

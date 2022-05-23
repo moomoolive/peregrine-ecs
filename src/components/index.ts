@@ -59,9 +59,9 @@ export interface StructProxyFactory<
 function createComponentViewClass<
     Definition extends ComponentDefinition
 >(
-    {fields}: ComponentTokens
+    {fields, componentName}: ComponentTokens
 ): StructProxyFactory<Definition> {
-    const BaseView = function(
+    const BaseStructProxy = function(
         this: RawStructProxy<ComponentDefinition>,
         component: ComponentReference,
         offset: number
@@ -69,6 +69,13 @@ function createComponentViewClass<
         this[struct_proxy_encoding.databuffer_ref] = component
         this[struct_proxy_encoding.buffer_offset] = offset
     }
+
+    /* set function name for proxy class, 
+    so that the console displays
+    a name that makes sense for each proxy */
+    Object.defineProperty(BaseStructProxy, "name", {
+        value: `${componentName}StructProxy`
+    })
 
     const viewPrototype = {}
     /* create setter & getter methods that map field names
@@ -87,8 +94,8 @@ function createComponentViewClass<
             }
         })
     }
-    BaseView.prototype = viewPrototype
-    return BaseView as unknown as StructProxyFactory<Definition>
+    BaseStructProxy.prototype = viewPrototype
+    return BaseStructProxy as unknown as StructProxyFactory<Definition>
 }
 
 export class RawComponent<

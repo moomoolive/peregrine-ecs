@@ -47,6 +47,6 @@ function isImmutable(id) {
 exports.isImmutable = isImmutable;
 function isComponent(originalId) {
     return (originalId >= 50 /* components_start */
-        && originalId <= 562 /* components_end */);
+        && originalId < 562 /* components_end */);
 }
 exports.isComponent = isComponent;

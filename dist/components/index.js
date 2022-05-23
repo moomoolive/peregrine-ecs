@@ -3,11 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateComponentStructProxies = exports.orderComponentsByName = exports.orderKeysByName = exports.deserializeComponentId = exports.computeComponentId = exports.structProxyMacro = exports.StructProxyClass = exports.RawComponent = void 0;
 const tokenizeDef_1 = require("./tokenizeDef");
 const errors_1 = require("../debugging/errors");
-function createComponentViewClass({ fields }) {
-    const BaseView = function (component, offset) {
+function createComponentViewClass({ fields, componentName }) {
+    const BaseStructProxy = function (component, offset) {
         this["@@component" /* databuffer_ref */] = component;
         this["@@offset" /* buffer_offset */] = offset;
     };
+    /* set function name for proxy class,
+    so that the console displays
+    a name that makes sense for each proxy */
+    Object.defineProperty(BaseStructProxy, "name", {
+        value: `${componentName}StructProxy`
+    });
     const viewPrototype = {};
     /* create setter & getter methods that map field names
     to offset in typed array */
@@ -22,8 +28,8 @@ function createComponentViewClass({ fields }) {
             }
         });
     }
-    BaseView.prototype = viewPrototype;
-    return BaseView;
+    BaseStructProxy.prototype = viewPrototype;
+    return BaseStructProxy;
 }
 class RawComponent {
     constructor(id, bytesPerElement, componentSegments, memoryConstructor, View, databuffer) {

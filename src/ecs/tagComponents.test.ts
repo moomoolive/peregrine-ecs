@@ -20,7 +20,7 @@ describe("adding tag components", () => {
         expect(ecs.hasId(e, tag)).toBe(true)
         // can delete entity with added tags normally
         ecs.delete(e)
-        expect(ecs.isAlive(e)).toBe(false)
+        expect(ecs.isActive(e)).toBe(false)
     })
 
     it("can add multiple tags to entity", () => {
@@ -60,8 +60,8 @@ describe("adding tag components", () => {
         ecs.delete(e)
         const failStatus = ecs.addId(e, tag)
         expect(failStatus).toBeLessThan(0)
-        expect(ecs.isAlive(e)).toBe(false)
-        expect(ecs.isAlive(tag)).toBe(true)
+        expect(ecs.isActive(e)).toBe(false)
+        expect(ecs.isActive(tag)).toBe(true)
     })
 
     it("adding the same tag to the same entity multiple times does nothing", () => {
@@ -80,7 +80,7 @@ describe("adding tag components", () => {
         const status2 = ecs.addId(e, tag)
         expect(status).toBeGreaterThanOrEqual(0)
         expect(status2).toBe(entity_mutation_status.tag_exists)
-        expect(ecs.isAlive(e)).toBe(true)
+        expect(ecs.isActive(e)).toBe(true)
         expect(ecs.hasId(e, tag))
     })
 
@@ -128,7 +128,7 @@ describe("adding tag components", () => {
             }
         })
         const tag = ecs.newId()
-        expect(ecs.isAlive(ecs.entities.myNpc)).toBe(true)
+        expect(ecs.isActive(ecs.entities.myNpc)).toBe(true)
         ecs.addId(ecs.entities.myNpc, tag)
         expect(ecs.hasId(ecs.entities.myNpc, tag)).toBe(true)
     })
@@ -152,7 +152,7 @@ describe("removing tag components", () => {
         const removeStatus = ecs.removeId(e, tag)
         expect(removeStatus).toBeGreaterThanOrEqual(0)
         expect(ecs.hasId(e, tag)).toBe(false)
-        expect(ecs.isAlive(e)).toBe(true)
+        expect(ecs.isActive(e)).toBe(true)
     })
 
     it("attempting to remove a tag twice does nothing", () => {
@@ -172,7 +172,7 @@ describe("removing tag components", () => {
         const removeStatus = ecs.removeId(e, tag)
         expect(removeStatus).toBeGreaterThanOrEqual(0)
         expect(ecs.removeId(e, tag)).toBe(entity_mutation_status.tag_not_found)
-        expect(ecs.isAlive(e)).toBe(true)
+        expect(ecs.isActive(e)).toBe(true)
     })
 
     it("should not be able delete id on uninitalized entity", () => {
@@ -261,11 +261,11 @@ describe("removing tag components", () => {
             }
         })
         const tag = ecs.newId()
-        expect(ecs.isAlive(ecs.entities.myNpc)).toBe(true)
+        expect(ecs.isActive(ecs.entities.myNpc)).toBe(true)
         ecs.addId(ecs.entities.myNpc, tag)
         expect(ecs.hasId(ecs.entities.myNpc, tag)).toBe(true)
         ecs.removeId(ecs.entities.myNpc, tag)
         expect(ecs.hasId(ecs.entities.myNpc, tag)).toBe(false)
-        expect(ecs.isAlive(ecs.entities.myNpc)).toBe(true)
+        expect(ecs.isActive(ecs.entities.myNpc)).toBe(true)
     })
 })
