@@ -151,11 +151,11 @@ class Ecs {
         return 2 /* successfully_deleted */;
     }
     addComponent(entityId, componentId) {
-        const originalId = (0, ids_1.stripIdMeta)(entityId);
-        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
-        if (!(0, ids_1.isComponent)(componentOriginalId)) {
+        if (!(0, ids_1.isComponent)(componentId)) {
             return -3 /* not_component */;
         }
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
+        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
         const entity = this.records.index(originalId);
         const { tableId, row, generationCount } = this.records.index(originalId);
         if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
@@ -178,11 +178,11 @@ class Ecs {
         return 0 /* successful_added */;
     }
     removeComponent(entityId, componentId) {
-        const originalId = (0, ids_1.stripIdMeta)(entityId);
-        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
-        if (!(0, ids_1.isComponent)(componentOriginalId)) {
+        if (!(0, ids_1.isComponent)(componentId)) {
             return -3 /* not_component */;
         }
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
+        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
         const entity = this.records.index(originalId);
         const { tableId, row, generationCount } = this.records.index(originalId);
         if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
@@ -206,11 +206,11 @@ class Ecs {
     }
     getComponent(entityId, componentId) {
         const originalId = (0, ids_1.stripIdMeta)(entityId);
-        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
         const { tableId, row, generationCount } = this.records.index(originalId);
-        if (!(0, ids_1.isComponent)(componentOriginalId) || !(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+        if (!(0, ids_1.isComponent)(componentId) || !(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
             return null;
         }
+        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
         const tables = this.tables;
         const table = tables[tableId];
         const index = table.componentIndexes.get(componentOriginalId);
@@ -225,10 +225,10 @@ class Ecs {
         return this.componentDebugInfo;
     }
     "~debug_component"(componentId) {
-        const baseId = (0, ids_1.stripIdMeta)(componentId);
-        if (!(0, ids_1.isComponent)(baseId)) {
+        if (!(0, ids_1.isComponent)(componentId)) {
             throw (0, errors_1.assertion)(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`);
         }
+        const baseId = (0, ids_1.stripIdMeta)(componentId);
         const id = (0, index_2.deserializeComponentId)(baseId);
         return this.componentDebugInfo[id];
     }

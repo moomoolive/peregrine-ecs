@@ -5,7 +5,11 @@ import {
     relationRegistryMacro,
 } from "./index"
 import {orderComponentsByName} from "../../components/index"
-import {isImmutable} from "../../entities/ids"
+import {
+    isImmutable,
+    isSized,
+    isComponent
+} from "../../entities/ids"
 
 describe("component registry", () => {
     it("should generate object will inputted keys", () => {
@@ -54,6 +58,32 @@ describe("component registry", () => {
         )
         expect(isImmutable(components.likeability as number)).toBe(true)
         expect(isImmutable(components.pets as number)).toBe(true)
+    })
+
+    it("component ids in registry should be marked as sized", () => {
+        const def = {
+            likeability: {x: "i32"},
+            pets: {age: "i32", type: "i32"}
+        } as const
+        const names = orderComponentsByName(def)
+        const components = componentRegistryMacro<typeof def>(
+            names
+        )
+        expect(isSized(components.likeability as number)).toBe(true)
+        expect(isSized(components.pets as number)).toBe(true)
+    })
+
+    it("component ids in registry should have the same meta as a component", () => {
+        const def = {
+            likeability: {x: "i32"},
+            pets: {age: "i32", type: "i32"}
+        } as const
+        const names = orderComponentsByName(def)
+        const components = componentRegistryMacro<typeof def>(
+            names
+        )
+        expect(isComponent(components.likeability as number)).toBe(true)
+        expect(isComponent(components.pets as number)).toBe(true)
     })
 
     it("should throw error if input is object with no keys", () => {

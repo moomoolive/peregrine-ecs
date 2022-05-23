@@ -305,11 +305,11 @@ export class Ecs<
         entityId: number, 
         componentId: ComponentId
     ): EntityMutationStatus {
-        const originalId = stripIdMeta(entityId)
-        const componentOriginalId = stripIdMeta(componentId as number)
-        if (!isComponent(componentOriginalId)) {
+        if (!isComponent(componentId as number)) {
             return entity_mutation_status.not_component
         }
+        const originalId = stripIdMeta(entityId)
+        const componentOriginalId = stripIdMeta(componentId as number)
         const entity = this.records.index(originalId)
         const {tableId, row, generationCount} = this.records.index(originalId)
         if (!entityIsInitialized(tableId, generationCount, entityId)) {
@@ -345,11 +345,11 @@ export class Ecs<
         entityId: number, 
         componentId: ComponentId
     ): EntityMutationStatus {
-        const originalId = stripIdMeta(entityId)
-        const componentOriginalId = stripIdMeta(componentId as number)
-        if (!isComponent(componentOriginalId)) {
+        if (!isComponent(componentId as number)) {
             return entity_mutation_status.not_component
         }
+        const originalId = stripIdMeta(entityId)
+        const componentOriginalId = stripIdMeta(componentId as number)
         const entity = this.records.index(originalId)
         const {tableId, row, generationCount} = this.records.index(originalId)
         if (!entityIsInitialized(tableId, generationCount, entityId)) {
@@ -388,11 +388,11 @@ export class Ecs<
         componentId: number | Definition
     ): StructProxy<Definition> | null {
         const originalId = stripIdMeta(entityId)
-        const componentOriginalId = stripIdMeta(componentId as number)
         const {tableId, row, generationCount} = this.records.index(originalId)
-        if (!isComponent(componentOriginalId) || !entityIsInitialized(tableId, generationCount, entityId)) {
+        if (!isComponent(componentId as number) || !entityIsInitialized(tableId, generationCount, entityId)) {
             return null
         }
+        const componentOriginalId = stripIdMeta(componentId as number)
         const tables = this.tables
         const table = tables[tableId]
         const index = table.componentIndexes.get(componentOriginalId)
@@ -410,10 +410,10 @@ export class Ecs<
     }
 
     "~debug_component"(componentId: ComponentId): ComponentDebug {
-        const baseId = stripIdMeta(componentId as number)
-        if (!isComponent(baseId)) {
+        if (!isComponent(componentId as number)) {
             throw assertion(`inputted id is not a component (got ${componentId.toLocaleString("en-us")})`)
         }
+        const baseId = stripIdMeta(componentId as number)
         const id = deserializeComponentId(baseId)
         return this.componentDebugInfo[id]
     }

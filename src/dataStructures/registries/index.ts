@@ -11,7 +11,10 @@ import {
     component_entity_encoding,
     standard_entity
 } from "../../entities/index"
-import {makeIdImmutable} from "../../entities/ids"
+import {
+    makeIdImmutable,
+    makeIdSized
+} from "../../entities/ids"
 
 export type ComponentRegistry<
     Declaration extends ComponentsDeclaration
@@ -21,6 +24,12 @@ export type ComponentRegistry<
 
 export const enum registry_encoding {
     max_components = component_entity_encoding.max_count
+}
+
+function applyComponentIdFlags(id: number): number {
+    const immutable = makeIdImmutable(id)
+    const sized = makeIdSized(immutable)
+    return sized
 }
 
 export function componentRegistryMacro<
@@ -44,8 +53,8 @@ export function componentRegistryMacro<
         if fields/component names are correct. 
         */
         const entityId = computeComponentId(i)
-        const immutableId = makeIdImmutable(entityId)
-        Object.defineProperty(registry, keys[i], {value: immutableId})
+        const idWithMeta = applyComponentIdFlags(entityId)
+        Object.defineProperty(registry, keys[i], {value: idWithMeta})
     }
     return Object.freeze(registry) as ComponentRegistry<Declartion>
 }

@@ -43,6 +43,26 @@ const ids_1 = require("../../entities/ids");
         (0, globals_1.expect)((0, ids_1.isImmutable)(components.likeability)).toBe(true);
         (0, globals_1.expect)((0, ids_1.isImmutable)(components.pets)).toBe(true);
     });
+    (0, globals_1.it)("component ids in registry should be marked as sized", () => {
+        const def = {
+            likeability: { x: "i32" },
+            pets: { age: "i32", type: "i32" }
+        };
+        const names = (0, index_2.orderComponentsByName)(def);
+        const components = (0, index_1.componentRegistryMacro)(names);
+        (0, globals_1.expect)((0, ids_1.isSized)(components.likeability)).toBe(true);
+        (0, globals_1.expect)((0, ids_1.isSized)(components.pets)).toBe(true);
+    });
+    (0, globals_1.it)("component ids in registry should have the same meta as a component", () => {
+        const def = {
+            likeability: { x: "i32" },
+            pets: { age: "i32", type: "i32" }
+        };
+        const names = (0, index_2.orderComponentsByName)(def);
+        const components = (0, index_1.componentRegistryMacro)(names);
+        (0, globals_1.expect)((0, ids_1.isComponent)(components.likeability)).toBe(true);
+        (0, globals_1.expect)((0, ids_1.isComponent)(components.pets)).toBe(true);
+    });
     (0, globals_1.it)("should throw error if input is object with no keys", () => {
         (0, globals_1.expect)(() => (0, index_1.componentRegistryMacro)([])).toThrow();
     });

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isComponent = exports.isImmutable = exports.makeIdImmutable = exports.extractRelatedEntity = exports.extractRelation = exports.isRelationship = exports.relationship = exports.extractGenerationCount = exports.stripIdMeta = exports.createId = exports.preserveSixBits = void 0;
+exports.isComponent = exports.isSized = exports.makeIdSized = exports.isImmutable = exports.makeIdImmutable = exports.extractRelatedEntity = exports.extractRelation = exports.isRelationship = exports.relationship = exports.extractGenerationCount = exports.stripIdMeta = exports.createId = exports.preserveSixBits = void 0;
 function preserveSixBits(num) {
     return num & 63 /* max_generation_count */;
 }
@@ -45,8 +45,13 @@ function isImmutable(id) {
     return hasImmutableFlag && !isRelationship(id);
 }
 exports.isImmutable = isImmutable;
-function isComponent(originalId) {
-    return (originalId >= 50 /* components_start */
-        && originalId < 562 /* components_end */);
+function makeIdSized(id) {
+    return id | 67108864 /* sized_flag */;
 }
-exports.isComponent = isComponent;
+exports.makeIdSized = makeIdSized;
+function isSized(id) {
+    const hasSizedFlag = (id & 67108864 /* sized_flag */) !== 0;
+    return hasSizedFlag && !isRelationship(id);
+}
+exports.isSized = isSized;
+exports.isComponent = isSized;

@@ -56,8 +56,8 @@ const ids_1 = require("./ids");
 (0, globals_1.describe)("immutability", () => {
     (0, globals_1.it)("can make id immutable", () => {
         const id = 0;
-        const immutableId = (0, ids_1.makeIdImmutable)(id);
-        (0, globals_1.expect)((0, ids_1.isImmutable)(immutableId)).toBe(true);
+        const sizedId = (0, ids_1.makeIdImmutable)(id);
+        (0, globals_1.expect)((0, ids_1.isImmutable)(sizedId)).toBe(true);
     });
     (0, globals_1.it)("relationships cannot be immutable", () => {
         const eats = 2;
@@ -65,5 +65,19 @@ const ids_1 = require("./ids");
         const eatsMangos = (0, ids_1.relationship)(eats, mangos);
         const immutableEatsMangos = (0, ids_1.makeIdImmutable)(eatsMangos);
         (0, globals_1.expect)((0, ids_1.isImmutable)(immutableEatsMangos)).toBe(false);
+    });
+});
+(0, globals_1.describe)("entity sizing", () => {
+    (0, globals_1.it)("can make id sized", () => {
+        const id = 0;
+        const sized = (0, ids_1.makeIdSized)(id);
+        (0, globals_1.expect)((0, ids_1.isSized)(sized)).toBe(true);
+    });
+    (0, globals_1.it)("relationships cannot be sized", () => {
+        const eats = 2;
+        const mangos = 45000;
+        const eatsMangos = (0, ids_1.relationship)(eats, mangos);
+        const immutableEatsMangos = (0, ids_1.makeIdSized)(eatsMangos);
+        (0, globals_1.expect)((0, ids_1.isSized)(immutableEatsMangos)).toBe(false);
     });
 });

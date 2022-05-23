@@ -4,7 +4,8 @@ export declare const enum id_encoding {
     generation_count_bits = 6,
     max_generation_count = 63,
     generation_count_mask = 33030144,
-    immutable_entity_flag = 33554432
+    immutable_entity_flag = 33554432,
+    sized_flag = 67108864
 }
 export declare function preserveSixBits(num: number): number;
 export declare function createId(baseId: number, generationCount: number): number;
@@ -20,5 +21,7 @@ export declare function extractRelation(relationship: number): number;
 export declare function extractRelatedEntity(relationship: number): number;
 export declare function makeIdImmutable(id: number): number;
 export declare function isImmutable(id: number): boolean;
-export declare function isComponent(originalId: number): boolean;
+export declare function makeIdSized(id: number): number;
+export declare function isSized(id: number): boolean;
+export declare const isComponent: typeof isSized;
 //# sourceMappingURL=ids.d.ts.map

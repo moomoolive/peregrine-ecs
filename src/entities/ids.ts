@@ -14,6 +14,7 @@ export const enum id_encoding {
     ),
 
     immutable_entity_flag = 1 << 25, /* after generation count */
+    sized_flag = 1 << 26, /* entity has size greater than zero (is a component) */
 }
 
 export function preserveSixBits(num: number): number {
@@ -75,9 +76,13 @@ export function isImmutable(id: number): boolean {
     return hasImmutableFlag && !isRelationship(id)
 }
 
-export function isComponent(originalId: number): boolean {
-    return (
-        originalId >= standard_entity.components_start
-        && originalId < standard_entity.components_end
-    )
+export function makeIdSized(id: number): number {
+    return id | id_encoding.sized_flag
 }
+
+export function isSized(id: number): boolean {
+    const hasSizedFlag = (id & id_encoding.sized_flag) !== 0
+    return hasSizedFlag && !isRelationship(id)
+}
+
+export const isComponent = isSized

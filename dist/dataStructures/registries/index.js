@@ -4,6 +4,11 @@ exports.entitiesRegistryMacro = exports.computeEntityId = exports.STANDARD_ENTIT
 const index_1 = require("../../components/index");
 const errors_1 = require("../../debugging/errors");
 const ids_1 = require("../../entities/ids");
+function applyComponentIdFlags(id) {
+    const immutable = (0, ids_1.makeIdImmutable)(id);
+    const sized = (0, ids_1.makeIdSized)(immutable);
+    return sized;
+}
 function componentRegistryMacro(componentNames) {
     if (componentNames.length < 1) {
         throw SyntaxError((0, errors_1.err)("component declaration must have at least one component"));
@@ -21,8 +26,8 @@ function componentRegistryMacro(componentNames) {
         if fields/component names are correct.
         */
         const entityId = (0, index_1.computeComponentId)(i);
-        const immutableId = (0, ids_1.makeIdImmutable)(entityId);
-        Object.defineProperty(registry, keys[i], { value: immutableId });
+        const idWithMeta = applyComponentIdFlags(entityId);
+        Object.defineProperty(registry, keys[i], { value: idWithMeta });
     }
     return Object.freeze(registry);
 }

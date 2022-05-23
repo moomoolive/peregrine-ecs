@@ -8,7 +8,9 @@ import {
     extractRelation,
     extractRelatedEntity,
     makeIdImmutable,
-    isImmutable
+    isImmutable,
+    makeIdSized,
+    isSized
 } from "./ids"
 
 describe("should be able to deserialize createId sections", () => {
@@ -71,8 +73,8 @@ describe("relationship id generation", () => {
 describe("immutability", () => {
     it("can make id immutable", () => {
         const id = 0
-        const immutableId = makeIdImmutable(id)
-        expect(isImmutable(immutableId)).toBe(true)
+        const sizedId = makeIdImmutable(id)
+        expect(isImmutable(sizedId)).toBe(true)
     })
 
     it("relationships cannot be immutable", () => {
@@ -81,5 +83,21 @@ describe("immutability", () => {
         const eatsMangos = relationship(eats, mangos)
         const immutableEatsMangos = makeIdImmutable(eatsMangos)
         expect(isImmutable(immutableEatsMangos)).toBe(false)
+    })
+})
+
+describe("entity sizing", () => {
+    it("can make id sized", () => {
+        const id = 0
+        const sized = makeIdSized(id)
+        expect(isSized(sized)).toBe(true)
+    })
+
+    it("relationships cannot be sized", () => {
+        const eats = 2
+        const mangos = 45_000
+        const eatsMangos = relationship(eats, mangos)
+        const immutableEatsMangos = makeIdSized(eatsMangos)
+        expect(isSized(immutableEatsMangos)).toBe(false)
     })
 })
