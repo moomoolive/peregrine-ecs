@@ -1,6 +1,6 @@
 import { relation_entity_encoding } from "../entities/index";
 import { ComponentRegistry, registry_encoding, RelationRegisty, IdDeclaration, EntityRegistry } from "../dataStructures/registries/index";
-import { ComponentsDeclaration, struct_proxy_encoding } from "../components/index";
+import { ComponentsDeclaration, struct_proxy_encoding, ComponentDefinition, StructProxy } from "../components/index";
 import { ComponentDebug, ComponentId } from "./debugging";
 import { EntityMutationStatus } from "../entities/mutations";
 export declare class Ecs<Components extends ComponentsDeclaration, Relations extends IdDeclaration, Entities extends IdDeclaration> {
@@ -41,6 +41,7 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     delete(entityId: number): EntityMutationStatus;
     addComponent(entityId: number, componentId: ComponentId): EntityMutationStatus;
     removeComponent(entityId: number, componentId: ComponentId): EntityMutationStatus;
+    getComponent<Definition extends ComponentDefinition>(entityId: number, componentId: number | Definition): StructProxy<Definition> | null;
     "~all_components_info"(): ComponentDebug[];
     "~debug_component"(componentId: ComponentId): ComponentDebug;
     "~entity_index"(entityId: number): {

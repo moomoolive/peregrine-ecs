@@ -192,10 +192,13 @@ export class Table {
             const component = components[i]
             const oldPtr = componentPtrs[i]
             const newPtr = allocator.realloc(
-                oldPtr, component.bytesPerElement * targetCapacity
+                oldPtr, 
+                component.bytesPerElement * targetCapacity
             )
             component.databuffer = new component.memoryConstructor(
-                allocator.buf, newPtr, targetCapacity
+                allocator.buf, newPtr, (
+                    targetCapacity * component.componentSegements
+                )
             )
             componentPtrs[i] = newPtr
         }

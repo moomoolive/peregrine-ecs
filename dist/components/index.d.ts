@@ -27,6 +27,7 @@ export declare class RawComponent<Definition extends ComponentDefinition> {
     constructor(id: number, bytesPerElement: number, componentSegments: number, memoryConstructor: ComponentTypedArrayConstructor, View: StructProxyFactory<Definition>, databuffer: ComponentTypedArray);
     index(index: number): StructProxy<Definition>;
 }
+export declare type Component<Definition extends ComponentDefinition> = (Pick<RawComponent<Definition>, "index">);
 export declare class StructProxyClass<Definition extends ComponentDefinition> {
     readonly bytesPerElement: number;
     readonly stringifiedDefinition: string;

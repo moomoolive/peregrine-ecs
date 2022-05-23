@@ -131,6 +131,10 @@ export class RawComponent<
     }
 }
 
+export type Component<Definition extends ComponentDefinition> = (
+    Pick<RawComponent<Definition>, "index">
+)
+
 export class StructProxyClass<
     Definition extends ComponentDefinition
 > {

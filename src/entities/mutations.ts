@@ -301,7 +301,10 @@ export function findTableOrCreateAddComponent(
         newTableComponentPtrs[i] = ptr
         const databuffer = new memoryConstructor(
             allocator.buf, ptr,
-            table_defaults.initial_capacity
+            (
+                table_defaults.initial_capacity
+                * componentSegements
+            )
         )
         const targetComponent = new RawComponent(
             id, bytesPerElement, componentSegements,
@@ -322,7 +325,10 @@ export function findTableOrCreateAddComponent(
     newTableComponentPtrs[targetIndex] = ptr
     const databuffer = new memoryConstructor(
         allocator.buf, ptr,
-        table_defaults.initial_capacity
+        (
+            table_defaults.initial_capacity
+            * componentSegements
+        )
     )
     const targetComponent = new RawComponent(
         id, bytesPerElement, componentSegements,
@@ -343,7 +349,10 @@ export function findTableOrCreateAddComponent(
         newTableComponentPtrs[i + 1] = ptr
         const databuffer = new memoryConstructor(
             allocator.buf, ptr,
-            table_defaults.initial_capacity
+            (
+                table_defaults.initial_capacity
+                * componentSegements
+            )
         )
         const targetComponent = new RawComponent(
             id, bytesPerElement, componentSegements,
@@ -352,7 +361,6 @@ export function findTableOrCreateAddComponent(
         )
         componentData.push(targetComponent)
     }
-
     const newTableId = tables.length
     const newTableEntities = i32Malloc(
         allocator, table_defaults.initial_capacity
@@ -385,7 +393,7 @@ export function shiftComponentDataUnaligned(
 ): number {
     const targetLength = destination.length++
     destination.ensureSize(1, allocator)
-    const targetComponentIndex = targetLength - 1
+    const targetComponentIndex = targetLength
     const currentLength = source.length--
     /* move entity id to new table */
     destination.entities[targetLength] = source.entities[sourceRow]

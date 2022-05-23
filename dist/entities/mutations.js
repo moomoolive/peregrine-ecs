@@ -142,7 +142,8 @@ function findTableOrCreateAddComponent(tableHashes, previousTable, componentId, 
         const ptr = allocator.malloc(1 /* initial_capacity */
             * bytesPerElement);
         newTableComponentPtrs[i] = ptr;
-        const databuffer = new memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
+        const databuffer = new memoryConstructor(allocator.buf, ptr, (1 /* initial_capacity */
+            * componentSegements));
         const targetComponent = new index_1.RawComponent(id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory, databuffer);
         componentData.push(targetComponent);
     }
@@ -150,7 +151,8 @@ function findTableOrCreateAddComponent(tableHashes, previousTable, componentId, 
     const ptr = allocator.malloc(1 /* initial_capacity */
         * bytesPerElement);
     newTableComponentPtrs[targetIndex] = ptr;
-    const databuffer = new memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
+    const databuffer = new memoryConstructor(allocator.buf, ptr, (1 /* initial_capacity */
+        * componentSegements));
     const targetComponent = new index_1.RawComponent(id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory, databuffer);
     componentData.push(targetComponent);
     for (let i = targetIndex; i < previousTable.components.length; i++) {
@@ -158,7 +160,8 @@ function findTableOrCreateAddComponent(tableHashes, previousTable, componentId, 
         const ptr = allocator.malloc(1 /* initial_capacity */
             * bytesPerElement);
         newTableComponentPtrs[i + 1] = ptr;
-        const databuffer = new memoryConstructor(allocator.buf, ptr, 1 /* initial_capacity */);
+        const databuffer = new memoryConstructor(allocator.buf, ptr, (1 /* initial_capacity */
+            * componentSegements));
         const targetComponent = new index_1.RawComponent(id, bytesPerElement, componentSegements, memoryConstructor, structProxyFactory, databuffer);
         componentData.push(targetComponent);
     }
@@ -175,7 +178,7 @@ exports.findTableOrCreateAddComponent = findTableOrCreateAddComponent;
 function shiftComponentDataUnaligned(source, destination, sourceRow, allocator, unalignedIndex, add) {
     const targetLength = destination.length++;
     destination.ensureSize(1, allocator);
-    const targetComponentIndex = targetLength - 1;
+    const targetComponentIndex = targetLength;
     const currentLength = source.length--;
     /* move entity id to new table */
     destination.entities[targetLength] = source.entities[sourceRow];

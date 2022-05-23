@@ -29,7 +29,9 @@ import {
     StructProxyClasses,
     generateComponentStructProxies,
     deserializeComponentId,
-    struct_proxy_encoding
+    struct_proxy_encoding,
+    ComponentDefinition,
+    StructProxy
 } from "../components/index"
 import {
     ComponentDebug,
@@ -328,7 +330,6 @@ export class Ecs<
                 tables, allocator, 
                 this.componentStructProxies[deserializeComponentId(componentOriginalId)]
             )
-        
         const newTable = targetTable.id
         const insertIndex = targetTable.componentIndexes.get(componentOriginalId)
         const newRow = shiftComponentDataUnaligned(
@@ -380,6 +381,26 @@ export class Ecs<
         entity.tableId = newTable
         entity.row = newRow
         return entity_mutation_status.successful_added
+    }
+
+    getComponent<Definition extends ComponentDefinition>(
+        entityId: number,
+        componentId: number | Definition
+    ): StructProxy<Definition> | null {
+        const originalId = stripIdMeta(entityId)
+        const componentOriginalId = stripIdMeta(componentId as number)
+        const {tableId, row, generationCount} = this.records.index(originalId)
+        if (!isComponent(componentOriginalId) || !entityIsInitialized(tableId, generationCount, entityId)) {
+            return null
+        }
+        const tables = this.tables
+        const table = tables[tableId]
+        const index = table.componentIndexes.get(componentOriginalId)
+        if (index === undefined) {
+            return null
+        }
+        const component = table.components[index]
+        return component.index(row) as StructProxy<Definition>
     }
 
     /* debugging tools */

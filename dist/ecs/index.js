@@ -204,6 +204,22 @@ class Ecs {
         entity.row = newRow;
         return 0 /* successful_added */;
     }
+    getComponent(entityId, componentId) {
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
+        const componentOriginalId = (0, ids_1.stripIdMeta)(componentId);
+        const { tableId, row, generationCount } = this.records.index(originalId);
+        if (!(0, ids_1.isComponent)(componentOriginalId) || !(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+            return null;
+        }
+        const tables = this.tables;
+        const table = tables[tableId];
+        const index = table.componentIndexes.get(componentOriginalId);
+        if (index === undefined) {
+            return null;
+        }
+        const component = table.components[index];
+        return component.index(row);
+    }
     /* debugging tools */
     "~all_components_info"() {
         return this.componentDebugInfo;
