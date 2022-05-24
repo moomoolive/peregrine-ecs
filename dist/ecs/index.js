@@ -11,6 +11,7 @@ const sharedArrays_1 = require("../dataStructures/sharedArrays");
 const index_3 = require("../allocator/index");
 const ids_1 = require("../entities/ids");
 const errors_1 = require("../debugging/errors");
+const manager_1 = require("../queries/manager");
 class Ecs {
     constructor(params) {
         const { components, relations = {}, entities = {}, maxEntities = 500000 /* limit */, allocatorInitialMemoryMB = 50, mode = "development" } = params;
@@ -48,6 +49,12 @@ class Ecs {
         }
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
         this.queryIndex = new Map();
+        this.queryTermBuffer = new Int32Array(150 /* buffer_size */);
+        this.tableIterBuffer = new Int32Array(150 /* buffer_size */);
+        this.queryManager = new manager_1.QueryManager(this.queryTermBuffer, this.tableIterBuffer, this.queryIndex, this.tables);
+    }
+    query() {
+        return this.queryManager["reset"]();
     }
     addToRootTable(id) {
         const rootTable = this.tables[2 /* ecs_root_table */];
@@ -106,7 +113,7 @@ class Ecs {
         const targetTableId = table.addEdges.get(tagId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreateAddTag)(this.hashToTableIndex, table, tagId, tables, allocator);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateAddTag)(this.hashToTableIndex, table, tagId, tables, allocator, this.queryIndex);
         const newTable = targetTable.id;
         // proceed to move entity data from current table to 
         // target table, (identical components, tags + new)
@@ -136,7 +143,7 @@ class Ecs {
         const targetTableId = table.removeEdges.get(tagId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveTag)(this.hashToTableIndex, table, tagId, tables, allocator);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveTag)(this.hashToTableIndex, table, tagId, tables, allocator, this.queryIndex);
         const newTable = targetTable.id;
         const newRow = (0, mutations_1.shiftComponentDataAligned)(table, targetTable, row, allocator);
         entity.tableId = newTable;
@@ -181,7 +188,7 @@ class Ecs {
         const targetTableId = table.addEdges.get(cId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreateAddComponent)(this.hashToTableIndex, table, cId, tables, allocator, this.componentStructProxies[(0, index_2.deserializeComponentId)((0, ids_1.stripIdMeta)(cId))]);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateAddComponent)(this.hashToTableIndex, table, cId, tables, allocator, this.componentStructProxies[(0, index_2.deserializeComponentId)((0, ids_1.stripIdMeta)(cId))], this.queryIndex);
         const newTable = targetTable.id;
         const insertIndex = targetTable.componentIndexes.get(cId);
         const newRow = (0, mutations_1.shiftComponentDataUnaligned)(table, targetTable, row, allocator, insertIndex, true);
@@ -208,7 +215,7 @@ class Ecs {
         const targetTableId = table.removeEdges.get(cId);
         const allocator = this.tableAllocator;
         const targetTable = targetTableId !== undefined ?
-            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveComponent)(this.hashToTableIndex, table, cId, tables, allocator);
+            tables[targetTableId] : (0, mutations_1.findTableOrCreateRemoveComponent)(this.hashToTableIndex, table, cId, tables, allocator, this.queryIndex);
         const newTable = targetTable.id;
         const removeIndex = table.componentIndexes.get(cId);
         const newRow = (0, mutations_1.shiftComponentDataUnaligned)(table, targetTable, row, allocator, removeIndex, false);

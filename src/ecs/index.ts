@@ -67,6 +67,11 @@ import {assertion} from "../debugging/errors"
 import {
     standard_declared_entities
 } from "../dataStructures/registries/standardEntities"
+import {QueryManager} from "../queries/manager"
+
+const enum queries {
+    buffer_size = 150
+}
 
 export class Ecs<
     Components extends ComponentsDeclaration,
@@ -87,6 +92,9 @@ export class Ecs<
 
     /* queries */
     private queryIndex: Map<number, Set<number>>
+    private queryTermBuffer: Int32Array
+    private tableIterBuffer: Int32Array
+    private queryManager: QueryManager
 
     /* relations */
     readonly relations: RelationRegisty<Relations>
@@ -191,7 +199,20 @@ export class Ecs<
         this.componentDebugInfo = generateComponentDebugInfo(
             this.componentStructProxies
         )
+
         this.queryIndex = new Map()
+        this.queryTermBuffer = new Int32Array(queries.buffer_size)
+        this.tableIterBuffer = new Int32Array(queries.buffer_size)
+        this.queryManager = new QueryManager(
+            this.queryTermBuffer,
+            this.tableIterBuffer,
+            this.queryIndex,
+            this.tables
+        )
+    }
+
+    query(): QueryManager {
+        return this.queryManager["reset"]()
     }
 
     private addToRootTable(id: number) {
@@ -270,7 +291,7 @@ export class Ecs<
         const targetTable = targetTableId !== undefined ?
             tables[targetTableId] : findTableOrCreateAddTag(
                 this.hashToTableIndex, table, tagId,
-                tables, allocator
+                tables, allocator, this.queryIndex
             )
         const newTable = targetTable.id
         // proceed to move entity data from current table to 
@@ -314,7 +335,7 @@ export class Ecs<
         const targetTable = targetTableId !== undefined ?
             tables[targetTableId] : findTableOrCreateRemoveTag(
                 this.hashToTableIndex, table, tagId,
-                tables, allocator
+                tables, allocator, this.queryIndex
             )
         const newTable = targetTable.id
         const newRow = shiftComponentDataAligned(
@@ -380,7 +401,8 @@ export class Ecs<
             tables[targetTableId] : findTableOrCreateAddComponent(
                 this.hashToTableIndex, table, cId,
                 tables, allocator, 
-                this.componentStructProxies[deserializeComponentId(stripIdMeta(cId))]
+                this.componentStructProxies[deserializeComponentId(stripIdMeta(cId))],
+                this.queryIndex
             )
         const newTable = targetTable.id
         const insertIndex = targetTable.componentIndexes.get(cId)
@@ -419,7 +441,7 @@ export class Ecs<
         const targetTable = targetTableId !== undefined ?
             tables[targetTableId] : findTableOrCreateRemoveComponent(
                 this.hashToTableIndex, table, cId,
-                tables, allocator,
+                tables, allocator, this.queryIndex
             )
         
         const newTable = targetTable.id

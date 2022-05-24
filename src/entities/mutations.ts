@@ -46,7 +46,8 @@ export function findTableOrCreateAddTag(
     previousTable: Table,
     tagId: number,
     tables: Table[],
-    allocator: Allocator
+    allocator: Allocator,
+    queryIndex: Map<number, Set<number>>
 ): Table {
     const {
         hash, 
@@ -108,6 +109,18 @@ export function findTableOrCreateAddTag(
     const newTableEntities = i32Malloc(
         allocator, table_defaults.initial_capacity
     )
+
+    /* add new table to the query index */
+    for (let i = 0; i < newTableComponentIds.length; i++) {
+        const componentId = newTableComponentIds[i]
+        let set = queryIndex.get(componentId)
+        if (!set) {
+            set = new Set()
+            queryIndex.set(componentId, set)
+        }
+        set.add(newTableId)
+    }
+
     const createdTable = new Table(
         newTableId,
         hash,
@@ -131,6 +144,7 @@ export function findTableOrCreateRemoveTag(
     tagId: number,
     tables: Table[],
     allocator: Allocator,
+    queryIndex: Map<number, Set<number>>
 ): Table {
     const {
         hash, 
@@ -189,6 +203,18 @@ export function findTableOrCreateRemoveTag(
     const newTableEntities = i32Malloc(
         allocator, table_defaults.initial_capacity
     )
+
+    /* add new table to the query index */
+    for (let i = 0; i < newTableComponentIds.length; i++) {
+        const componentId = newTableComponentIds[i]
+        let set = queryIndex.get(componentId)
+        if (!set) {
+            set = new Set()
+            queryIndex.set(componentId, set)
+        }
+        set.add(newTableId)
+    }
+
     const createdTable = new Table(
         newTableId,
         hash,
@@ -251,7 +277,8 @@ export function findTableOrCreateAddComponent(
     componentId: number,
     tables: Table[],
     allocator: Allocator,
-    proxyClass: StructProxyClass<ComponentDefinition>
+    proxyClass: StructProxyClass<ComponentDefinition>,
+    queryIndex: Map<number, Set<number>>
 ): Table {
     const {
         hash, 
@@ -367,6 +394,18 @@ export function findTableOrCreateAddComponent(
     const newTableEntities = i32Malloc(
         allocator, table_defaults.initial_capacity
     )
+    
+    /* add new table to the query index */
+    for (let i = 0; i < newTableComponentIds.length; i++) {
+        const componentId = newTableComponentIds[i]
+        let set = queryIndex.get(componentId)
+        if (!set) {
+            set = new Set()
+            queryIndex.set(componentId, set)
+        }
+        set.add(newTableId)
+    }
+
     const createdTable = new Table(
         newTableId,
         hash,
@@ -464,7 +503,8 @@ export function findTableOrCreateRemoveComponent(
     previousTable: Table,
     componentId: number,
     tables: Table[],
-    allocator: Allocator
+    allocator: Allocator,
+    queryIndex: Map<number, Set<number>>
 ): Table {
     const {
         hash, 
@@ -546,6 +586,18 @@ export function findTableOrCreateRemoveComponent(
     const newTableEntities = i32Malloc(
         allocator, table_defaults.initial_capacity
     )
+
+    /* add new table to the query index */
+    for (let i = 0; i < newTableComponentIds.length; i++) {
+        const componentId = newTableComponentIds[i]
+        let set = queryIndex.get(componentId)
+        if (!set) {
+            set = new Set()
+            queryIndex.set(componentId, set)
+        }
+        set.add(newTableId)
+    }
+
     const createdTable = new Table(
         newTableId,
         hash,

@@ -3,6 +3,7 @@ import { ComponentRegistry, registry_encoding, RelationRegisty, IdDeclaration, E
 import { ComponentsDeclaration, struct_proxy_encoding, ComponentDefinition, StructProxy } from "../components/index";
 import { ComponentDebug, ComponentId } from "./debugging";
 import { EntityMutationStatus } from "../entities/mutations";
+import { QueryManager } from "../queries/manager";
 export declare class Ecs<Components extends ComponentsDeclaration, Relations extends IdDeclaration, Entities extends IdDeclaration> {
     static readonly MAX_FIELDS_PER_COMPONENT = struct_proxy_encoding.max_fields;
     static readonly MAX_COMPONENTS: registry_encoding;
@@ -14,6 +15,9 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     readonly entities: EntityRegistry<Entities>;
     readonly declaredEntities: Entities;
     private queryIndex;
+    private queryTermBuffer;
+    private tableIterBuffer;
+    private queryManager;
     readonly relations: RelationRegisty<Relations>;
     readonly declaredRelations: Relations;
     readonly "~declaredRelationsCount": number;
@@ -35,6 +39,7 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
         allocatorInitialMemoryMB?: number;
         mode?: "development" | "production";
     });
+    query(): QueryManager;
     private addToRootTable;
     newId(): number;
     hasId(entityId: number, id: number): boolean;

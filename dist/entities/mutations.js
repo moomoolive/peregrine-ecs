@@ -5,7 +5,7 @@ const index_1 = require("../components/index");
 const hashing_1 = require("../table/hashing");
 const index_2 = require("../table/index");
 const index_3 = require("../allocator/index");
-function findTableOrCreateAddTag(tableHashes, previousTable, tagId, tables, allocator) {
+function findTableOrCreateAddTag(tableHashes, previousTable, tagId, tables, allocator, queryIndex) {
     const { hash, insertIndex } = (0, hashing_1.computeAdditonalTagHash)(previousTable.componentIds, tagId, previousTable.components.length);
     const nextTableId = tableHashes.get(hash);
     // check if table has already been created
@@ -36,6 +36,16 @@ function findTableOrCreateAddTag(tableHashes, previousTable, tagId, tables, allo
     }
     const newTableId = tables.length;
     const newTableEntities = (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */);
+    /* add new table to the query index */
+    for (let i = 0; i < newTableComponentIds.length; i++) {
+        const componentId = newTableComponentIds[i];
+        let set = queryIndex.get(componentId);
+        if (!set) {
+            set = new Set();
+            queryIndex.set(componentId, set);
+        }
+        set.add(newTableId);
+    }
     const createdTable = new index_2.Table(newTableId, hash, newTableComponentIds, componentData, (0, index_3.i32Malloc)(allocator, 6 /* meta_size */), newTableComponentPtrs, newTableEntities, 1 /* initial_capacity */);
     previousTable.addEdges.set(tagId, newTableId);
     createdTable.removeEdges.set(tagId, previousTable.id);
@@ -44,7 +54,7 @@ function findTableOrCreateAddTag(tableHashes, previousTable, tagId, tables, allo
     return createdTable;
 }
 exports.findTableOrCreateAddTag = findTableOrCreateAddTag;
-function findTableOrCreateRemoveTag(tableHashes, previousTable, tagId, tables, allocator) {
+function findTableOrCreateRemoveTag(tableHashes, previousTable, tagId, tables, allocator, queryIndex) {
     const { hash, removeIndex } = (0, hashing_1.computeRemoveTagHash)(previousTable.componentIds, tagId, previousTable.components.length);
     const nextTableId = tableHashes.get(hash);
     // check if table has already been created
@@ -74,6 +84,16 @@ function findTableOrCreateRemoveTag(tableHashes, previousTable, tagId, tables, a
     }
     const newTableId = tables.length;
     const newTableEntities = (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */);
+    /* add new table to the query index */
+    for (let i = 0; i < newTableComponentIds.length; i++) {
+        const componentId = newTableComponentIds[i];
+        let set = queryIndex.get(componentId);
+        if (!set) {
+            set = new Set();
+            queryIndex.set(componentId, set);
+        }
+        set.add(newTableId);
+    }
     const createdTable = new index_2.Table(newTableId, hash, newTableComponentIds, componentData, (0, index_3.i32Malloc)(allocator, 6 /* meta_size */), newTableComponentPtrs, newTableEntities, 1 /* initial_capacity */);
     previousTable.removeEdges.set(tagId, newTableId);
     createdTable.addEdges.set(tagId, previousTable.id);
@@ -113,7 +133,7 @@ function shiftComponentDataAligned(source, destination, sourceRow, allocator) {
     return targetLength;
 }
 exports.shiftComponentDataAligned = shiftComponentDataAligned;
-function findTableOrCreateAddComponent(tableHashes, previousTable, componentId, tables, allocator, proxyClass) {
+function findTableOrCreateAddComponent(tableHashes, previousTable, componentId, tables, allocator, proxyClass, queryIndex) {
     const { hash, insertIndex } = (0, hashing_1.computeAdditonalComponentHash)(previousTable.componentIds, componentId, previousTable.components.length);
     const nextTableId = tableHashes.get(hash);
     // check if table has already been created
@@ -167,6 +187,16 @@ function findTableOrCreateAddComponent(tableHashes, previousTable, componentId, 
     }
     const newTableId = tables.length;
     const newTableEntities = (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */);
+    /* add new table to the query index */
+    for (let i = 0; i < newTableComponentIds.length; i++) {
+        const componentId = newTableComponentIds[i];
+        let set = queryIndex.get(componentId);
+        if (!set) {
+            set = new Set();
+            queryIndex.set(componentId, set);
+        }
+        set.add(newTableId);
+    }
     const createdTable = new index_2.Table(newTableId, hash, newTableComponentIds, componentData, (0, index_3.i32Malloc)(allocator, 6 /* meta_size */), newTableComponentPtrs, newTableEntities, 1 /* initial_capacity */);
     previousTable.addEdges.set(componentId, newTableId);
     createdTable.removeEdges.set(componentId, previousTable.id);
@@ -237,7 +267,7 @@ function shiftComponentDataUnaligned(source, destination, sourceRow, allocator, 
     return targetLength;
 }
 exports.shiftComponentDataUnaligned = shiftComponentDataUnaligned;
-function findTableOrCreateRemoveComponent(tableHashes, previousTable, componentId, tables, allocator) {
+function findTableOrCreateRemoveComponent(tableHashes, previousTable, componentId, tables, allocator, queryIndex) {
     const { hash, removeIndex } = (0, hashing_1.computeRemoveComponentHash)(previousTable.componentIds, componentId, previousTable.components.length);
     const nextTableId = tableHashes.get(hash);
     // check if table has already been created
@@ -276,6 +306,16 @@ function findTableOrCreateRemoveComponent(tableHashes, previousTable, componentI
     }
     const newTableId = tables.length;
     const newTableEntities = (0, index_3.i32Malloc)(allocator, 1 /* initial_capacity */);
+    /* add new table to the query index */
+    for (let i = 0; i < newTableComponentIds.length; i++) {
+        const componentId = newTableComponentIds[i];
+        let set = queryIndex.get(componentId);
+        if (!set) {
+            set = new Set();
+            queryIndex.set(componentId, set);
+        }
+        set.add(newTableId);
+    }
     const createdTable = new index_2.Table(newTableId, hash, newTableComponentIds, componentData, (0, index_3.i32Malloc)(allocator, 6 /* meta_size */), newTableComponentPtrs, newTableEntities, 1 /* initial_capacity */);
     previousTable.removeEdges.set(componentId, newTableId);
     createdTable.addEdges.set(componentId, previousTable.id);

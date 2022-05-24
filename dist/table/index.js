@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Table = exports.createTableMeta = void 0;
 const index_1 = require("../allocator/index");
+const ids_1 = require("../entities/ids");
 function createTableMeta(allocator) {
     return (0, index_1.i32Malloc)(allocator, 6 /* meta_size */);
 }
@@ -74,13 +75,18 @@ class Table {
     get(component) {
         const arrIndex = this.componentIndexes.get(component);
         const components = this.components;
-        if (!arrIndex || arrIndex > (components.length - 1)) {
-            return;
+        if (arrIndex === undefined || arrIndex > (components.length - 1)) {
+            return null;
         }
         return components[arrIndex];
     }
-    has(componentId) {
-        return this.componentIndexes.has(componentId);
+    hasRelationship(relation, entity) {
+        return this.has((0, ids_1.relationship)(relation, entity));
+    }
+    /* alias */
+    hasComponent(id) { return this.has(id); }
+    has(id) {
+        return this.componentIndexes.has(id);
     }
     ensureSize(additional, allocator) {
         const len = this.length;

@@ -7,6 +7,8 @@ import {
     ComponentDefinition
 } from "../components/index"
 import {bytes} from "../consts"
+import {relationship} from "../entities/ids"
+import {ComponentId} from "../ecs/debugging"
 
 export const enum table_encoding {
     meta_size = 6,
@@ -152,17 +154,23 @@ export class Table {
 
     get<Definition extends ComponentDefinition>(
         component: number | Definition
-    ): Component<Definition> | undefined {
+    ): Component<Definition> | null {
         const arrIndex = this.componentIndexes.get(component as number)
         const components = this.components
-        if (!arrIndex || arrIndex > (components.length - 1)) {
-            return
+        if (arrIndex === undefined || arrIndex > (components.length - 1)) {
+            return null
         }
         return components[arrIndex] as Component<Definition>
     }
 
-    has(componentId: number): boolean {
-        return this.componentIndexes.has(componentId)
+    hasRelationship(relation: number, entity: number): boolean {
+        return this.has(relationship(relation, entity))
+    }
+
+    /* alias */
+    hasComponent(id: ComponentId) { return this.has(id) }
+    has(id: ComponentId): boolean {
+        return this.componentIndexes.has(id as number)
     }
 
     ensureSize(
@@ -253,4 +261,3 @@ export class Table {
     }
 }
 
-export type QueryTable = Pick<Table, "entities" | "get">

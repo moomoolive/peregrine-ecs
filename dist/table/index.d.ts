@@ -1,5 +1,6 @@
 import { Allocator } from "../allocator/index";
 import { RawComponent, ComponentDefinition } from "../components/index";
+import { ComponentId } from "../ecs/debugging";
 export declare const enum table_encoding {
     meta_size = 6,
     length_index = 0,
@@ -45,12 +46,13 @@ export declare class Table {
     set componentIdsPtr(newPtr: number);
     get componentCount(): number;
     set componentCount(newPtr: number);
-    get<Definition extends ComponentDefinition>(component: number | Definition): Component<Definition> | undefined;
-    has(componentId: number): boolean;
+    get<Definition extends ComponentDefinition>(component: number | Definition): Component<Definition> | null;
+    hasRelationship(relation: number, entity: number): boolean;
+    hasComponent(id: ComponentId): boolean;
+    has(id: ComponentId): boolean;
     ensureSize(additional: number, allocator: Allocator): number;
     private resizeComponents;
     reclaimMemory(allocator: Allocator): number;
     removeEntity(row: number): TableMutationStatus;
 }
-export declare type QueryTable = Pick<Table, "entities" | "get">;
 //# sourceMappingURL=index.d.ts.map
