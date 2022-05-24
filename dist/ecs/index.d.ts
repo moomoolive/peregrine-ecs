@@ -48,6 +48,8 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     addComponent(entityId: number, componentId: ComponentId): EntityMutationStatus;
     removeComponent(entityId: number, componentId: ComponentId): EntityMutationStatus;
     getComponent<Definition extends ComponentDefinition>(entityId: number, componentId: number | Definition): StructProxy<Definition> | null;
+    newRelation(): number;
+    deleteRelation(entityId: number): EntityMutationStatus;
     "~all_components_info"(): ComponentDebug[];
     "~debug_component"(componentId: ComponentId): ComponentDebug;
     "~entity_index"(entityId: number): {

@@ -179,3 +179,33 @@ const ids_1 = require("../entities/ids");
         (0, globals_1.expect)(ecs.isActive(ecs.entities.apples)).toBe(false);
     });
 });
+(0, globals_1.describe)("relations", () => {
+    (0, globals_1.it)("can created relations", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            }
+        });
+        const relation = ecs.newRelation();
+        (0, globals_1.expect)(ecs.isActive(relation)).toBe(true);
+    });
+    (0, globals_1.it)("relations can be deleted", () => {
+        const ecs = new index_1.Ecs({
+            components: {
+                position: { x: "f64", y: "f64", z: "f64" },
+                controller: { up: "i32", down: "i32" },
+                inventory: { weight: "i32", items: "i32" },
+                playerType: { type: "i32" },
+                time: { value: "f32" }
+            }
+        });
+        const relation = ecs.newRelation();
+        (0, globals_1.expect)(ecs.isActive(relation)).toBe(true);
+        ecs.deleteRelation(relation);
+        (0, globals_1.expect)(ecs.isActive(relation)).toBe(false);
+    });
+});

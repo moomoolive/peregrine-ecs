@@ -64,7 +64,7 @@ class Ecs {
         }
         const index = --this.unusedIndexesCount;
         const id = this.unusedIndexes[index];
-        const generation = this.addToRootTable(this.unusedIndexes[index]);
+        const generation = this.addToRootTable(id);
         return (0, ids_1.createId)(id, generation);
     }
     hasId(entityId, id) {
@@ -230,6 +230,36 @@ class Ecs {
         }
         const component = table.components[index];
         return component.index(row);
+    }
+    newRelation() {
+        if (this.unusedRelationsCount < 1) {
+            const index = this.largestRelationIndex++;
+            const generation = this.addToRootTable(index);
+            return (0, ids_1.createId)(index, generation);
+        }
+        else if (this.largestRelationIndex > 2047 /* max_id */) {
+            throw (0, errors_1.assertion)(`too many relations, relations have exceeded the maximum capacity of ${1400 /* approx_max_count */}.`);
+        }
+        const index = --this.unusedRelationsCount;
+        const id = this.unusedRelations[index];
+        const generation = this.addToRootTable(id);
+        return (0, ids_1.createId)(id, generation);
+    }
+    deleteRelation(entityId) {
+        if ((0, ids_1.isImmutable)(entityId)) {
+            return -2 /* entity_immutable */;
+        }
+        const originalId = (0, ids_1.stripIdMeta)(entityId);
+        const { tableId, row, generationCount } = this.records.index(originalId);
+        if (!(0, records_1.entityIsInitialized)(tableId, generationCount, entityId)) {
+            return -1 /* entity_uninitialized */;
+        }
+        this.records.unsetEntity(originalId);
+        this.tables[tableId].removeEntity(row);
+        /* recycle entity id, stash for later use */
+        const unusedSlot = this.unusedRelationsCount++;
+        this.unusedRelations[unusedSlot] = originalId;
+        return 2 /* successfully_deleted */;
     }
     /* debugging tools */
     "~all_components_info"() {

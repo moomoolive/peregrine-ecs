@@ -192,3 +192,35 @@ describe("reserved entities", () => {
         expect(ecs.isActive(ecs.entities.apples)).toBe(false)
     })
 })
+
+describe("relations", () => {
+    it("can created relations", () => {
+        const ecs = new Ecs({
+            components: {
+                position: {x: "f64", y: "f64", z: "f64"},
+                controller: {up: "i32", down: "i32"},
+                inventory: {weight: "i32", items: "i32"},
+                playerType: {type: "i32"},
+                time: {value: "f32"}
+            }
+        })
+        const relation = ecs.newRelation()
+        expect(ecs.isActive(relation)).toBe(true)
+    })
+
+    it("relations can be deleted", () => {
+        const ecs = new Ecs({
+            components: {
+                position: {x: "f64", y: "f64", z: "f64"},
+                controller: {up: "i32", down: "i32"},
+                inventory: {weight: "i32", items: "i32"},
+                playerType: {type: "i32"},
+                time: {value: "f32"}
+            }
+        })
+        const relation = ecs.newRelation()
+        expect(ecs.isActive(relation)).toBe(true)
+        ecs.deleteRelation(relation)
+        expect(ecs.isActive(relation)).toBe(false)
+    })
+})

@@ -206,7 +206,7 @@ export class Ecs<
         }
         const index = --this.unusedIndexesCount
         const id = this.unusedIndexes[index]
-        const generation = this.addToRootTable(this.unusedIndexes[index])
+        const generation = this.addToRootTable(id)
         return createId(id, generation)
     }
 
@@ -446,6 +446,37 @@ export class Ecs<
         }
         const component = table.components[index]
         return component.index(row) as StructProxy<Definition>
+    }
+
+    newRelation(): number {
+        if (this.unusedRelationsCount < 1) {
+            const index = this.largestRelationIndex++
+            const generation = this.addToRootTable(index)
+            return createId(index, generation)
+        } else if (this.largestRelationIndex > relation_entity_encoding.max_id) {
+            throw assertion(`too many relations, relations have exceeded the maximum capacity of ${relation_entity_encoding.approx_max_count}.`) 
+        }
+        const index = --this.unusedRelationsCount
+        const id = this.unusedRelations[index]
+        const generation = this.addToRootTable(id)
+        return createId(id, generation)
+    }
+
+    deleteRelation(entityId: number): EntityMutationStatus {
+        if (isImmutable(entityId)) {
+            return entity_mutation_status.entity_immutable
+        }
+        const originalId = stripIdMeta(entityId)
+        const {tableId, row, generationCount} = this.records.index(originalId)
+        if (!entityIsInitialized(tableId, generationCount, entityId)) {
+            return entity_mutation_status.entity_uninitialized
+        }
+        this.records.unsetEntity(originalId)
+        this.tables[tableId].removeEntity(row)
+        /* recycle entity id, stash for later use */
+        const unusedSlot = this.unusedRelationsCount++
+        this.unusedRelations[unusedSlot] = originalId
+        return entity_mutation_status.successfully_deleted
     }
 
     /* debugging tools */
