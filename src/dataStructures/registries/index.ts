@@ -15,6 +15,8 @@ import {
     makeIdImmutable,
     makeIdSized
 } from "../../entities/ids"
+import {STANDARD_RELATIONS_INDEX} from "./standardRelations"
+import {STANDARD_ENTITIES} from "./standardEntities"
 
 export type ComponentRegistry<
     Declaration extends ComponentsDeclaration
@@ -94,30 +96,55 @@ export const enum relation_registy_encoding {
     standard_relations_count = 1
 }
 
+export type StandardEntityIndex = ReadonlyArray<{
+    name: string,
+    type: EntityType,
+    id: number
+}>
+
+// made with the help of this beautiful answer: https://stackoverflow.com/questions/71918556/typescript-creating-object-type-from-readonly-array
+export type StandardEntitiesDeclartion<
+    Index extends StandardEntityIndex
+> = {
+    [relation in Index[number] as relation["name"]]: relation["type"]
+}
+
 function entityRegistryMacro<
     Declaration extends IdDeclaration,
-    StandardEntities extends IdDeclaration
+    Index extends StandardEntityIndex
 >(
     declaredEntities: Declaration,
     registryFor: string,
-    standardEntities: StandardEntities,
+    standardEntities: Index,
     idComputeFn: (offset: number) => number
 ): {
     registry: (
         IdRegistry<Declaration>
-        & IdRegistry<StandardEntities>
+        & IdRegistry<StandardEntitiesDeclartion<Index>>
     ),
     orderedKeys: string[]
 } {
     if (typeof declaredEntities !== "object" || declaredEntities ===  null || Array.isArray(declaredEntities)) {
         throw incorrectSchema(`declared ${registryFor} must be an object with string values of ${ENTITY_DECLARATION_TYPES.join(", ")}. Got ${declaredEntities} (type=${typeof declaredEntities}).`)
     }
-    const keys = {...standardEntities, ...declaredEntities}
-    const relationKeys = orderKeysByName(Object.keys(keys))
     const registry = {}
+    /* create standard entities, standard entities have
+    their ids known ahead of time, while user defined ones
+    are only known at runtime */
+    for (let i = 0; i < standardEntities.length; i++) {
+        const {name, id, type} = standardEntities[i]
+        const idWithMeta = type === "immutable" ? 
+            makeIdImmutable(id) : id
+        Object.defineProperty(registry, name, {value: idWithMeta})
+    }
+
+    const standardKeys = standardEntities.map(({name}) => name)
+
+    /* create user defined entities */
+    const relationKeys = orderKeysByName(Object.keys(declaredEntities))
     for (let i = 0; i < relationKeys.length; i++) {
         const name = relationKeys[i]
-        const type = keys[name]
+        const type = declaredEntities[name]
         if (typeof type !== "string" || !correctEntityType(type)) {
             throw incorrectSchema(`declared ${registryFor} "${name}" is an incorrect type (type=${typeof type}, value=${type}). Declared ${registryFor} must be a string value of ${ENTITY_DECLARATION_TYPES.join(", ")}.`)
         }
@@ -128,26 +155,34 @@ function entityRegistryMacro<
             registry, relationKeys[i], {value: idWithMeta}
         )
     }
+    
     return {
         registry: Object.freeze(registry) as (
             IdRegistry<Declaration>
-            & IdRegistry<StandardEntities>
+            & IdRegistry<StandardEntitiesDeclartion<Index>>
         ),
-        orderedKeys: relationKeys
+        orderedKeys: [...standardKeys, ...relationKeys]
     }
 }
 
-export const STANDARD_RELATIONS = {
-    instanceof: "immutable",
-    wildcard: "immutable"
-} as const
+export const enum standard_relations {
+    any = standard_entity.relations_start
+}
+
+export type StandardRelationsDeclartion = StandardEntitiesDeclartion<typeof STANDARD_RELATIONS_INDEX>
+
+type PrivateRelations = "wildcard" | "__reserved__"
 
 export type RelationRegisty<
     Declaration extends IdDeclaration
 > = (
     IdRegistry<Declaration>
-    & IdRegistry<typeof STANDARD_RELATIONS>
+    & Omit<IdRegistry<StandardRelationsDeclartion>, PrivateRelations>
 )
+
+export function computeNonStandardRelationId(offset: number): number {
+    return computeRelationId(STANDARD_RELATIONS_INDEX.length + offset)
+}
 
 export function relationRegistryMacro<
     Declaration extends IdDeclaration
@@ -156,24 +191,28 @@ export function relationRegistryMacro<
     orderedKeys: string[]
 } {
     return entityRegistryMacro(
-        declaredRelations, "relations", STANDARD_RELATIONS,
-        computeRelationId
+        declaredRelations, "relations", STANDARD_RELATIONS_INDEX,
+        computeNonStandardRelationId
     ) 
 }
 
-export const STANDARD_ENTITIES = {
+export type StandardUserspaceEntityDeclaration = StandardEntitiesDeclartion<typeof STANDARD_ENTITIES>
 
-} as const
+export type PrivateEntities = "__reserved__"
 
 export type EntityRegistry<
     Declaration extends IdDeclaration
 > = (
     IdRegistry<Declaration>
-    & IdRegistry<typeof STANDARD_ENTITIES>
+    & Omit<IdRegistry<StandardUserspaceEntityDeclaration>, PrivateEntities>
 )
 
 export function computeEntityId(offset: number): number {
     return offset + standard_entity.start_of_user_defined_entities
+}
+
+export function computeNonStandardEntityId(offset: number): number {
+    return computeEntityId(offset + STANDARD_ENTITIES.length)
 }
 
 export function entitiesRegistryMacro<
@@ -184,6 +223,6 @@ export function entitiesRegistryMacro<
 } {
     return entityRegistryMacro(
         declaredRelations, "entities", STANDARD_ENTITIES,
-        computeEntityId
+        computeNonStandardEntityId
     ) 
 }

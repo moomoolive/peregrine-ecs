@@ -13,6 +13,7 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     private records;
     readonly entities: EntityRegistry<Entities>;
     readonly declaredEntities: Entities;
+    private queryIndex;
     readonly relations: RelationRegisty<Relations>;
     readonly declaredRelations: Relations;
     readonly "~declaredRelationsCount": number;

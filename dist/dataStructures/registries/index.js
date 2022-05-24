@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.entitiesRegistryMacro = exports.computeEntityId = exports.STANDARD_ENTITIES = exports.relationRegistryMacro = exports.STANDARD_RELATIONS = exports.ENTITY_DECLARATION_TYPES = exports.computeRelationId = exports.componentRegistryMacro = void 0;
+exports.entitiesRegistryMacro = exports.computeNonStandardEntityId = exports.computeEntityId = exports.relationRegistryMacro = exports.computeNonStandardRelationId = exports.ENTITY_DECLARATION_TYPES = exports.computeRelationId = exports.componentRegistryMacro = void 0;
 const index_1 = require("../../components/index");
 const errors_1 = require("../../debugging/errors");
 const ids_1 = require("../../entities/ids");
+const standardRelations_1 = require("./standardRelations");
+const standardEntities_1 = require("./standardEntities");
 function applyComponentIdFlags(id) {
     const immutable = (0, ids_1.makeIdImmutable)(id);
     const sized = (0, ids_1.makeIdSized)(immutable);
@@ -53,12 +55,22 @@ function entityRegistryMacro(declaredEntities, registryFor, standardEntities, id
     if (typeof declaredEntities !== "object" || declaredEntities === null || Array.isArray(declaredEntities)) {
         throw (0, errors_1.incorrectSchema)(`declared ${registryFor} must be an object with string values of ${exports.ENTITY_DECLARATION_TYPES.join(", ")}. Got ${declaredEntities} (type=${typeof declaredEntities}).`);
     }
-    const keys = Object.assign(Object.assign({}, standardEntities), declaredEntities);
-    const relationKeys = (0, index_1.orderKeysByName)(Object.keys(keys));
     const registry = {};
+    /* create standard entities, standard entities have
+    their ids known ahead of time, while user defined ones
+    are only known at runtime */
+    for (let i = 0; i < standardEntities.length; i++) {
+        const { name, id, type } = standardEntities[i];
+        const idWithMeta = type === "immutable" ?
+            (0, ids_1.makeIdImmutable)(id) : id;
+        Object.defineProperty(registry, name, { value: idWithMeta });
+    }
+    const standardKeys = standardEntities.map(({ name }) => name);
+    /* create user defined entities */
+    const relationKeys = (0, index_1.orderKeysByName)(Object.keys(declaredEntities));
     for (let i = 0; i < relationKeys.length; i++) {
         const name = relationKeys[i];
-        const type = keys[name];
+        const type = declaredEntities[name];
         if (typeof type !== "string" || !correctEntityType(type)) {
             throw (0, errors_1.incorrectSchema)(`declared ${registryFor} "${name}" is an incorrect type (type=${typeof type}, value=${type}). Declared ${registryFor} must be a string value of ${exports.ENTITY_DECLARATION_TYPES.join(", ")}.`);
         }
@@ -69,23 +81,26 @@ function entityRegistryMacro(declaredEntities, registryFor, standardEntities, id
     }
     return {
         registry: Object.freeze(registry),
-        orderedKeys: relationKeys
+        orderedKeys: [...standardKeys, ...relationKeys]
     };
 }
-exports.STANDARD_RELATIONS = {
-    instanceof: "immutable",
-    wildcard: "immutable"
-};
+function computeNonStandardRelationId(offset) {
+    return computeRelationId(standardRelations_1.STANDARD_RELATIONS_INDEX.length + offset);
+}
+exports.computeNonStandardRelationId = computeNonStandardRelationId;
 function relationRegistryMacro(declaredRelations) {
-    return entityRegistryMacro(declaredRelations, "relations", exports.STANDARD_RELATIONS, computeRelationId);
+    return entityRegistryMacro(declaredRelations, "relations", standardRelations_1.STANDARD_RELATIONS_INDEX, computeNonStandardRelationId);
 }
 exports.relationRegistryMacro = relationRegistryMacro;
-exports.STANDARD_ENTITIES = {};
 function computeEntityId(offset) {
     return offset + 4095 /* start_of_user_defined_entities */;
 }
 exports.computeEntityId = computeEntityId;
+function computeNonStandardEntityId(offset) {
+    return computeEntityId(offset + standardEntities_1.STANDARD_ENTITIES.length);
+}
+exports.computeNonStandardEntityId = computeNonStandardEntityId;
 function entitiesRegistryMacro(declaredRelations) {
-    return entityRegistryMacro(declaredRelations, "entities", exports.STANDARD_ENTITIES, computeEntityId);
+    return entityRegistryMacro(declaredRelations, "entities", standardEntities_1.STANDARD_ENTITIES, computeNonStandardEntityId);
 }
 exports.entitiesRegistryMacro = entitiesRegistryMacro;

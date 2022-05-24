@@ -64,6 +64,9 @@ import {
     relationship
 } from "../entities/ids"
 import {assertion} from "../debugging/errors"
+import {
+    standard_declared_entities
+} from "../dataStructures/registries/standardEntities"
 
 export class Ecs<
     Components extends ComponentsDeclaration,
@@ -81,6 +84,9 @@ export class Ecs<
     private records: EntityIndex
     readonly entities: EntityRegistry<Entities>
     readonly declaredEntities: Entities
+
+    /* queries */
+    private queryIndex: Map<number, Set<number>>
 
     /* relations */
     readonly relations: RelationRegisty<Relations>
@@ -185,6 +191,7 @@ export class Ecs<
         this.componentDebugInfo = generateComponentDebugInfo(
             this.componentStructProxies
         )
+        this.queryIndex = new Map()
     }
 
     private addToRootTable(id: number) {
@@ -480,7 +487,6 @@ export class Ecs<
     }
 
     /* debugging tools */
-
     "~all_components_info"(): ComponentDebug[] {
         return this.componentDebugInfo
     }
@@ -514,8 +520,12 @@ export class Ecs<
     }
 
     get "~preciseEntityCount"(): number {
+        const trueEntityCount = (
+            this.largestIndex 
+            - standard_entity.start_of_user_defined_entities
+        )
         return (
-            this["~entity_count"] 
+            trueEntityCount 
             + standard_entity.reserved_count
             + this["~component_count"]
             + this["~relation_count"]
@@ -525,6 +535,7 @@ export class Ecs<
     get "~entity_count"(): number {
         return (
             this.largestIndex 
+            - standard_declared_entities.count
             - standard_entity.start_of_user_defined_entities
         )
     }

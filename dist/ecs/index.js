@@ -47,6 +47,7 @@ class Ecs {
             this.hashToTableIndex.set(hash, id);
         }
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
+        this.queryIndex = new Map();
     }
     addToRootTable(id) {
         const rootTable = this.tables[2 /* ecs_root_table */];
@@ -284,13 +285,16 @@ class Ecs {
         };
     }
     get "~preciseEntityCount"() {
-        return (this["~entity_count"]
+        const trueEntityCount = (this.largestIndex
+            - 4095 /* start_of_user_defined_entities */);
+        return (trueEntityCount
             + 50 /* reserved_count */
             + this["~component_count"]
             + this["~relation_count"]);
     }
     get "~entity_count"() {
         return (this.largestIndex
+            - 200 /* count */
             - 4095 /* start_of_user_defined_entities */);
     }
     get "~component_count"() {
