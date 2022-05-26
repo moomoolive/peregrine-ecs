@@ -127,3 +127,22 @@ const ids_1 = require("../../entities/ids");
         (0, globals_1.expect)((0, ids_1.isImmutable)(relations.hates)).toBe(true);
     });
 });
+(0, globals_1.describe)("standard relations", () => {
+    (0, globals_1.it)("standard relationships exist", () => {
+        const { registry: relations } = (0, index_1.relationRegistryMacro)({});
+        (0, globals_1.expect)(typeof relations.wildcard).toBe("number");
+        (0, globals_1.expect)(typeof relations.instanceof).toBe("number");
+    });
+    (0, globals_1.it)("attempting to overwrite standard properties throws and error", () => {
+        (0, globals_1.expect)(() => (0, index_1.relationRegistryMacro)({
+            instanceof: "immutable",
+            wildcard: "immutable"
+        })).toThrow();
+    });
+});
+(0, globals_1.describe)("standard entities", () => {
+    (0, globals_1.it)("standard entities exist", () => {
+        const { registry } = (0, index_1.entitiesRegistryMacro)({});
+        (0, globals_1.expect)(typeof registry.wildcard).toBe("number");
+    });
+});

@@ -167,7 +167,6 @@ export class Table {
         return this.has(relationship(relation, entity))
     }
 
-    /* alias */
     hasComponent(id: ComponentId) { return this.has(id) }
     has(id: ComponentId): boolean {
         return this.componentIndexes.has(id as number)

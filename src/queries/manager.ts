@@ -1,6 +1,7 @@
 import {ComponentId} from "../ecs/debugging"
 import {relationship} from "../entities/ids"
 import {Table} from "../table/index"
+import {createSharedInt32Array} from "../dataStructures/sharedArrays"
 
 type TablePublicFields = (
     "entities"
@@ -12,28 +13,48 @@ type TablePublicFields = (
 
 export type PublicTable = Pick<Table, TablePublicFields> 
 
+export const enum query_encoding {
+    terms_meta_data_size = 1,
+    max_terms = 150,
+    term_buffer_size = max_terms,
+    max_queried_tables = 300
+}
+
+export const enum query_terms_encoding {
+    term_count = 0,
+    term_count_reset_value = 1,
+    first_term = term_count_reset_value,
+    second_term = first_term + 1
+}
+
 export class QueryManager {
     private termBuffer: Int32Array
-    private tableIterBuffer: Int32Array
+    private tablePtrBuffer: Int32Array
     private queryIndex: Map<number, Set<number>>
-    private termCount: number
     private tables: Table[]
 
     constructor(
-        termBuffer: Int32Array,
-        tableIterBuffer: Int32Array,
         queryIndex: Map<number, Set<number>>,
         tables: Table[]
     ) {
-        this.termBuffer = termBuffer
-        this.tableIterBuffer = tableIterBuffer
+        this.termBuffer = createSharedInt32Array(query_encoding.term_buffer_size)
+        this.tablePtrBuffer = createSharedInt32Array(query_encoding.max_queried_tables) 
         this.queryIndex = queryIndex
-        this.termCount = 0
+        this.termCount = query_terms_encoding.term_count_reset_value
         this.tables = tables
     }
 
+    private get termCount(): number {
+        return this.termBuffer[query_terms_encoding.term_count]
+    }
+
+    private set termCount(value: number) {
+        this.termBuffer[query_terms_encoding.term_count] = value
+    }
+    
+
     private reset(): this {
-        this.termCount = 0
+        this.termCount = query_terms_encoding.term_count_reset_value
         return this
     }
 
@@ -67,20 +88,20 @@ export class QueryManager {
         }
         const terms = this.termBuffer
         const index = this.queryIndex
-        const firstTerm = terms[0]
+        const firstTerm = terms[query_terms_encoding.first_term]
         const matchingTablesFirst = index.get(firstTerm)
         if (matchingTablesFirst === undefined) {
             return
         }
 
         let tableIndex = 0
-        const tableBuffer = this.tableIterBuffer
+        const tablePtrs = this.tablePtrBuffer
         for (const tableId of matchingTablesFirst) {
-            tableBuffer[tableIndex] = tableId
+            tablePtrs[tableIndex] = tableId
             tableIndex++
         }
 
-        for (let i = 1; i < len; i++) {
+        for (let i = query_terms_encoding.second_term; i < len; i++) {
             const term = terms[i]
             const matchingTables = index.get(term)
             if (matchingTables === undefined) {
@@ -88,19 +109,19 @@ export class QueryManager {
             }
             let x = 0
             while (x < tableIndex) {
-                const tableId = tableBuffer[x]
+                const tableId = tablePtrs[x]
                 if (matchingTables.has(tableId)) {
                     x++
                     continue
                 }
-                tableBuffer[x] = tableBuffer[tableIndex - 1]
+                tablePtrs[x] = tablePtrs[tableIndex - 1]
                 tableIndex--
             }
         }
 
         const tables = this.tables
         for (let i = 0; i < tableIndex; i++) {
-            const tableId = tableBuffer[i]
+            const tableId = tablePtrs[i]
             const table = tables[tableId]
             const start = 0
             const end = table.length

@@ -83,7 +83,6 @@ class Table {
     hasRelationship(relation, entity) {
         return this.has((0, ids_1.relationship)(relation, entity));
     }
-    /* alias */
     hasComponent(id) { return this.has(id); }
     has(id) {
         return this.componentIndexes.has(id);

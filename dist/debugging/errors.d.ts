@@ -1,5 +1,5 @@
 export declare const enum error_msgs {
-    ecs_signature = "[\uD83E\uDD85 peregrine]",
+    ecs_signature = "[\uD83E\uDD85 shahin]",
     assertion = " ASSERTION_FAILED ",
     incorrect_schema = " INCORRECT_SCHEMA "
 }

@@ -7,12 +7,12 @@ use */
 exports.STANDARD_RELATIONS_INDEX = [
     {
         name: "instanceof",
-        id: 562 /* relations_start */,
+        id: 562 /* instanceof */,
         type: "immutable"
     },
     {
         name: "wildcard",
-        id: 562 /* relations_start */ + 1,
+        id: 563 /* wildcard */,
         type: "immutable"
     },
     /* reserved start */

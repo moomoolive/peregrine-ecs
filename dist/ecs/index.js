@@ -49,9 +49,7 @@ class Ecs {
         }
         this.componentDebugInfo = (0, debugging_1.generateComponentDebugInfo)(this.componentStructProxies);
         this.queryIndex = new Map();
-        this.queryTermBuffer = new Int32Array(150 /* buffer_size */);
-        this.tableIterBuffer = new Int32Array(150 /* buffer_size */);
-        this.queryManager = new manager_1.QueryManager(this.queryTermBuffer, this.tableIterBuffer, this.queryIndex, this.tables);
+        this.queryManager = new manager_1.QueryManager(this.queryIndex, this.tables);
     }
     query() {
         return this.queryManager["reset"]();

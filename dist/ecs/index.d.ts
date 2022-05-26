@@ -15,8 +15,6 @@ export declare class Ecs<Components extends ComponentsDeclaration, Relations ext
     readonly entities: EntityRegistry<Entities>;
     readonly declaredEntities: Entities;
     private queryIndex;
-    private queryTermBuffer;
-    private tableIterBuffer;
     private queryManager;
     readonly relations: RelationRegisty<Relations>;
     readonly declaredRelations: Relations;

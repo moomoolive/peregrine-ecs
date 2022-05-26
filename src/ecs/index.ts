@@ -69,10 +69,6 @@ import {
 } from "../dataStructures/registries/standardEntities"
 import {QueryManager} from "../queries/manager"
 
-const enum queries {
-    buffer_size = 150
-}
-
 export class Ecs<
     Components extends ComponentsDeclaration,
     Relations extends IdDeclaration,
@@ -92,8 +88,6 @@ export class Ecs<
 
     /* queries */
     private queryIndex: Map<number, Set<number>>
-    private queryTermBuffer: Int32Array
-    private tableIterBuffer: Int32Array
     private queryManager: QueryManager
 
     /* relations */
@@ -201,11 +195,7 @@ export class Ecs<
         )
 
         this.queryIndex = new Map()
-        this.queryTermBuffer = new Int32Array(queries.buffer_size)
-        this.tableIterBuffer = new Int32Array(queries.buffer_size)
         this.queryManager = new QueryManager(
-            this.queryTermBuffer,
-            this.tableIterBuffer,
             this.queryIndex,
             this.tables
         )

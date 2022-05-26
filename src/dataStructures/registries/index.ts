@@ -180,6 +180,13 @@ export type RelationRegisty<
     & Omit<IdRegistry<StandardRelationsDeclartion>, PrivateRelations>
 )
 
+export type RelationRegistyRaw<
+    Declaration extends IdDeclaration
+> = (
+    IdRegistry<Declaration>
+    & IdRegistry<StandardRelationsDeclartion>
+)
+
 export function computeNonStandardRelationId(offset: number): number {
     return computeRelationId(STANDARD_RELATIONS_INDEX.length + offset)
 }
@@ -187,7 +194,7 @@ export function computeNonStandardRelationId(offset: number): number {
 export function relationRegistryMacro<
     Declaration extends IdDeclaration
 >(declaredRelations: Declaration): {
-    registry: RelationRegisty<Declaration>,
+    registry: RelationRegistyRaw<Declaration>,
     orderedKeys: string[]
 } {
     return entityRegistryMacro(
@@ -198,13 +205,22 @@ export function relationRegistryMacro<
 
 export type StandardUserspaceEntityDeclaration = StandardEntitiesDeclartion<typeof STANDARD_ENTITIES>
 
-export type PrivateEntities = "__reserved__"
+export type PrivateEntities = (
+    "__reserved__" | "wildcard"
+)
 
 export type EntityRegistry<
     Declaration extends IdDeclaration
 > = (
     IdRegistry<Declaration>
     & Omit<IdRegistry<StandardUserspaceEntityDeclaration>, PrivateEntities>
+)
+
+export type EntityRegistryRaw<
+    Declaration extends IdDeclaration
+> = (
+    IdRegistry<Declaration>
+    & IdRegistry<StandardUserspaceEntityDeclaration>
 )
 
 export function computeEntityId(offset: number): number {
@@ -218,7 +234,7 @@ export function computeNonStandardEntityId(offset: number): number {
 export function entitiesRegistryMacro<
     Declaration extends IdDeclaration
 >(declaredRelations: Declaration): {
-    registry: EntityRegistry<Declaration>,
+    registry: EntityRegistryRaw<Declaration>,
     orderedKeys: string[]
 } {
     return entityRegistryMacro(

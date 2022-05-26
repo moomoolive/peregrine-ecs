@@ -34,18 +34,20 @@ export declare const enum standard_relations {
 export declare type StandardRelationsDeclartion = StandardEntitiesDeclartion<typeof STANDARD_RELATIONS_INDEX>;
 declare type PrivateRelations = "wildcard" | "__reserved__";
 export declare type RelationRegisty<Declaration extends IdDeclaration> = (IdRegistry<Declaration> & Omit<IdRegistry<StandardRelationsDeclartion>, PrivateRelations>);
+export declare type RelationRegistyRaw<Declaration extends IdDeclaration> = (IdRegistry<Declaration> & IdRegistry<StandardRelationsDeclartion>);
 export declare function computeNonStandardRelationId(offset: number): number;
 export declare function relationRegistryMacro<Declaration extends IdDeclaration>(declaredRelations: Declaration): {
-    registry: RelationRegisty<Declaration>;
+    registry: RelationRegistyRaw<Declaration>;
     orderedKeys: string[];
 };
 export declare type StandardUserspaceEntityDeclaration = StandardEntitiesDeclartion<typeof STANDARD_ENTITIES>;
-export declare type PrivateEntities = "__reserved__";
+export declare type PrivateEntities = ("__reserved__" | "wildcard");
 export declare type EntityRegistry<Declaration extends IdDeclaration> = (IdRegistry<Declaration> & Omit<IdRegistry<StandardUserspaceEntityDeclaration>, PrivateEntities>);
+export declare type EntityRegistryRaw<Declaration extends IdDeclaration> = (IdRegistry<Declaration> & IdRegistry<StandardUserspaceEntityDeclaration>);
 export declare function computeEntityId(offset: number): number;
 export declare function computeNonStandardEntityId(offset: number): number;
 export declare function entitiesRegistryMacro<Declaration extends IdDeclaration>(declaredRelations: Declaration): {
-    registry: EntityRegistry<Declaration>;
+    registry: EntityRegistryRaw<Declaration>;
     orderedKeys: string[];
 };
 export {};

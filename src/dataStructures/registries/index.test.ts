@@ -3,6 +3,7 @@ import {
     componentRegistryMacro, 
     registry_encoding,
     relationRegistryMacro,
+    entitiesRegistryMacro
 } from "./index"
 import {orderComponentsByName} from "../../components/index"
 import {
@@ -154,5 +155,27 @@ describe("relation registry (id registry generation)", () => {
         expect(isImmutable(relations.eats)).toBe(true)
         expect(isImmutable(relations.livesIn)).toBe(false)
         expect(isImmutable(relations.hates)).toBe(true)
+    })
+})
+
+describe("standard relations", () => {
+    it("standard relationships exist", () => {
+        const {registry: relations} = relationRegistryMacro({})
+        expect(typeof relations.wildcard).toBe("number")
+        expect(typeof relations.instanceof).toBe("number")
+    })
+
+    it("attempting to overwrite standard properties throws and error", () => {
+        expect(() => relationRegistryMacro({
+            instanceof: "immutable",
+            wildcard: "immutable"
+        })).toThrow()
+    })
+})
+
+describe("standard entities", () => {
+    it("standard entities exist", () => {
+        const {registry} = entitiesRegistryMacro({})
+        expect(typeof registry.wildcard).toBe("number")
     })
 })

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.assertion = exports.incorrectSchema = exports.err = void 0;
 function err(msg) {
-    return "[\uD83E\uDD85 peregrine]" /* ecs_signature */ + msg;
+    return "[\uD83E\uDD85 shahin]" /* ecs_signature */ + msg;
 }
 exports.err = err;
 function incorrectSchema(msg) {
